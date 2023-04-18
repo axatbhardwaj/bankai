@@ -1,5 +1,14 @@
 #!/usr/bin/env fish
-# This file is used to setup aliases for my shell
+# This file is used to setup Fish
+
+
+# OMF-INSTALLATION
+git clone https://github.com/oh-my-fish/oh-my-fish
+cd oh-my-fish
+bin/install --offline
+cd ..
+
+#Aliasess
 alias dog "code"; funcsave dog; 
 alias dawg "code-insiders";funcsave dawg;
 alias lss "ls -ah";funcsave lss;
@@ -16,24 +25,12 @@ fisher install gazorby/fish-abbreviation-tips
 fisher install acomagu/fish-async-prompt
 fisher install joseluisq/gitnow@2.11.0
 
-# OMF-INSTALLATION
-git clone https://github.com/oh-my-fish/oh-my-fish
-cd oh-my-fish
-bin/install --offline
 
 #OMF-THEMES
 omf install neolambda
 
-#installing paru
-sudo pacman -S --needed base-devel
-git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si
 
-#Installing fastfetch --arch
-paru -S fastfetch
-
-#configuring for kitty and Fastfetch
+#configuring launch options
 cd ~/.config/fish
 rmf config.fish 
 printf "if status is-interactive
@@ -41,5 +38,6 @@ printf "if status is-interactive
     fastfetch
     export TERM=screen-256color
 end" >> config.fish
+cd ~
 
 
