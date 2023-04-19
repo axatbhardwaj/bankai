@@ -1,5 +1,10 @@
 #!/bin/bash
 #updateing Arch 
+
+#installing sudo 
+pacman -S sudo
+
+#upgrading system
 sudo pacman -Syyu
 
 #installing git
@@ -12,7 +17,7 @@ pacman -S which
 sudo pacman -S --needed base-devel
 git clone https://aur.archlinux.org/paru.git
 cd paru
-makepkg -si
+sudo makepkg -si
 cd ..
 
 #Installing fastfetch --arch
