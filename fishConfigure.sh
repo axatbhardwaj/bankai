@@ -1,34 +1,34 @@
-#!/usr/bin/env fish
+#!/bin/bash
 # This file is used to setup Fish
 
+Making fish default shell 
+chsh -s $(which fish)
 
 # OMF-INSTALLATION
-git clone https://github.com/oh-my-fish/oh-my-fish
-cd oh-my-fish
-bin/install --offline
-cd ..
-
-#Aliasess
-alias dog "code"; funcsave dog; 
-alias dawg "code-insiders";funcsave dawg;
-alias lss "ls -ah";funcsave lss;
-alias rmf "rm -rf";funcsave rmf;
-
-#Fisher- INSTALLATION
-curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
-
-# Fisher extensions
-fisher install jorgebucaran/nvm.fish
-fisher install jorgebucaran/replay.fish
-fisher install franciscolourenco/done
-fisher install gazorby/fish-abbreviation-tips
-fisher install acomagu/fish-async-prompt
-fisher install joseluisq/gitnow@2.11.0
-
+curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install > install
+fish install --path=~/.local/share/omf --config=~/.config/omf
 
 #OMF-THEMES
 omf install neolambda
 
+#Fisher- INSTALLATION
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+
+
+# Fisher extensions
+fish -c "fisher install jorgebucaran/nvm.fish"
+fish -c "fisher install jorgebucaran/replay.fish"
+fish -c "fisher install franciscolourenco/done"
+fish -c "fisher install gazorby/fish-abbreviation-tips"
+fish -c "fisher install acomagu/fish-async-prompt"
+fish -c "fisher install joseluisq/gitnow@2.11.0"
+fish -c "fisher install meaningful-ooo/sponge"
+
+#Aliasess
+fish -c "alias dog "code"; funcsave dog;" 
+fish -c "alias dawg "code-insiders";funcsave dawg;"
+fish -c "alias lss "ls -ah";funcsave lss;"
+fish -c "alias rmf "rm -rf";funcsave rmf;"
 
 #configuring launch options
 cd ~/.config/fish
@@ -39,5 +39,3 @@ printf "if status is-interactive
     export TERM=screen-256color
 end" >> config.fish
 cd ~
-
-
