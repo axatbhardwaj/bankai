@@ -1,26 +1,23 @@
-#!/usr/bin/env fish
-# This file is used to setup Fish
+# #!/usr/bin/env fish
+# # This file is used to setup Fish
 
-#installing Fish
-sudo apt-add-repository ppa:fish-shell/release-3 
-sudo apt-get update && sudo apt-get upgrade
-sudo apt-get install fish
+# #installing Fish
+# sudo passwd $USER -d #removing passwd for EC2 instance
 
+# sudo apt-add-repository ppa:fish-shell/release-3 
+# sudo apt-get update && sudo apt-get upgrade
+# sudo apt-get install fish
+
+#Making fish default shell 
+chsh -s $(which fish)
 
 # OMF-INSTALLATION
-git clone https://github.com/oh-my-fish/oh-my-fish
-cd oh-my-fish
-bin/install --offline
-cd ..
-
-#Aliasess
-alias dog "code"; funcsave dog; 
-alias dawg "code-insiders";funcsave dawg;
-alias lss "ls -ah";funcsave lss;
-alias rmf "rm -rf";funcsave rmf;
+curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install > install
+fish install --path=~/.local/share/omf --config=~/.config/omf
 
 #Fisher- INSTALLATION
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+
 
 # Fisher extensions
 fisher install jorgebucaran/nvm.fish
@@ -32,6 +29,12 @@ fisher install joseluisq/gitnow@2.11.0
 
 #OMF-THEMES
 omf install neolambda
+
+#Aliasess
+alias dog "code"; funcsave dog; 
+alias dawg "code-insiders";funcsave dawg;
+alias lss "ls -ah";funcsave lss;
+alias rmf "rm -rf";funcsave rmf;
 
 #configuring launch options
 cd ~/.config/fish
