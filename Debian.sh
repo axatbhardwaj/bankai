@@ -16,7 +16,9 @@ sudo apt-get install fish
 chsh -s $(which fish)
 
 # Install OMF
-curl -sL https://get.oh-my.fish | fish
+fish -c `git clone https://github.com/oh-my-fish/oh-my-fish.git ~/.local/share/omf
+~/.local/share/omf/bin/install --offline`
+
 
 # Install OMF themes
 fish -c "omf install neolambda"
