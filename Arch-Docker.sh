@@ -13,7 +13,8 @@ sudo paru -S fish
 chsh -s $(which fish)
 
 # Install OMF
-curl -sL https://get.oh-my.fish | fish
+curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install > install
+fish -c " fish install --path=~/.local/share/omf --config=~/.config/omf --noninteractive --yes"
 
 # Install OMF themes
 fish -c "omf install neolambda"
