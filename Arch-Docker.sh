@@ -8,14 +8,10 @@ if [[ $(id -u) -eq 0 ]]; then
 fi
 
 # Update system and install required packages
-sudo pacman -Syu --noconfirm git 
-
-#installing fakeroot for makepkg
-sudo pacman -S --noconfirm base-devel alpm
+sudo pacman -Syu --noconfirm git base-devel 
 
 #updating 
 sudo pacman -Syu
-
 
 
 # Install Paru if not already installed
@@ -27,6 +23,8 @@ if ! command -v paru &> /dev/null; then
   makepkg -si --noconfirm --nocheck
 
   cd -
+
+  exit
 fi
 
 # install Fish
@@ -65,6 +63,6 @@ echo 'if status is-interactive
 end' >> ~/.config/fish/config.fish
 
 # Install Fastfetch
-sudo pacman -S --noconfirm fastfetch
+sudo paru -S --noconfirm fastfetch
 
 echo "Fish installation complete! Restart your terminal to start using Fish."
