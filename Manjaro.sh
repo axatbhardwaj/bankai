@@ -51,7 +51,7 @@ printf "if status is-interactive
     # Commands to run in interactive sessions can go here
     fastfetch
     export TERM=screen-256color
-end\n" >> ~/.config/fish/config.fish
+end\n" > ~/.config/fish/config.fish
 
 
 echo "Fish installation complete! Restart your terminal to start using Fish."
