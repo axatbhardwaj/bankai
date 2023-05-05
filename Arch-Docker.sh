@@ -3,8 +3,20 @@
 
 set -e  # Exit on error
 
+#installing git 
+pacman -S git --noconfirm
+
 # Update system and install required packages
-pacman --noconfirm -Syu paru git curl
+# Install Paru if not already installed
+if ! command -v paru &> /dev/null
+then
+    echo "Paru not found. Installing Paru..."
+    git clone https://aur.archlinux.org/paru.git /tmp/paru
+    cd /tmp/paru
+    makepkg -si --noconfirm
+fi
+
+
 
 # Install Fish
 sudo paru -S fish
