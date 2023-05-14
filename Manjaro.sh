@@ -42,6 +42,7 @@ fish -c 'alias dog "code"; funcsave dog;'
 fish -c 'alias dawg "code-insiders"; funcsave dawg;'
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
+fish -c 'alias ps "ps auxfh"; funcsave ps;' 
 
 # Install Fastfetch
 paru -Syyu --noconfirm fastfetch
@@ -51,6 +52,7 @@ printf "if status is-interactive
     # Commands to run in interactive sessions can go here
     fastfetch
     export TERM=screen-256color
+    set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
 
 
