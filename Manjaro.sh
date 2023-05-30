@@ -50,6 +50,9 @@ fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
 
+
+####------------------------------------------------------ installng software ------------------------------------------------------####
+
 # Install Fastfetch
 paru -S fastfetch --noconfirm
 #Installing Bismuth for tiling
@@ -72,11 +75,16 @@ paru -S kitty --noconfirm                                                       
 #Updating system
 paru 
 
+
+#### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
+
+#making kittyconfig.sh exec
 chmod 775 kittyconfig.sh
 
+#configuring kitty
 source "./kittyconfig.sh"
 
-# Configure launch options
+#Configure launch options for fish
 printf "if status is-interactive
     # Commands to run in interactive sessions can go here
     fastfetch
