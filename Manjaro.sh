@@ -60,7 +60,7 @@ paru -S visual-studio-code-insiders-bin --noconfirm
 #installing Forceblur
 paru -S kwin-scripts-forceblur --noconfirm
 #Enabling kwin forceblur
-bash -c "mkdir -p ~/.local/share/kservices5/
+fish -c "mkdir -p ~/.local/share/kservices5/
 cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
 #Installing spotify 
 paru -S spotify --noconfirm
@@ -71,6 +71,10 @@ paru -S kitty --noconfirm                                                       
 
 #Updating system
 paru 
+
+chmod 775 kittyconfig.sh
+
+source "./kittyconfig.sh"
 
 # Configure launch options
 printf "if status is-interactive
