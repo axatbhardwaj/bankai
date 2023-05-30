@@ -1,7 +1,13 @@
 #!/bin/bash
-# This file is used to setup Fish
+# This file is used to setup Manjro for my setup
+#the commands for verbose and redundant for better calrity 
 
 set -e  # Exit on error
+
+paru -S rustup
+rustup install stable
+
+sudo pacman -Syu base-devel rustup --noconfirm
 
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
@@ -45,7 +51,26 @@ fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
 
 # Install Fastfetch
-paru -Syyu --noconfirm fastfetch
+paru -S fastfetch --noconfirm
+#Installing Bismuth for tiling
+paru -S kwin-bismuth --noconfirm
+#installing vs-code and vscode insiders
+paru -S visual-studio-code-bin --noconfirm
+paru -S visual-studio-code-insiders-bin --noconfirm
+#installing Forceblur
+paru -S kwin-scripts-forceblur --noconfirm
+#Enabling kwin forceblur
+bash -c "mkdir -p ~/.local/share/kservices5/
+cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
+#Installing spotify 
+paru -S spotify --noconfirm
+#installing Brave
+paru -S brave-bin --noconfirm
+#installing Kitty
+paru -S kitty --noconfirm                                                                                                                                                                                           130 (9.438s)
+
+#Updating system
+paru 
 
 # Configure launch options
 printf "if status is-interactive
