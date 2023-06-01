@@ -18,6 +18,12 @@ then
     makepkg -si --noconfirm
 fi
 
+#making paru config executable
+chmod 775 paruConfig.sh
+
+#running paruConfig for enabling colors in paru
+source "sudo ./paruconfig.sh"
+
 # install Fish
 paru -Syyu --noconfirm fish
 
