@@ -15,7 +15,9 @@ if grep -q "color = always" "$config_file"; then
 fi
 
 # Add 'color = always' to the Paru configuration file
-echo "color = always" >> "$config_file"
+tmp_file=$(mktemp)
+sed '/^#\[options\]/a color = always' "$config_file" > "$tmp_file"
+mv "$tmp_file" "$config_file"
 
 echo "Colors enabled in Paru."
 
