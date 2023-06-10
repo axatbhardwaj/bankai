@@ -51,7 +51,6 @@ fish -c "fisher install meaningful-ooo/sponge"
 
 # Set aliases
 fish -c 'alias dog "code"; funcsave dog;' 
-fish -c 'alias dawg "code-insiders"; funcsave dawg;'
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
@@ -65,7 +64,6 @@ paru -S fastfetch --noconfirm
 paru -S kwin-bismuth --noconfirm
 #installing vs-code and vscode insiders
 paru -S visual-studio-code-bin --noconfirm
-paru -S visual-studio-code-insiders-bin --noconfirm
 #installing Forceblur
 paru -S kwin-scripts-forceblur --noconfirm
 #Enabling kwin forceblur
