@@ -1,6 +1,6 @@
 #!/bin/bash
 # This file is used to setup Manjro for my setup
-#the commands for verbose and redundant for better calrity 
+#the commands are verbose and redundant for better calrity 
 
 set -e  # Exit on error
 
