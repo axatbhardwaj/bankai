@@ -9,6 +9,9 @@ rustup install stable
 
 sudo pacman -Syu base-devel rustup --noconfirm
 
+#--------------------------------------- Package Mangers Installation ---------------------------------------
+
+
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
 then
@@ -17,6 +20,9 @@ then
     cd /tmp/paru
     makepkg -si --noconfirm
 fi
+
+#installing amethyst
+paru -S ame --noconfirm
 
 #making paru config executable
 chmod 775 paruConfig.sh
