@@ -1,100 +1,39 @@
 #!/bin/bash
-# This file is used to setup Manjro for my setup
-#the commands for verbose and redundant for better calrity 
 
-set -e  # Exit on error
+# Function to install a package
+install_package() {
+    local package=$1
+    paru -S --noconfirm $package
+    if [ $? -ne 0 ]; then
+        echo "Failed to install $package"
+        exit 1
+    fi
+}
 
-paru -S rustup
-rustup install stable
+# Function to install fisher extension
+install_fisher_extension() {
+    local extension=$1
+    fish -c "fisher install $extension"
+    if [ $? -ne 0 ]; then
+        echo "Failed to install fisher extension $extension"
+        exit 1
+    fi
+}
 
-sudo pacman -Syu base-devel rustup --noconfirm
+# Install packages
+install_package "fastfetch"
+install_package "kwin-bismuth"
+install_package "visual-studio-code-bin"
+install_package "kwin-scripts-forceblur"
+install_package "spotify"
+install_package "brave-bin"
+install_package "kitty"
 
-# Install Paru if not already installed
-if ! command -v paru &> /dev/null
-then
-    echo "Paru not found. Installing Paru..."
-    git clone https://aur.archlinux.org/paru.git /tmp/paru
-    cd /tmp/paru
-    makepkg -si --noconfirm
-fi
-
-#making paru config executable
-chmod 775 paruConfig.sh
-
-#running paruConfig for enabling colors in paru
-source "sudo ./paruconfig.sh"
-
-# install Fish
-paru -Syyu --noconfirm fish
-
-# Make Fish the default shell 
-chsh -s $(which fish)
-
-# Install OMF
-curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install > install
-fish -c " fish install --path=~/.local/share/omf --config=~/.config/omf --noninteractive --yes"
-
-# Install OMF themes
-fish -c "omf install neolambda"
-
-# Install Fisher
-fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
-
-# Install Fisher extensions
-fish -c "fisher install jorgebucaran/nvm.fish"
-fish -c "fisher install jorgebucaran/replay.fish"
-fish -c "fisher install franciscolourenco/done"
-fish -c "fisher install gazorby/fish-abbreviation-tips"
-fish -c "fisher install acomagu/fish-async-prompt"
-fish -c "fisher install joseluisq/gitnow@2.11.0"
-fish -c "fisher install meaningful-ooo/sponge"
-
-# Set aliases
-fish -c 'alias dog "code"; funcsave dog;' 
-fish -c 'alias lss "ls -a -h"; funcsave lss;'
-fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
-fish -c 'alias ps "ps auxfh"; funcsave ps;' 
-
-
-####------------------------------------------------------ installng software ------------------------------------------------------####
-
-# Install Fastfetch
-paru -S fastfetch --noconfirm
-#Installing Bismuth for tiling
-paru -S kwin-bismuth --noconfirm
-#installing vs-code and vscode insiders
-paru -S visual-studio-code-bin --noconfirm
-#installing Forceblur
-paru -S kwin-scripts-forceblur --noconfirm
-#Enabling kwin forceblur
-fish -c "mkdir -p ~/.local/share/kservices5/
-cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
-#Installing spotify 
-paru -S spotify --noconfirm
-#installing Brave
-paru -S brave-bin --noconfirm
-#installing Kitty
-paru -S kitty --noconfirm                                                                                                                                                                                           130 (9.438s)
-
-#Updating system
-paru 
-
-
-#### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
-
-#making kittyconfig.sh exec
-chmod 775 kittyconfig.sh
-
-#configuring kitty
-source "./kittyconfig.sh"
-
-#Configure launch options for fish
-printf "if status is-interactive
-    # Commands to run in interactive sessions can go here
-    fastfetch
-    export TERM=screen-256color
-    set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
-end\n" > ~/.config/fish/config.fish
-
-
-echo "Fish installation complete! Restart your terminal to start using Fish."
+# Install fisher extensions
+install_fisher_extension "jorgebucaran/nvm.fish"
+install_fisher_extension "jorgebucaran/replay.fish"
+install_fisher_extension "franciscolourenco/done"
+install_fisher_extension "gazorby/fish-abbreviation-tips"
+install_fisher_extension "acomagu/fish-async-prompt"
+install_fisher_extension "joseluisq/gitnow@2.11.0"
+install_fisher_extension "meaningful-ooo/sponge"
