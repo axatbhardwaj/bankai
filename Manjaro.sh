@@ -13,9 +13,9 @@ then
     makepkg -si --noconfirm
 fi
 
+#installing rustup
 paru -S rustup
 rustup install stable
-
 sudo pacman -Syu base-devel rustup --noconfirm
 
 
