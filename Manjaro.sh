@@ -4,6 +4,9 @@
 
 set -e  # Exit on error
 
+#do pacman updates
+sudo pacman -Syu
+
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
 then
