@@ -4,8 +4,8 @@
 
 set -e  # Exit on error
 
-#do pacman updates
-sudo pacman -Syu --noconfirm
+#do pacman updates & installing rust up
+sudo pacman -Syu base-devel rustup --noconfirm
 
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
@@ -16,10 +16,6 @@ then
     makepkg -si --noconfirm
 fi
 
-#installing rustup
-paru -S rustup
-rustup install stable
-paru -Syu base-devel rustup --noconfirm
 
 #installing amethyst
 paru -S ame --noconfirm
