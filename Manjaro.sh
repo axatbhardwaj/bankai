@@ -19,7 +19,7 @@ fi
 #installing rustup
 paru -S rustup
 rustup install stable
-sudo pacman -Syu base-devel rustup --noconfirm
+paru -Syu base-devel rustup --noconfirm
 
 
 #making paru config executable
