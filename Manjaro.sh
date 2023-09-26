@@ -2,16 +2,8 @@
 # This file is used to setup Manjro for my setup
 #the commands are verbose and redundant for better calrity 
 
-set -e  # Exit on error
-
-paru -S rustup
-rustup install stable
-
-sudo pacman -Syu base-devel rustup --noconfirm
-
 #--------------------------------------- Package Mangers Installation ---------------------------------------
-
-
+set -e  # Exit on error
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
 then
@@ -20,6 +12,11 @@ then
     cd /tmp/paru
     makepkg -si --noconfirm
 fi
+
+#installing rustup
+paru -S rustup
+rustup install stable
+sudo pacman -Syu base-devel rustup --noconfirm
 
 #installing amethyst
 paru -S ame --noconfirm
