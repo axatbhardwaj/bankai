@@ -5,7 +5,7 @@
 set -e  # Exit on error
 
 #do pacman updates & installing rust up
-sudo pacman -Syu base-devel rustup --noconfirm
+sudo pacman -Syu base-devel rustup -y --noconfirm
 
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
