@@ -21,6 +21,8 @@ paru -S rustup
 rustup install stable
 paru -Syu base-devel rustup --noconfirm
 
+#installing amethyst
+paru -S ame --noconfirm
 
 #making paru config executable
 chmod 775 paruConfig.sh
@@ -29,7 +31,7 @@ chmod 775 paruConfig.sh
 source "sudo ./paruconfig.sh"
 
 # install Fish
-paru -Syyu --noconfirm fish
+ame -Syyu --noconfirm fish
 
 # Make Fish the default shell 
 chsh -s $(which fish)
