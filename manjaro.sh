@@ -80,16 +80,15 @@ fish -c 'alias ps "ps auxfh"; funcsave ps;'
 
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
 
-# configure kitty config
-#!/bin/bash
+# Configure kitty config
 
 # Define the path to the kitty.conf file
 config_file="$HOME/.config/kitty/kitty.conf"
 
 # Check if the kitty.conf file exists
 if [ ! -f "$config_file" ]; then
-    printf "Error: kitty.conf file not found at %s\n" "$config_file"
-    exit 1
+    mkdir -p "$HOME/.config/kitty"
+    touch "$config_file"
 fi
 
 # Add or modify the transparency setting
@@ -106,6 +105,11 @@ printf "if status is-interactive
     export TERM=screen-256color
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
+
+
+#configureing blurr
+ mkdir -p ~/.local/share/kservices5/
+ cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
 
 
 echo "Fish installation complete! Restart your terminal to start using Fish."
