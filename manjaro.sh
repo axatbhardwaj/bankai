@@ -39,8 +39,6 @@ ame i kwin-bismuth --noconfirm
 ame i visual-studio-code-bin --noconfirm
 #installing Forceblur
 ame i kwin-scripts-forceblur --noconfirm
-#Installing spotify 
-ame i spotify --noconfirm
 #installing Brave
 ame i brave-bin --noconfirm
 #installing zip
