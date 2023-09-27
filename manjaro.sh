@@ -27,9 +27,6 @@ fi
 #installing amethyst
 paru -S ame --noconfirm
 
-#enabling flatpak 
-pamac install libpamac-flatpack-plugin
-
 ####------------------------------------------------------ installng software ------------------------------------------------------####
 
 # install Fish
