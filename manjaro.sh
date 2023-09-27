@@ -61,8 +61,6 @@ ame i steam-devices --noconfirm
 flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
 #installing steam using flatpak
 flatpak install flathub com.valvesoftware.Steam -y
-#installing proton-VPN
-flatpak install flathub com.protonvpn.www-y
 #installing Discord
 flatpak install flathub com.discordapp.Discord -y
 #installing teams-for-linux
