@@ -31,21 +31,23 @@ paru -S ame --noconfirm
 ####------------------------------------------------------ installng software ------------------------------------------------------####
 
 # install Fish
-ame -S fish --noconfirm 
+ame i fish --noconfirm 
 # Install Fastfetch
-ame -S fastfetch --noconfirm
+ame i fastfetch --noconfirm
 #Installing Bismuth for tiling
-ame -S kwin-bismuth --noconfirm
+ame i kwin-bismuth --noconfirm
 #installing vs-code and vscode insiders
-ame -S visual-studio-code-bin --noconfirm
+ame i visual-studio-code-bin --noconfirm
 #installing Forceblur
-ame -S kwin-scripts-forceblur --noconfirm
+ame i kwin-scripts-forceblur --noconfirm
 #Installing spotify 
-ame -S spotify --noconfirm
+ame i spotify --noconfirm
 #installing Brave
-ame -S brave-bin --noconfirm
+ame i brave-bin --noconfirm
+#installing zip
+ame i zip --noconfirm
 #installing Kitty
-ame -S kitty --noconfirm              
+ame i kitty --noconfirm              
 
 #updating system
 ame --noconfirm
