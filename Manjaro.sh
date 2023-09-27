@@ -40,9 +40,6 @@ ame -S kwin-bismuth --noconfirm
 ame -S visual-studio-code-bin --noconfirm
 #installing Forceblur
 ame -S kwin-scripts-forceblur --noconfirm
-#Enabling kwin forceblur
-fish -c "mkdir -p ~/.local/share/kservices5/
-cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
 #Installing spotify 
 ame -S spotify --noconfirm
 #installing Brave
@@ -52,7 +49,6 @@ ame -S kitty --noconfirm
 
 #updating system
 ame --noconfirm
-
 
 # Make Fish the default shell 
 chsh -s $(which fish)
