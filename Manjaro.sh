@@ -5,7 +5,14 @@
 set -e  # Exit on error
 
 #do pacman updates & installing rust up
-sudo pacman -Syu base-devel rustup --noconfirm
+sudo pacman -Syu base-devel --noconfirm
+
+#installing rust with rustup
+#!/bin/bash
+
+curl https://sh.rustup.rs -sSf | sh -s -- -y --profile default --default-toolchain stable
+source $HOME/.cargo/env
+
 
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
