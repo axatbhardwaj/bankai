@@ -27,6 +27,8 @@ fi
 #installing amethyst
 paru -S ame --noconfirm
 
+#enabling flatpak 
+pamac install libpamac-flatpack-plugin
 
 ####------------------------------------------------------ installng software ------------------------------------------------------####
 
@@ -47,7 +49,32 @@ ame i brave-bin --noconfirm
 #installing zip
 ame i zip --noconfirm
 #installing Kitty
-ame i kitty --noconfirm              
+ame i kitty --noconfirm           
+#installing signal
+ame i signal-desktop --noconfirm
+#installing thunderbird
+ame i thunderbird-bin --noconfirm
+#installing noisetorch
+ame i noisetorch-bin --noconfirm
+#installing steam-devices for flatpak support
+ame i steam-devices --noconfirm
+
+
+
+##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------
+#installing whatsapp
+flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
+#installing steam using flatpak
+flatpak install flathub com.valvesoftware.Steam -y
+#installing proton-VPN
+flatpak install flathub com.protonvpn.www-y
+#installing Discord
+flatpak install flathub com.discordapp.Discord -y
+#installing teams-for-linux
+flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
+#installig spotify
+flatpak install flathub com.spotify.Client -y
+
 
 #updating system
 ame --noconfirm
@@ -122,5 +149,5 @@ end\n" > ~/.config/fish/config.fish
  cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
 
 
-echo "Fish installation complete! Restart your terminal to start using Fish."
-echo "Rember to enable blurr within kwin-scripts"
+echo "\nFish installation complete! Restart your terminal to start using Fish."
+echo "\nRember to enable blurr within kwin-scripts"
