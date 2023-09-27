@@ -27,8 +27,33 @@ fi
 #installing amethyst
 paru -S ame --noconfirm
 
+
+####------------------------------------------------------ installng software ------------------------------------------------------####
+
+# Install Fastfetch
+ame -S fastfetch --noconfirm
+#Installing Bismuth for tiling
+ame -S kwin-bismuth --noconfirm
+#installing vs-code and vscode insiders
+ame -S visual-studio-code-bin --noconfirm
+#installing Forceblur
+ame -S kwin-scripts-forceblur --noconfirm
+#Enabling kwin forceblur
+fish -c "mkdir -p ~/.local/share/kservices5/
+cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
+#Installing spotify 
+ame -S spotify --noconfirm
+#installing Brave
+ame -S brave-bin --noconfirm
+#installing Kitty
+ame -S kitty --noconfirm              
+
 # install Fish
-ame -Syyu --noconfirm fish
+ame -S fish --noconfirm 
+
+#updating system
+ame --noconfirm
+
 
 # Make Fish the default shell 
 chsh -s $(which fish)
@@ -57,28 +82,6 @@ fish -c 'alias dog "code"; funcsave dog;'
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
-
-
-####------------------------------------------------------ installng software ------------------------------------------------------####
-
-# Install Fastfetch
-ame -S fastfetch --noconfirm
-#Installing Bismuth for tiling
-ame -S kwin-bismuth --noconfirm
-#installing vs-code and vscode insiders
-ame -S visual-studio-code-bin --noconfirm
-#installing Forceblur
-ame -S kwin-scripts-forceblur --noconfirm
-#Enabling kwin forceblur
-fish -c "mkdir -p ~/.local/share/kservices5/
-cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
-#Installing spotify 
-ame -S spotify --noconfirm
-#installing Brave
-ame -S brave-bin --noconfirm
-#installing Kitty
-ame -S kitty --noconfirm                                                                                                                                                                                           130 (9.438s)
- 
 
 
 
