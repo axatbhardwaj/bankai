@@ -142,5 +142,5 @@ end\n" > ~/.config/fish/config.fish
  cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
 
 
-echo "\nFish installation complete! Restart your terminal to start using Fish."
-echo "\nRember to enable blurr within kwin-scripts"
+echo "Fish installation complete! Restart your terminal to start using Fish."
+echo "Rember to enable blurr within kwin-scripts"
