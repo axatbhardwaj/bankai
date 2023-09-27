@@ -112,6 +112,8 @@ end\n" > ~/.config/fish/config.fish
  git clone https://github.com/esjeon/kwin-forceblur.git
  cd kwin-forceblur
  chmod +x install.sh
+ chmod +x pack.sh
+ ./pack.sh
  ./install.sh
 
  mkdir -p ~/.local/share/kservices5/
