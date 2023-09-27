@@ -78,15 +78,11 @@ fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
 
-
-
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
 
-#making kittyconfig.sh exec
-chmod 775 kittyconfig.sh
+# configure kitty config
+printf "background_opacity 0.5\n" > ~/.config/kitty/kitty.conf
 
-#configuring kitty
-source "./kittyconfig.sh"
 
 #Configure launch options for fish
 printf "if status is-interactive
