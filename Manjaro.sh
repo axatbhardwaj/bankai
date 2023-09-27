@@ -62,25 +62,24 @@ fish -c 'alias ps "ps auxfh"; funcsave ps;'
 ####------------------------------------------------------ installng software ------------------------------------------------------####
 
 # Install Fastfetch
-paru -S fastfetch --noconfirm
+ame -S fastfetch --noconfirm
 #Installing Bismuth for tiling
-paru -S kwin-bismuth --noconfirm
+ame -S kwin-bismuth --noconfirm
 #installing vs-code and vscode insiders
-paru -S visual-studio-code-bin --noconfirm
+ame -S visual-studio-code-bin --noconfirm
 #installing Forceblur
-paru -S kwin-scripts-forceblur --noconfirm
+ame -S kwin-scripts-forceblur --noconfirm
 #Enabling kwin forceblur
 fish -c "mkdir -p ~/.local/share/kservices5/
 cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop"
 #Installing spotify 
-paru -S spotify --noconfirm
+ame -S spotify --noconfirm
 #installing Brave
-paru -S brave-bin --noconfirm
+ame -S brave-bin --noconfirm
 #installing Kitty
-paru -S kitty --noconfirm                                                                                                                                                                                           130 (9.438s)
+ame -S kitty --noconfirm                                                                                                                                                                                           130 (9.438s)
+ 
 
-#Updating system
-paru 
 
 
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
