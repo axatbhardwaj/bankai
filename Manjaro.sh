@@ -27,12 +27,6 @@ fi
 #installing amethyst
 paru -S ame --noconfirm
 
-#making paru config executable
-chmod 775 paruConfig.sh
-
-#running paruConfig for enabling colors in paru
-source "sudo ./paruconfig.sh"
-
 # install Fish
 ame -Syyu --noconfirm fish
 
