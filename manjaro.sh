@@ -81,7 +81,22 @@ fish -c 'alias ps "ps auxfh"; funcsave ps;'
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
 
 # configure kitty config
-printf "background_opacity 0.5\n" > ~/.config/kitty/kitty.conf
+#!/bin/bash
+
+# Define the path to the kitty.conf file
+config_file="$HOME/.config/kitty/kitty.conf"
+
+# Check if the kitty.conf file exists
+if [ ! -f "$config_file" ]; then
+    printf "Error: kitty.conf file not found at %s\n" "$config_file"
+    exit 1
+fi
+
+# Add or modify the transparency setting
+printf "background_opacity 0.5\n" >> "$config_file"
+
+printf "Transparency setting added to kitty.conf. Restart Kitty for the changes to take effect.\n"
+
 
 
 #Configure launch options for fish
@@ -94,3 +109,4 @@ end\n" > ~/.config/fish/config.fish
 
 
 echo "Fish installation complete! Restart your terminal to start using Fish."
+echo "Rember to enable blurr within kwin-scripts"
