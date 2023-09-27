@@ -30,6 +30,8 @@ paru -S ame --noconfirm
 
 ####------------------------------------------------------ installng software ------------------------------------------------------####
 
+# install Fish
+ame -S fish --noconfirm 
 # Install Fastfetch
 ame -S fastfetch --noconfirm
 #Installing Bismuth for tiling
@@ -47,9 +49,6 @@ ame -S spotify --noconfirm
 ame -S brave-bin --noconfirm
 #installing Kitty
 ame -S kitty --noconfirm              
-
-# install Fish
-ame -S fish --noconfirm 
 
 #updating system
 ame --noconfirm
