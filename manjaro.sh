@@ -118,8 +118,6 @@ printf "background_opacity 0.5\n" >> "$config_file"
 
 printf "Transparency setting added to kitty.conf. Restart Kitty for the changes to take effect.\n"
 
-
-
 #Configure launch options for fish
 printf "if status is-interactive
     # Commands to run in interactive sessions can go here
@@ -128,8 +126,10 @@ printf "if status is-interactive
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
 
-
 #configureing blurr
+#only run this snippet if the argument provided is not y
+if [ $1 != "y" ]
+then
 
  git clone https://github.com/esjeon/kwin-forceblur.git
  cd kwin-forceblur
@@ -140,7 +140,7 @@ end\n" > ~/.config/fish/config.fish
 
  mkdir -p ~/.local/share/kservices5/
  cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
-
+echo "Rember to enable blurr within kwin-scripts"
+fi
 
 echo "Fish installation complete! Restart your terminal to start using Fish."
-echo "Rember to enable blurr within kwin-scripts"
