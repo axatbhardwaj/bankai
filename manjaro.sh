@@ -51,16 +51,14 @@ ame i signal-desktop --noconfirm
 ame i thunderbird-bin --noconfirm
 #installing noisetorch
 ame i noisetorch-bin --noconfirm
-#installing steam-devices for flatpak support
-ame i steam-devices --noconfirm
+#installing steam
+ame i steam --noconfirm
 
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------
 #installing whatsapp
 flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
-#installing steam using flatpak
-flatpak install flathub com.valvesoftware.Steam -y
 #installing Discord
 flatpak install flathub com.discordapp.Discord -y
 #installing teams-for-linux
