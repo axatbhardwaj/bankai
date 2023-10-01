@@ -1,7 +1,6 @@
 #!/bin/bash
 # This file is used to setup Manjro for my setup
 #the commands for verbose and redundant for better calrity 
-
 set -e  # Exit on error
 
 #do pacman updates & installing rust up
@@ -13,7 +12,6 @@ sudo pacman -Syu base-devel --noconfirm
 curl https://sh.rustup.rs -sSf | sh -s -- -y --profile default --default-toolchain stable
 source $HOME/.cargo/env
 
-
 # Install Paru if not already installed
 if ! command -v paru &> /dev/null
 then
@@ -22,7 +20,6 @@ then
     cd /tmp/paru
     makepkg -si --noconfirm
 fi
-
 
 #installing amethyst
 paru -S ame --noconfirm
@@ -53,8 +50,10 @@ ame i thunderbird-bin --noconfirm
 ame i noisetorch-bin --noconfirm
 #installing steam
 ame i steam --noconfirm
-
-
+#installing gamemode
+ame i gamemode --noconfirm
+#installing bitwarden
+ame i bitwarden --noconfirm
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------
 #installing whatsapp
@@ -65,7 +64,6 @@ flatpak install flathub com.discordapp.Discord -y
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #installig spotify
 flatpak install flathub com.spotify.Client -y
-
 
 #updating system
 ame --noconfirm
