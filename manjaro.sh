@@ -212,4 +212,6 @@ echo "Rember to enable blurr within kwin-scripts"
 fi
 
 
+
+
 echo "Fish installation complete! Restart your terminal to start using Fish."
