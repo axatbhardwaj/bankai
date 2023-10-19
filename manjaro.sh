@@ -41,6 +41,8 @@ ame i visual-studio-code-bin --noconfirm
 ame i kwin-scripts-forceblur --noconfirm
 #installing Brave
 ame i brave-bin --noconfirm
+#installing floorp
+ame i floorp --noconfirm
 #installing zip
 ame i zip --noconfirm
 #installing Kitty
