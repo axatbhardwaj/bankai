@@ -32,7 +32,7 @@ paru -S ame --noconfirm
 # install Fish
 ame i fish --noconfirm 
 # Install Fastfetch
-ame i fastfetch --noconfirm
+ame i fastfetch-git --noconfirm
 #Installing Bismuth for tiling
 ame i kwin-bismuth --noconfirm
 #installing vs-code and vscode insiders
