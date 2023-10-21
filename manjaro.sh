@@ -173,23 +173,16 @@ IdentityFile " > ~/vsCodeSshConfig.config
 
 #configuring global gitconfig
 printf "# ~/.gitconfig
- 
-[includeIf "gitdir:~/personal/"] # include for all .git projects under personnal/ 
-path = ~/personal/.gitconfig.personal
- 
+
+[includeIf "gitdir:~/personal/"]
+    path = ~/personal/.gitconfig.personal
+
 [includeIf "gitdir:~/infrablok/"]
-path = ~/work/.gitconfig.work
- 
+    path = ~/work/.gitconfig.work
+
 [core]
-excludesfile = ~/.gitignore      # valid everywhere
-[credential "https://github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
-"
-> ~/.gitconfig
+    excludesfile = ~/.gitignore
+"> ~/.gitconfig
 ####--------------------------------------------------------git config ends------------------------------------------------------####
 
 
