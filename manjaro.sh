@@ -32,7 +32,7 @@ paru -S ame --noconfirm
 # install Fish
 ame i fish --noconfirm 
 # Install Fastfetch
-ame i fastfetch --noconfirm
+ame i fastfetch-git --noconfirm
 #Installing Bismuth for tiling
 ame i kwin-bismuth --noconfirm
 #installing vs-code and vscode insiders
@@ -41,6 +41,8 @@ ame i visual-studio-code-bin --noconfirm
 ame i kwin-scripts-forceblur --noconfirm
 #installing Brave
 ame i brave-bin --noconfirm
+#installing floorp
+ame i floorp --noconfirm
 #installing zip
 ame i zip --noconfirm
 #installing Kitty
