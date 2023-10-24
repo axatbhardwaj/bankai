@@ -55,7 +55,12 @@ ame i thunderbird-bin --noconfirm
 ame i noisetorch-bin --noconfirm
 #installing steam
 ame i steam --noconfirm
-
+#installing github-cli
+ame i github-cli --noconfirm
+#installing nvm
+ame i nvm --noconfirm
+#insalling authy
+ame i authy --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
