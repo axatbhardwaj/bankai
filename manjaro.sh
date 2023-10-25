@@ -61,6 +61,8 @@ ame i github-cli --noconfirm
 ame i nvm --noconfirm
 #insalling authy
 ame i authy --noconfirm
+#installing notion
+ame i notion-app-enhanced --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
