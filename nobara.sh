@@ -62,7 +62,7 @@ if [ ! -f "$config_file" ]; then
     mkdir -p "$HOME/.config/kitty"
     touch "$config_file"
 fi
-printf "background_opacity 0.5\n" >> "$config_file"
+printf "background_opacity 0.75\n" >> "$config_file"
 printf "Transparency setting added to kitty.conf. Restart Kitty for the changes to take effect.\n"
 
 # Configure Fish launch options
