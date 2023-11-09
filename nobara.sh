@@ -22,12 +22,15 @@ sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.re
 # Install software using dnf (Fedora's package manager)
 sudo dnf install -y fish fastfetch code zip kitty thunderbird gh 
 
+#Adding flathub repo 
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
 # Install Flatpak apps
 flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
 flatpak install flathub com.discordapp.Discord -y
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 flatpak install flathub com.spotify.Client -y
-flatpak install flathub one.ablaze.floorp -y
+flatpak install flathub one.ablaze.floorp -y 
 flatpak install flathub org.signal.Signal -y
 flatpak install flathub com.authy.Authy -y
 
