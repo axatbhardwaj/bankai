@@ -1,10 +1,10 @@
 #!/bin/bash
 # This file is used to setup Nobara Linux for my setup
-
 set -e  # Exit on error
 
-# Update system and install necessary packages
-nobara-sync
+# Prompt for sudo password early on
+echo "Please enter your sudo password:"
+sudo -S echo "Thank you!"
 
 # Install Rust using rustup
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile default --default-toolchain stable
@@ -29,13 +29,13 @@ sudo dnf install -y fish fastfetch code zip kitty thunderbird gh
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
 # Install Flatpak apps
-flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
-flatpak install flathub com.discordapp.Discord -y
-flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
-flatpak install flathub com.spotify.Client -y
-flatpak install flathub one.ablaze.floorp -y 
-flatpak install flathub org.signal.Signal -y
-flatpak install flathub com.authy.Authy -y
+flatpak install --user flathub io.github.mimbrero.WhatsAppDesktop -y
+flatpak install --user flathub com.discordapp.Discord -y
+flatpak install --user flathub com.github.IsmaelMartinez.teams_for_linux -y
+flatpak install --user flathub com.spotify.Client -y
+flatpak install --user flathub app/one.ablaze.floorp/x86_64/stable -y 
+flatpak install --user flathub org.signal.Signal -y
+flatpak install --user flathub com.authy.Authy -y
 
 
 # Make Fish the default shell k
@@ -137,5 +137,8 @@ printf "if status is-interactive
 end\n" > ~/.config/fish/config.fish
 
 # Additional configurations...
+
+# Update system and install necessary packages
+nobara-sync
 
 echo "Nobara Linux setup complete! Restart your terminal to start using Fish."
