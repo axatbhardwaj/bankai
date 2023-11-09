@@ -22,6 +22,9 @@ sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.re
 # Install software using dnf (Fedora's package manager)
 sudo dnf install -y fish fastfetch code zip kitty thunderbird gh 
 
+####----------------------------------------- configuring flatpak and installing softwares ---------------------------------- ####
+
+
 #Adding flathub repo 
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
@@ -43,7 +46,8 @@ curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install 
 fish -c "fish install --path=~/.local/share/omf --config=~/.config/omf --noninteractive --yes"
 fish -c "omf install neolambda"
 
-# Install Fisher and extensions
+####----------------------------------------------- Install Fisher and extensions -------------------------------------------####
+
 fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
 fish -c "fisher install jorgebucaran/nvm.fish"
 fish -c "fisher install jorgebucaran/replay.fish"
@@ -58,6 +62,63 @@ fish -c 'alias dog "code"; funcsave dog;'
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
+
+####-------------------------------------------------------- git config -------------------------------------------------------####
+#creating directory for work and personal git
+
+mkdir -p ~/work
+cd ~/work
+printf "# ~/work/.gitconfig.work
+ 
+[user]
+email = {work_email}
+name = {work_username}
+ 
+[github]
+user = "{github_username}"
+ 
+[core]
+sshCommand = "ssh -i {ssh_key_path}"
+" > ~/work/.gitconfig.work
+
+
+mkdir -p ~/personal
+cd ~/personal
+printf "# ~/personal/.gitconfig.personal
+ 
+[user]
+email = {personal_email}
+name = {personal_username}
+ 
+[github]
+user = "{github_username}"
+ 
+[core]
+sshCommand = "ssh -i {ssh_key_path}"
+" > ~/personal/.gitconfig.personal
+
+#creating a vscodeSsh config for remote ssh connections
+printf "Host {HOSTNAME}
+HostName
+User 
+IdentityFile " > ~/vsCodeSshConfig.config
+
+#configuring global gitconfig
+printf "# ~/.gitconfig
+
+[includeIf "gitdir:~/personal/"]
+    path = ~/personal/.gitconfig.personal
+
+[includeIf "gitdir:~/infrablok/"]
+    path = ~/work/.gitconfig.work
+
+[core]
+    excludesfile = ~/.gitignore
+"> ~/.gitconfig
+
+
+####----------------------------------------------- configuring kitty and Fish launch ---------------------------------------- ####
+
 
 # Configure kitty
 config_file="$HOME/.config/kitty/kitty.conf"
