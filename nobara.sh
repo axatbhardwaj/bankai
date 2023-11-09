@@ -32,7 +32,7 @@ gpgcheck=0" | sudo tee /etc/yum.repos.d/notion-repackaged.repo > /dev/null
 echo "notion-repackaged repository added to your package manager."
 
 # Install software using dnf (Fedora's package manager)
-sudo dnf install -y fish fastfetch code zip kitty thunderbird gh notion-app-enhanced
+sudo dnf install -y fish fastfetch code zip kitty thunderbird gh notion-app-enhanced chromium
 
 
 ####----------------------------------------- configuring flatpak and installing softwares ---------------------------------- ####
