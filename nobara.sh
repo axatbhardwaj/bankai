@@ -3,8 +3,11 @@
 set -e  # Exit on error
 
 # Prompt for sudo password early on
-echo "Please enter your sudo password:"
-sudo -S echo "Thank you!"
+read -s -p "Please enter your sudo password: " password
+echo
+
+# Use the provided password with sudo
+echo "$password" | sudo -S echo "Thank you!"
 
 # Install Rust using rustup
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile default --default-toolchain stable
@@ -18,6 +21,15 @@ sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.m
 sudo dnf install 'dnf-command(config-manager)'
 sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 
+#adding repo for notion-app enhanced
+# Create the /etc/yum.repos.d/notion-repackaged.repo file with the repository information
+echo "[notion-repackaged]
+name=notion-repackaged
+baseurl=https://yum.fury.io/notion-repackaged/
+enabled=1
+gpgcheck=0" | sudo tee /etc/yum.repos.d/notion-repackaged.repo > /dev/null
+
+echo "notion-repackaged repository added to your package manager."
 
 # Install software using dnf (Fedora's package manager)
 sudo dnf install -y fish fastfetch code zip kitty thunderbird gh 
@@ -135,8 +147,6 @@ printf "if status is-interactive
     export TERM=screen-256color
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
-
-# Additional configurations...
 
 # Update system and install necessary packages
 nobara-sync
