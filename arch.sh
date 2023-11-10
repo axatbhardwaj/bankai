@@ -165,6 +165,9 @@ add_ssh_to_agent() {
     ssh-add -K $1
 }
 
+# Start SSH agent
+eval "$(ssh-agent -s)"
+
 # Creating directory for work and personal git
 mkdir -p ~/work
 cd ~/work
