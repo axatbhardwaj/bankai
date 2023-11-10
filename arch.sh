@@ -227,6 +227,9 @@ cat <<EOF > ~/.gitconfig
     excludesfile = ~/.gitignore
 EOF
 
+echo "CAT the .pub files and add the contents to Github.com in their respective accounts"
+
+
 ####--------------------------------------------------------git config ends------------------------------------------------------####
 
 
