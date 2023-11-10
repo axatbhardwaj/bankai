@@ -32,10 +32,17 @@ gpgcheck=0" | sudo tee /etc/yum.repos.d/notion-repackaged.repo > /dev/null
 echo "notion-repackaged repository added to your package manager."
 
 # Install software using dnf (Fedora's package manager)
-sudo dnf install -y fish fastfetch code zip kitty thunderbird gh notion-app-enhanced chromium
+sudo dnf install -y fish fastfetch code zip kitty thunderbird gh notion-app-enhanced chromium steam
 
+####----------------------------------------- Installing Gamemode -----------------------------------------------------------####
+sudo dnf install meson systemd-devel pkg-config git dbus-devel
 
-####----------------------------------------- configuring flatpak and installing softwares ---------------------------------- ####
+git clone https://github.com/FeralInteractive/gamemode.git
+cd gamemode
+git checkout 1.7 # omit to build the master branch
+./bootstrap.sh
+
+####----------------------------------------- configuring flatpak and installing softwares ----------------------------------####
 
 
 #Adding flathub repo 
@@ -49,7 +56,7 @@ flatpak install --user flathub com.spotify.Client -y
 flatpak install --user flathub app/one.ablaze.floorp/x86_64/stable -y 
 flatpak install --user flathub org.signal.Signal -y
 flatpak install --user flathub com.authy.Authy -y
-
+flatpak install --user flathub com.bitwarden.desktop -y
 
 # Make Fish the default shell k
 chsh -s $(which fish)
