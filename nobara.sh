@@ -120,11 +120,9 @@ IdentityFile " > ~/vsCodeSshConfig.config
 printf "# ~/.gitconfig
 
 [includeIf "gitdir:~/personal/"]
-    path = ~/personal/.gitconfig.personal
-
+    path =~/personal/.gitconfig.personal
 [includeIf "gitdir:~/infrablok/"]
-    path = ~/work/.gitconfig.work
-
+    path =~/work/.gitconfig.work
 [core]
     excludesfile = ~/.gitignore
 "> ~/.gitconfig
@@ -149,7 +147,4 @@ printf "if status is-interactive
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
 
-# Update system and install necessary packages
-nobara-sync
-
-echo "Nobara Linux setup complete! Restart your terminal to start using Fish."
+echo "Linux setup complete! Restart your terminal to start using Fish."
