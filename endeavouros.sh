@@ -143,7 +143,6 @@ end\n" > ~/.config/fish/config.fish
 
 ####------------------------------------------------------ git config ------------------------------------------------------####
 #creating directory for work and personal git
-
 mkdir -p ~/work
 cd ~/work
 printf "# ~/work/.gitconfig.work
@@ -159,7 +158,6 @@ user = "{github_username}"
 sshCommand = "ssh -i {ssh_key_path}"
 " > ~/work/.gitconfig.work
 
-
 mkdir -p ~/personal
 cd ~/personal
 printf "# ~/personal/.gitconfig.personal
@@ -174,12 +172,6 @@ user = "{github_username}"
 [core]
 sshCommand = "ssh -i {ssh_key_path}"
 " > ~/personal/.gitconfig.personal
-
-#creating a vscodeSsh config for remote ssh connections
-printf "Host {HOSTNAME}
-HostName
-User 
-IdentityFile " > ~/vsCodeSshConfig.config
 
 #configuring global gitconfig
 printf "# ~/.gitconfig
