@@ -245,23 +245,24 @@ echo "CAT the .pub files and add the contents to Github.com in their respective 
 
 
 #####----------------------------------------------------Installing blurr------------------------------------------------------####
-#configureing blurr
-#only run this snippet if the argument provided is not y
-if [ $1 != "y" ]
-then
+# Prompt for desktop environment
+read -p "Is your desktop environment KDE? (y/n): " is_kde
 
- git clone https://github.com/esjeon/kwin-forceblur.git
- cd kwin-forceblur
- chmod +x install.sh
- chmod +x pack.sh
- ./pack.sh
- ./install.sh
+if [ "$is_kde" = "y" ]; then
+        git clone https://github.com/esjeon/kwin-forceblur.git
+        cd kwin-forceblur
+        chmod +x install.sh
+        chmod +x pack.sh
+        ./pack.sh
+        ./install.sh
 
- mkdir -p ~/.local/share/kservices5/
- cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
-echo "Rember to enable blurr within kwin-scripts"
+        mkdir -p ~/.local/share/kservices5/
+        cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
+        echo "Remember to enable blurr within kwin-scripts"
+    fi
+else
+    echo "Skipping kwin-forceblur installation as the desktop environment is not KDE."
 fi
-
 
 
 
