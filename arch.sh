@@ -155,6 +155,11 @@ prompt_user() {
     echo "$user_input"
 }
 
+# Function to generate Ed25519 SSH key
+generate_ed25519_key() {
+    ssh-keygen -t ed25519 -C "$1" -f "$2"
+}
+
 # Function to add SSH key to agent
 add_ssh_to_agent() {
     ssh-add -K $1
@@ -182,8 +187,8 @@ user = "$github_username"
 sshCommand = "ssh -i ~/.ssh/work_key"
 EOF
 
-# Generate SSH key for work
-ssh-keygen -t rsa -b 4096 -C "$work_email" -f ~/.ssh/work_key
+# Generate Ed25519 SSH key for work
+generate_ed25519_key "$work_email" ~/.ssh/work_key
 
 # Add SSH key to agent
 add_ssh_to_agent ~/.ssh/work_key
@@ -209,8 +214,8 @@ user = "$github_username"
 sshCommand = "ssh -i ~/.ssh/personal_key"
 EOF
 
-# Generate SSH key for personal
-ssh-keygen -t rsa -b 4096 -C "$personal_email" -f ~/.ssh/personal_key
+# Generate Ed25519 SSH key for personal
+generate_ed25519_key "$personal_email" ~/.ssh/personal_key
 
 # Add SSH key to agent
 add_ssh_to_agent ~/.ssh/personal_key
@@ -226,6 +231,7 @@ cat <<EOF > ~/.gitconfig
 [core]
     excludesfile = ~/.gitignore
 EOF
+
 
 echo "CAT the .pub files and add the contents to Github.com in their respective accounts"
 
