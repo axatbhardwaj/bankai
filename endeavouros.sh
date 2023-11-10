@@ -146,49 +146,87 @@ end\n" > ~/.config/fish/config.fish
 
 
 ####------------------------------------------------------ git config ------------------------------------------------------####
-#creating directory for work and personal git
+
+### configuring git 
+
+# Function to prompt for user input
+prompt_user() {
+    read -p "$1: " user_input
+    echo "$user_input"
+}
+
+# Function to add SSH key to agent
+add_ssh_to_agent() {
+    ssh-add -K $1
+}
+
+# Creating directory for work and personal git
 mkdir -p ~/work
 cd ~/work
-printf "# ~/work/.gitconfig.work
- 
-[user]
-email = {work_email}
-name = {work_username}
- 
-[github]
-user = "{github_username}"
- 
-[core]
-sshCommand = "ssh -i {ssh_key_path}"
-" > ~/work/.gitconfig.work
 
+# Prompt for work-related information
+work_email=$(prompt_user "Enter work email")
+work_username=$(prompt_user "Enter work username")
+github_username=$(prompt_user "Enter GitHub username for work")
+
+# Generate .gitconfig.work
+cat <<EOF > ~/work/.gitconfig.work
+[user]
+email = $work_email
+name = $work_username
+
+[github]
+user = "$github_username"
+
+[core]
+sshCommand = "ssh -i ~/.ssh/work_key"
+EOF
+
+# Generate SSH key for work
+ssh-keygen -t rsa -b 4096 -C "$work_email" -f ~/.ssh/work_key
+
+# Add SSH key to agent
+add_ssh_to_agent ~/.ssh/work_key
+
+# Repeat the process for personal
 mkdir -p ~/personal
 cd ~/personal
-printf "# ~/personal/.gitconfig.personal
- 
+
+personal_email=$(prompt_user "Enter personal email")
+personal_username=$(prompt_user "Enter personal username")
+github_username=$(prompt_user "Enter GitHub username for personal")
+
+# Generate .gitconfig.personal
+cat <<EOF > ~/personal/.gitconfig.personal
 [user]
-email = {personal_email}
-name = {personal_username}
- 
+email = $personal_email
+name = $personal_username
+
 [github]
-user = "{github_username}"
- 
+user = "$github_username"
+
 [core]
-sshCommand = "ssh -i {ssh_key_path}"
-" > ~/personal/.gitconfig.personal
+sshCommand = "ssh -i ~/.ssh/personal_key"
+EOF
 
-#configuring global gitconfig
-printf "# ~/.gitconfig
+# Generate SSH key for personal
+ssh-keygen -t rsa -b 4096 -C "$personal_email" -f ~/.ssh/personal_key
 
+# Add SSH key to agent
+add_ssh_to_agent ~/.ssh/personal_key
+
+# Configure global gitconfig
+cat <<EOF > ~/.gitconfig
 [includeIf "gitdir:~/personal/"]
-    path =~/personal/.gitconfig.personal
+    path = ~/personal/.gitconfig.personal
 
-[includeIf "gitdir:~/infrablok/"]
-    path =~/work/.gitconfig.work
+[includeIf "gitdir:~/work/"]
+    path = ~/work/.gitconfig.work
 
 [core]
     excludesfile = ~/.gitignore
-"> ~/.gitconfig
+EOF
+
 ####--------------------------------------------------------git config ends------------------------------------------------------####
 
 
