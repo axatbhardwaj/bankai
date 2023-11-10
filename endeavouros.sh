@@ -61,6 +61,12 @@ paru -S authy --noconfirm
 paru -S notion-app-enhanced --noconfirm
 #installing flatpak 
 paru -S flatpak --noconfirm
+#installing steam
+paru -S steam --noconfirm
+#installing kde-partitionmanger
+paru -S partitionmanager --noconfirm
+#installing spotify 
+paru -S spotify --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
@@ -75,8 +81,6 @@ flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
 flatpak install flathub com.discordapp.Discord -y
 #installing teams-for-linux
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
-#installig spotify
-flatpak install flathub com.spotify.Client -y
 
 
 #updating system
