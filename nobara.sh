@@ -58,6 +58,7 @@ flatpak install --user flathub org.signal.Signal -y
 flatpak install --user flathub com.authy.Authy -y
 flatpak install --user flathub com.bitwarden.desktop -y
 
+####---------------------------------------------------- configuring fish------------------------------------------------------####
 # Make Fish the default shell k
 chsh -s $(which fish)
 
@@ -66,7 +67,6 @@ curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install 
 fish -c "fish install --path=~/.local/share/omf --config=~/.config/omf --noninteractive --yes"
 fish -c "omf install neolambda"
 
-####---------------------------------------------------- configuring fish------------------------------------------------------####
 
 fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
 fish -c "fisher install jorgebucaran/nvm.fish"
