@@ -80,7 +80,7 @@ flatpak install flathub com.spotify.Client -y
 
 
 #updating system
-paru --noconfirm
+paru -Syu --noconfirm
 
 ####--------------------------------------------------software instlled ----------------------------------------------------####
 
