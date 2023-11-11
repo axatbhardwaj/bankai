@@ -58,7 +58,7 @@ paru -S nvm --noconfirm
 #insalling authy
 paru -S authy --noconfirm
 #installing notion
-paru -S notion-app-enhanced --noconfirm
+paru -S notion-app-electron --noconfirm
 #installing flatpak 
 paru -S flatpak --noconfirm
 #installing steam
@@ -86,7 +86,7 @@ flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #updating system
 paru -Syu --noconfirm
 
-####--------------------------------------------------software instlled ----------------------------------------------------####
+####---------------------------------------------configuring fish ------------------------------------------------------####
 
 # Make Fish the default shell 
 chsh -s $(which fish)
@@ -142,7 +142,6 @@ printf "if status is-interactive
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
 
-####------------------------------------ kitty and fish congiuration ends --------------------------------------------------####
 
 
 ####------------------------------------------------------ git config ------------------------------------------------------####
@@ -237,10 +236,6 @@ EOF
 
 
 echo "CAT the .pub files and add the contents to Github.com in their respective accounts"
-
-
-####--------------------------------------------------------git config ends------------------------------------------------------####
-
 
 
 
