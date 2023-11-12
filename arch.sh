@@ -161,7 +161,7 @@ generate_ed25519_key() {
 
 # Function to add SSH key to agent
 add_ssh_to_agent() {
-    ssh-add -K $1
+    ssh-add $1
 }
 
 # Start SSH agent
