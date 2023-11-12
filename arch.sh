@@ -256,7 +256,6 @@ if [ "$is_kde" = "y" ]; then
         mkdir -p ~/.local/share/kservices5/
         cp ~/.local/share/kwin/scripts/forceblur/metadata.desktop ~/.local/share/kservices5/forceblur.desktop
         echo "Remember to enable blurr within kwin-scripts"
-    fi
 else
     echo "Skipping kwin-forceblur installation as the desktop environment is not KDE."
 fi
