@@ -67,6 +67,8 @@ paru -S steam --noconfirm
 paru -S partitionmanager --noconfirm
 #installing spotify 
 paru -S spotify --noconfirm
+#installing timeshift 
+paru -S timeshift --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
