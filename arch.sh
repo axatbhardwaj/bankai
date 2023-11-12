@@ -67,8 +67,14 @@ paru -S steam --noconfirm
 paru -S partitionmanager --noconfirm
 #installing spotify 
 paru -S spotify --noconfirm
-#installing timeshift 
+#installing timeshift
+paru -S timeshift --noconfirm
+#installing timeshift-autosnap
 paru -S timeshift-autosnap --noconfirm
+#intsalling grub-btrfs
+paru -S grub-btrfs --noconfirm
+#installing grub-customizer
+paru -S grub-customizer --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
