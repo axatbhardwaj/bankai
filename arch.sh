@@ -248,7 +248,12 @@ EOF
 
 echo "CAT the .pub files and add the contents to Github.com in their respective accounts"
 
+####---------------------------KDE-connect fix----------------------------------####
+killall kdeconnectd
+mv ~/.config/kdeconnect ~/.config/kdeconnect.bak
 
+sudo firewall-cmd --permanent --zone=public --add-service=kdeconnect
+sudo firewall-cmd --reload
 
 #####----------------------------------------------------Installing blurr------------------------------------------------------####
 # Prompt for desktop environment
