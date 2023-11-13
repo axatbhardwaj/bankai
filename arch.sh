@@ -65,8 +65,6 @@ paru -S flatpak --noconfirm
 paru -S steam --noconfirm
 #installing kde-partitionmanger
 paru -S partitionmanager --noconfirm
-#installing spotify 
-paru -S spotify --noconfirm
 #installing timeshift
 paru -S timeshift --noconfirm
 #installing timeshift-autosnap
@@ -91,6 +89,8 @@ flatpak install flathub com.discordapp.Discord -y
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #installing authy 
 flatpak install flathub com.authy.Authy -y
+#installing spotify
+flatpak install flathub com.spotify.Client -y
 
 #updating system
 paru -Syu --noconfirm
