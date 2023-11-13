@@ -91,7 +91,6 @@ flatpak install flathub com.discordapp.Discord -y
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #installing authy 
 flatpak install flathub com.authy.Authy -y
-
 #installing flatseal
 flatpak install flathub com.github.tchx84.Flatseal -y
 
