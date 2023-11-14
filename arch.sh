@@ -71,11 +71,12 @@ paru -S partitionmanager --noconfirm
 paru -S timeshift --noconfirm
 #installing timeshift-autosnap
 paru -S timeshift-autosnap --noconfirm
+#installing inotify
+paru -S inotify-tools --noconfirm
 #intsalling grub-btrfs
 paru -S grub-btrfs --noconfirm
 #installing grub-customizer
 paru -S grub-customizer --noconfirm
-
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
 
@@ -93,6 +94,13 @@ flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 flatpak install flathub com.authy.Authy -y
 #installing flatseal
 flatpak install flathub com.github.tchx84.Flatseal -y
+
+
+#####-------------------------------------- Grub fixes ------------------------------------------------#####
+
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+sudo systemctl enable grub-btrfsd
+
 
 #updating system
 paru -Syu --noconfirm
