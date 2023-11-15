@@ -61,6 +61,8 @@ paru -S authy --noconfirm
 paru -S notion-app-electron --noconfirm
 #installing flatpak 
 paru -S flatpak --noconfirm
+#installing bitwarden
+paru -S bitwarden --noconfirm
 #installing steam
 paru -S steam --noconfirm
 #installing spotify
