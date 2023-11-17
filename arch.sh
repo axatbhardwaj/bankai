@@ -79,6 +79,8 @@ paru -S inotify-tools --noconfirm
 paru -S grub-btrfs --noconfirm
 #installing grub-customizer
 paru -S grub-customizer --noconfirm
+#installing webcord
+paru -S webcord --noconfirm
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
 
@@ -98,6 +100,10 @@ flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 flatpak install flathub com.authy.Authy -y
 #installing flatseal
 flatpak install flathub com.github.tchx84.Flatseal -y
+
+
+#fixing issue with dicord flatpak related to files
+flatpak override --user --filesystem=home:ro com.discordapp.Discord
 
 
 #####-------------------------------------- Grub fixes ------------------------------------------------#####
