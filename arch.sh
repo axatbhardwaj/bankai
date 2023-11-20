@@ -94,6 +94,8 @@ flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
 flatpak install flathub com.discordapp.Discord -y
 #installing discord screen-audio
 flatpak install de.shorsh.discord-screenaudio -y
+#installing discord-overlay 
+flatpak install io.github.trigg.discover_overlay
 #installing teams-for-linux
 flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #installing authy 
