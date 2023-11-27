@@ -81,6 +81,11 @@ paru -S grub-btrfs --noconfirm
 paru -S grub-customizer --noconfirm
 #installing webcord
 paru -S webcord --noconfirm
+#installing whatsapp-for-linux
+paru -S whatsapp-for-linux --noconfirm
+#installing teams-for-linux
+paru -S teams-for-linux --noconfirm
+
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
 
@@ -88,16 +93,12 @@ paru -S webcord --noconfirm
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 
-#installing whatsapp
-flatpak install flathub io.github.mimbrero.WhatsAppDesktop -y
 #installing Discord
 flatpak install flathub com.discordapp.Discord -y
 #installing discord screen-audio
 flatpak install de.shorsh.discord-screenaudio -y
 #installing discord-overlay 
 flatpak install io.github.trigg.discover_overlay
-#installing teams-for-linux
-flatpak install flathub com.github.IsmaelMartinez.teams_for_linux -y
 #installing authy 
 flatpak install flathub com.authy.Authy -y
 #installing flatseal
