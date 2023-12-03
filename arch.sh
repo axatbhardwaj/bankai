@@ -82,9 +82,11 @@ paru -S grub-customizer --noconfirm
 #installing webcord
 paru -S webcord --noconfirm
 #installing whatsapp-for-linux
-paru -S whatsapp-for-linux --noconfirm
+paru -S whatsdesk-bin --noconfirm
 #installing teams-for-linux
 paru -S teams-for-linux --noconfirm
+#installing discord screen-audio
+paru -S discord-screenaudio --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
@@ -95,8 +97,6 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 
 #installing Discord
 flatpak install flathub com.discordapp.Discord -y
-#installing discord screen-audio
-flatpak install de.shorsh.discord-screenaudio -y
 #installing discord-overlay 
 flatpak install io.github.trigg.discover_overlay
 #installing authy 
