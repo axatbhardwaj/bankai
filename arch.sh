@@ -46,7 +46,7 @@ paru -S kitty --noconfirm
 #installing signal
 paru -S signal-desktop --noconfirm
 #installing thunderbird
-paru -S thunderbird-bin --noconfirm
+paru -S thunderbird --noconfirm
 #installing noisetorch
 paru -S noisetorch-bin --noconfirm
 #installing steam
@@ -66,7 +66,7 @@ paru -S bitwarden --noconfirm
 #installing steam
 paru -S steam --noconfirm
 #installing spotify
-paru -S spotify --noconfirm
+paru -S spotify-snapstore --noconfirm
 #installing kde-partitionmanger
 paru -S partitionmanager --noconfirm
 #installing timeshift
