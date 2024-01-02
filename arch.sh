@@ -145,7 +145,7 @@ fish -c "fisher install meaningful-ooo/sponge"
 # Set aliases
 fish -c 'alias dog "code"; funcsave dog;' 
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
-fish -c 'alias rmf "rm -r -f"; funcsave rmf;'
+fish -c 'alias rmf "rm -r -f -v"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
 
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
