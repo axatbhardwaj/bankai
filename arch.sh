@@ -80,6 +80,8 @@ paru -S whatsdesk-bin --noconfirm
 paru -S teams-for-linux --noconfirm
 #installing discord screen-audio
 paru -S discord-screenaudio --noconfirm
+#installing onlyoffice
+paru -S onlyoffice-bin --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
