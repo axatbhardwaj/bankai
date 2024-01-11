@@ -4,11 +4,8 @@
 
 set -e  # Exit on error
 
-#do pacman updates & installing rust up
-sudo pacman -Syu base-devel --noconfirm
-
-#installing rust with rustup
-#!/bin/bash
+#pacman updates & installing rust up
+sudo pacman -Syyu base-devel --noconfirm
 
 curl https://sh.rustup.rs -sSf | sh -s -- -y --profile default --default-toolchain stable
 source $HOME/.cargo/env
@@ -49,8 +46,6 @@ paru -S signal-desktop --noconfirm
 paru -S thunderbird --noconfirm
 #installing noisetorch
 paru -S noisetorch-bin --noconfirm
-#installing steam
-paru -S steam --noconfirm
 #installing github-cli
 paru -S github-cli --noconfirm
 #installing nvm
@@ -63,8 +58,6 @@ paru -S notion-app-electron --noconfirm
 paru -S flatpak --noconfirm
 #installing bitwarden
 paru -S bitwarden --noconfirm
-#installing steam
-paru -S steam --noconfirm
 #installing spotify
 paru -S spotify-snapstore --noconfirm
 #installing kde-partitionmanger
@@ -116,7 +109,7 @@ sudo systemctl enable grub-btrfsd
 
 
 #updating system
-paru -Syu --noconfirm
+paru -Syyu --noconfirm
 
 ####---------------------------------------------configuring fish ------------------------------------------------------####
 
@@ -295,6 +288,56 @@ else
     echo "Skipping kwin-forceblur installation as the desktop environment is not KDE."
 fi
 
+#promt for gameing 
+read -p "Do you want to to configure this machine for gaming ? (y/n): " game_on
 
+if [ "$game_on"="y" ]; then
+    #installing steam
+    paru -S steam --noconfirm
+    #installing lutris
+    paru -S lutris --noconfirm
+    #installing protonup for proton-GE
+    paru -S protonup-rs-bin --noconfirm
+    #installing protontricks
+    paru -S protontricks --noconfirm
+    #installing gamemode
+    paru -S gamemode --noconfirm
+    #installing plasma-gamemode-integration
+    paru -S plasma-gamemode-git --noconfirm
+    #installing goverlay 
+    paru -S goverlay --noconfirm
+    #installing nvtop
+    paru -S nvtop --noconfirm
+    #installing btop
+    paru -S btop --noconfirm
+    #installing nvidia settings
+    paru -S nvidia-settings --noconfirm
+    #installing nvdock for nvsettings
+    paru -S nvdock-git --noconfirm
 
-echo "Fish installation complete! Restart your terminal to start using Fish."
+    #updating system before installing zen-kernel
+    paru -Syyu --noconfirm
+
+    #installing zen-kernel
+    paru -S zen-kernel linux-zen-headers --noconfirm
+
+    #making grub entry for zen-kernel
+    sudo grub-mkconfig -o /boot/grub/grub.cfg    
+
+    echo "Games-configurations completed !
+    launch steam and lutris then run:
+    protonup-rs -q 
+    "
+fi
+
+#ask if to enable bluetooth
+read -p "Do you want to enable bluetooth ? (y/n): " bt_on
+
+if [ "$bt_on"="y" ]; then
+    #enable bluetooth
+    sudo systemctl enable bluetooth
+    sudo systemctl start bluetooth
+    echo "Bluetooth enabled !"
+fi
+
+echo "installation complete! Restart your terminal"
