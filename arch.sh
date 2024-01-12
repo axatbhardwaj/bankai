@@ -134,7 +134,7 @@ fish -c "fisher install jorgebucaran/replay.fish"
 fish -c "fisher install franciscolourenco/done"
 fish -c "fisher install gazorby/fish-abbreviation-tips"
 fish -c "fisher install acomagu/fish-async-prompt"
-fish -c "fisher install joseluisq/gitnow@2.11.0"
+# fish -c "fisher install joseluisq/gitnow@2.11.0"
 fish -c "fisher install meaningful-ooo/sponge"
 
 # Set aliases
