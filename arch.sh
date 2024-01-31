@@ -82,6 +82,8 @@ paru -S teams-for-linux --noconfirm
 paru -S discord-screenaudio --noconfirm
 #installing onlyoffice
 paru -S onlyoffice-bin --noconfirm
+#installing cursor
+paru -S cursor-appimage --noconfirm
 
 
 ##----------------------------------------------------FLATPAK INSTALLS------------------------------------------------------##
@@ -142,6 +144,12 @@ fish -c 'alias dog "code"; funcsave dog;'
 fish -c 'alias lss "ls -a -h"; funcsave lss;'
 fish -c 'alias rmf "rm -r -f -v"; funcsave rmf;'
 fish -c 'alias ps "ps auxfh"; funcsave ps;' 
+fish -c 'function cursor; command cursor $argv > /dev/null 2>&1 &; end; funcsave cursor'
+
+#### ----------------------- configuring cursor appimage ---------------------------------------- ####
+chmod +x cursor-config.sh
+./cursor-config.sh
+
 
 #### ----------------------- configuring kitty and Fish launch ---------------------------------------- ####
 
