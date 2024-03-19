@@ -174,7 +174,7 @@ printf "Transparency setting added to kitty.conf. Restart Kitty for the changes 
 #Configure launch options for fish
 printf "if status is-interactive
     # Commands to run in interactive sessions can go here
-    fastfetch
+    # fastfetch
     export TERM=screen-256color
     set -gx VIRTUAL_ENV_DISABLE_PROMPT 1
 end\n" > ~/.config/fish/config.fish
