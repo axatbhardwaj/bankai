@@ -167,9 +167,9 @@ if [ ! -f "$config_file" ]; then
 fi
 
 # Add or modify the transparency setting
-printf "background_opacity 0.5\n" >> "$config_file"
+# printf "background_opacity 0.5\n" >> "$config_file"
 
-printf "Transparency setting added to kitty.conf. Restart Kitty for the changes to take effect.\n"
+# printf "Transparency setting added to kitty.conf. Restart Kitty for the changes to take effect.\n"
 
 #Configure launch options for fish
 printf "if status is-interactive
