@@ -125,7 +125,7 @@ curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install 
 fish -c " fish install --path=~/.local/share/omf --config=~/.config/omf --noninteractive --yes"
 
 # Install OMF themes
-fish -c "omf install ays"
+fish -c "omf install lambda"
 
 # Install Fisher
 fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
