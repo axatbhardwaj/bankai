@@ -362,7 +362,9 @@ export async function runDebianServerSetup() {
 		return false;
 	}
 	if (!paseoConfigured) {
-		log.error("Debian Server setup finished, but Paseo was not configured.");
+		log.error(
+			"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
+		);
 		return false;
 	}
 

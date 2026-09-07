@@ -66,7 +66,7 @@ function runDefaultSetupWithSafeDoubles({
 		};
 		mock.module(${JSON.stringify(modulePath("src/common/utils.js"))}, () => ({
 			commandExists: async () => false,
-			log: { dim() {}, error() {}, info() {}, success() {}, warning() {} },
+				log: { dim() {}, error(message) { events.push({ type: "error", message }); }, info() {}, success() {}, warning() {} },
 			promptUser: async (message, initial) => {
 				events.push({ type: "prompt", message, initial });
 				if (message === paseoPrompt) return ${JSON.stringify(paseoAnswer)};
@@ -258,6 +258,11 @@ describe("Debian default path", () => {
 		});
 
 		expect(result).toBe(false);
-		expect(events.at(-1)).toEqual({ type: "helper", name: "paseo-server" });
+		expect(events).toContainEqual({ type: "helper", name: "paseo-server" });
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message:
+				"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
+		});
 	});
 });
