@@ -7,6 +7,10 @@ import { promptDeviceType } from "./src/common/device_type.js";
 import { getBanner, showBanner } from "./src/common/ui.js";
 import { log, promptUser } from "./src/common/utils.js";
 import {
+	backupAgentSkills,
+	syncAgentSkills,
+} from "./src/helpers/configure_agent_skills.js";
+import {
 	backupAudioConfig,
 	syncAudioConfig,
 } from "./src/helpers/configure_audio.js";
@@ -27,43 +31,39 @@ import {
 	backupCodexConfig,
 	syncCodexConfig,
 } from "./src/helpers/configure_codex.js";
-import {
-	backupAgentSkills,
-	syncAgentSkills,
-} from "./src/helpers/configure_agent_skills.js";
 import { installGhStack } from "./src/helpers/configure_gh_stack.js";
-import { configureKdeConnectCommands } from "./src/helpers/configure_kde_connect.js";
 import {
 	backupHyprmoncfg,
 	configureHyprmoncfg,
 } from "./src/helpers/configure_hyprmoncfg.js";
+import { configureKdeConnectCommands } from "./src/helpers/configure_kde_connect.js";
 import {
 	backupMimeappsConfig,
 	syncMimeappsConfig,
 } from "./src/helpers/configure_mimeapps.js";
+import { configureOmarchyAppearance } from "./src/helpers/configure_omarchy_appearance.js";
 import {
 	backupOmarchyBar,
 	configureOmarchyBar,
 } from "./src/helpers/configure_omarchy_bar.js";
-import { configureOmarchyAppearance } from "./src/helpers/configure_omarchy_appearance.js";
 import { configureOmarchyPlugins } from "./src/helpers/configure_omarchy_plugins.js";
 import { configureOmarchyWorkspaces } from "./src/helpers/configure_omarchy_workspaces.js";
-import {
-	backupPrWatch,
-	syncPrWatch,
-} from "./src/helpers/configure_pr_watch.js";
-import { configureT3CodeServer } from "./src/helpers/configure_t3_code_server.js";
-import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
 import {
 	backupPaseoProfiles,
 	syncPaseoProfiles,
 } from "./src/helpers/configure_paseo_profiles.js";
+import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
+import {
+	backupPrWatch,
+	syncPrWatch,
+} from "./src/helpers/configure_pr_watch.js";
+import { configureSkills, listSkills } from "./src/helpers/configure_skills.js";
+import { configureT3CodeServer } from "./src/helpers/configure_t3_code_server.js";
 import {
 	backupWorktreeCleanup,
 	syncWorktreeCleanup,
 } from "./src/helpers/configure_worktree_cleanup.js";
 import { installUserScripts } from "./src/helpers/install_user_scripts.js";
-import { configureSkills, listSkills } from "./src/helpers/configure_skills.js";
 import { runCachyOSSetup } from "./src/os_scripts/cachyos.js";
 import { runDebianServerSetup } from "./src/os_scripts/debian_server.js";
 
@@ -72,7 +72,7 @@ const program = new Command();
 program
 	.name("haoshoku")
 	.description("Haoshoku: portable setup for Arch / Omarchy and Debian Server.")
-	.version("11.6.1")
+	.version("11.7.0")
 	.addHelpText("before", getBanner());
 
 program

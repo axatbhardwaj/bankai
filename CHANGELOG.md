@@ -1,5 +1,18 @@
 # Changelog
 
+## 11.7.0 - 2026-09-08
+
+- Make Paseo the default orchestrator: install `paseo-bin` on Arch, launch the
+  desktop by its absolute AUR path, require the native daemon on Debian, and
+  keep T3 Code as an optional compatibility service.
+- Install upstream Paseo orchestration skills and sync the Haoshoku-owned
+  routing, review, and HTML-deliverable skills for Claude Code and Codex.
+- Add whitelist-only Paseo profile/provider policy sync and backup while
+  preserving credentials, network settings, unknown profiles, and unrelated
+  configuration.
+- Make shared agent instructions portable and document local, SSH-host, and
+  optional encrypted-relay operation across PC and VPS hosts.
+
 ## 11.6.1 - 2026-09-08
 
 - Support direct root ownership for `--server-paseo`, including root's systemd
