@@ -28,3 +28,10 @@ merge, wrapper, or agent-definition layer.
 
 Local/system skills owned by Omarchy or the Codex harness are outside this
 operation and are not pruned.
+
+## Headless Paseo
+
+`configure_paseo_server.js` owns the Debian native Paseo CLI, fresh config,
+systemd user service, persistence checks, managed-process verification, and
+optional interactive relay pairing. It deliberately does not install provider
+CLIs or synchronize workflow profiles.

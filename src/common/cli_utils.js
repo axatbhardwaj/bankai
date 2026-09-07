@@ -17,6 +17,7 @@ export const MODE_FLAGS = [
 	"codex",
 	"codexBackup",
 	"serverT3Code",
+	"serverPaseo",
 	"skills",
 	"skillsUpdate",
 	"skillsList",

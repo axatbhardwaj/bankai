@@ -67,6 +67,14 @@ describe("haoshoku CLI help", () => {
 		expect(help).not.toContain("Tailscale");
 	});
 
+	it("documents the native headless Paseo server mode", () => {
+		const help = output(["--help"]);
+		const normalizedHelp = help.replace(/\s+/g, " ");
+
+		expect(help).toContain("--server-paseo");
+		expect(normalizedHelp).toContain("native Paseo headless service on Debian");
+	});
+
 	it("documents T3 Connect instead of mandatory Tailscale server access", () => {
 		const readme = fs.readFileSync(README, "utf8");
 		expect(readme).toContain("npx --yes t3@latest connect link --headless");

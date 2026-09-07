@@ -49,6 +49,7 @@ import {
 	syncPrWatch,
 } from "./src/helpers/configure_pr_watch.js";
 import { configureT3CodeServer } from "./src/helpers/configure_t3_code_server.js";
+import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
 import {
 	backupWorktreeCleanup,
 	syncWorktreeCleanup,
@@ -63,7 +64,7 @@ const program = new Command();
 program
 	.name("haoshoku")
 	.description("Haoshoku: portable setup for Arch / Omarchy and Debian Server.")
-	.version("11.5.1")
+	.version("11.6.0")
 	.addHelpText("before", getBanner());
 
 program
@@ -90,6 +91,10 @@ program
 	.option(
 		"--server-t3-code",
 		"Configure the T3 Code headless service and T3 Connect on Debian",
+	)
+	.option(
+		"--server-paseo",
+		"Configure the native Paseo headless service on Debian",
 	)
 	.option("--skills", "Install Matt Pocock skills for Claude Code and Codex")
 	.option("--skills-update", "Refresh Matt Pocock skills")
@@ -237,6 +242,16 @@ async function runAction(options) {
 			return;
 		}
 		if (!(await configureT3CodeServer())) process.exitCode = 1;
+		return;
+	}
+
+	if (options.serverPaseo) {
+		if (detectOS() !== "debian-server") {
+			log.error("--server-paseo requires a Debian-family host.");
+			process.exitCode = 2;
+			return;
+		}
+		if (!(await configurePaseoServer())) process.exitCode = 1;
 		return;
 	}
 

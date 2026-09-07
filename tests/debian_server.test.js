@@ -31,7 +31,10 @@ function makeFakePrompt(value = true) {
 	return { prompt, calls };
 }
 
-function runDefaultSetupWithSafeDoubles() {
+function runDefaultSetupWithSafeDoubles({
+	paseoAnswer = true,
+	paseoResult = true,
+} = {}) {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "haoshoku-debian-path-"));
 	const modulePath = (relativePath) =>
 		path.resolve(import.meta.dir, "..", relativePath);
@@ -51,6 +54,7 @@ function runDefaultSetupWithSafeDoubles() {
 			"Install Claude Remote Control services with all permission checks bypassed? This permanently sets bypassPermissionsModeAccepted: true in ~/.claude.json for every Claude Code session on this machine, not only these services. To undo it, edit ~/.claude.json and remove the flag or set it to false.",
 			"Enable automatic git worktree cleanup? This enables a persistent weekly timer that runs cleanup-worktrees.sh --apply and deletes eligible worktrees.",
 		]);
+		const paseoPrompt = "Configure the native headless Paseo service?";
 		const writeFileSync = actualFs.writeFileSync.bind(actualFs);
 		actualFs.writeFileSync = (target, ...args) => {
 			const tempRoot = path.resolve(process.env.TMPDIR);
@@ -62,9 +66,10 @@ function runDefaultSetupWithSafeDoubles() {
 		};
 		mock.module(${JSON.stringify(modulePath("src/common/utils.js"))}, () => ({
 			commandExists: async () => false,
-			log: { dim() {}, error() {}, info() {}, success() {}, warning() {} },
+				log: { dim() {}, error(message) { events.push({ type: "error", message }); }, info() {}, success() {}, warning() {} },
 			promptUser: async (message, initial) => {
 				events.push({ type: "prompt", message, initial });
+				if (message === paseoPrompt) return ${JSON.stringify(paseoAnswer)};
 				return promptAnswers.has(message);
 			},
 			runCommand: async () => true,
@@ -85,9 +90,11 @@ function runDefaultSetupWithSafeDoubles() {
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_codex.js"))}, () => ({ configureCodex: record("codex") }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_skills.js"))}, () => ({ configureSkills: record("skills", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", true) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_server.js"))}, () => ({ configurePaseoServer: record("paseo-server", ${JSON.stringify(paseoResult)}) }));
 		const { runDebianServerSetup } = await import(${JSON.stringify(debianModule)} + "?default-path-test");
-		await runDebianServerSetup();
+		const result = await runDebianServerSetup();
 		console.log("DEBIAN_EVENTS=" + JSON.stringify(events));
+		console.log("DEBIAN_RESULT=" + JSON.stringify(result));
 	`;
 
 	try {
@@ -108,7 +115,10 @@ function runDefaultSetupWithSafeDoubles() {
 		expect(fs.readFileSync(path.join(home, "jail.local"), "utf8")).toBe(
 			buildFail2banJail(),
 		);
-		return JSON.parse(encodedEvents);
+		return {
+			events: JSON.parse(encodedEvents),
+			result: JSON.parse(output.match(/DEBIAN_RESULT=(.*)/)?.[1] ?? "null"),
+		};
 	} finally {
 		fs.rmSync(home, { recursive: true, force: true });
 	}
@@ -181,7 +191,7 @@ describe("setupFirewall (UFW lockout gate)", () => {
 
 describe("Debian default path", () => {
 	it("runs every server-applicable developer component in deliberate order", () => {
-		const events = runDefaultSetupWithSafeDoubles();
+		const { events, result } = runDefaultSetupWithSafeDoubles();
 		const prompts = events.filter(({ type }) => type === "prompt");
 		const helpers = events
 			.filter(({ type }) => type === "helper")
@@ -224,6 +234,35 @@ describe("Debian default path", () => {
 			"worktree-cleanup",
 			"codex",
 			"skills",
+			"paseo-server",
 		]);
+		expect(result).toBe(true);
+	});
+
+	it("allows declining the optional Paseo component", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			paseoAnswer: false,
+		});
+
+		expect(result).toBe(true);
+		expect(
+			events.some(
+				(event) => event.type === "helper" && event.name === "paseo-server",
+			),
+		).toBe(false);
+	});
+
+	it("propagates a selected Paseo setup failure", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			paseoResult: false,
+		});
+
+		expect(result).toBe(false);
+		expect(events).toContainEqual({ type: "helper", name: "paseo-server" });
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message:
+				"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
+		});
 	});
 });

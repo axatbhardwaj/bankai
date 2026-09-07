@@ -104,6 +104,12 @@ describe("findActiveModeFlags", () => {
 		]);
 	});
 
+	it("keeps the two Debian server components mutually exclusive", () => {
+		expect(
+			findActiveModeFlags({ serverT3Code: true, serverPaseo: true }),
+		).toEqual(["serverT3Code", "serverPaseo"]);
+	});
+
 	it("ignores falsy flag values", () => {
 		expect(findActiveModeFlags({ claude: false, skills: undefined })).toEqual(
 			[],
