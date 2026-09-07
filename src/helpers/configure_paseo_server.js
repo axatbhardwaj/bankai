@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { homedir, userInfo } from "node:os";
 import path from "node:path";
 
+import { ensureNode24Runtime } from "../common/node_24_runtime.js";
 import { log, promptUser } from "../common/utils.js";
 
 const PASEO_PACKAGE = "@getpaseo/cli";
@@ -84,36 +85,16 @@ async function nodeRuntime(runner, env) {
 }
 
 async function ensureNodeRuntime(runner, env, logger) {
-	const existing = await nodeRuntime(runner, env);
-	if (existing) return existing;
-
-	logger.info("Installing the validated Node.js 24 LTS runtime...");
-	const repository = await runner(
-		[
-			"bash",
-			"-c",
-			"set -o pipefail; curl -fsSL https://deb.nodesource.com/setup_24.x | sudo bash -",
-		],
-		{ env, stdio: "inherit" },
-	);
-	if (repository.exitCode !== 0) {
-		logger.error("Could not configure the NodeSource Node.js 24 repository.");
-		return null;
-	}
-	const install = await runner(["sudo", "apt-get", "install", "-y", "nodejs"], {
-		env,
-		stdio: "inherit",
+	return ensureNode24Runtime({
+		readRuntimeImpl: () => nodeRuntime(runner, env),
+		isRuntimeSupported: (runtime) => Boolean(runtime),
+		runInstallStepImpl: async (step) =>
+			(await runner(step.args, { env, stdio: "inherit" })).exitCode === 0,
+		installMessage: "Installing the validated Node.js 24 LTS runtime...",
+		incompatibleMessage: () =>
+			"Node.js 24 is still unavailable after installation.",
+		logger,
 	});
-	if (install.exitCode !== 0) {
-		logger.error("Could not install Node.js 24.");
-		return null;
-	}
-	const installed = await nodeRuntime(runner, env);
-	if (!installed) {
-		logger.error("Node.js 24 is still unavailable after installation.");
-		return null;
-	}
-	return installed;
 }
 
 async function paseoVersion(cli, runner, env) {

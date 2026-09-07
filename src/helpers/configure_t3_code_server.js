@@ -1,8 +1,6 @@
+import { ensureNode24Runtime } from "../common/node_24_runtime.js";
 import { log, runCommand } from "../common/utils.js";
 
-const NODESOURCE_SETUP_COMMAND =
-	"curl -fsSL https://deb.nodesource.com/setup_24.x | sudo bash -";
-const NODE_INSTALL_COMMAND = "sudo apt install -y nodejs";
 const T3_SERVICE_INSTALL_COMMAND = "npx --yes t3@latest service install";
 const T3_SERVICE_STATUS_COMMAND = "npx --yes t3@latest service status";
 const T3_CONNECT_LINK_COMMAND = "npx --yes t3@latest connect link --headless";
@@ -95,29 +93,18 @@ export async function ensureT3NodeRuntime({
 	runCommandImpl = runCommand,
 	logger = log,
 } = {}) {
-	const currentVersion = await getNodeVersionImpl();
-	if (isT3NodeVersionSupported(currentVersion)) return true;
-
-	logger.info(
-		`Installing a T3 Code-compatible Node.js runtime (current: ${currentVersion ?? "missing"})...`,
+	return (
+		(await ensureNode24Runtime({
+			readRuntimeImpl: getNodeVersionImpl,
+			isRuntimeSupported: isT3NodeVersionSupported,
+			runInstallStepImpl: (step) => runCommandImpl(step.command),
+			installMessage: (currentVersion) =>
+				`Installing a T3 Code-compatible Node.js runtime (current: ${currentVersion ?? "missing"})...`,
+			incompatibleMessage: (installedVersion) =>
+				`Node.js ${installedVersion ?? "is still unavailable"}; T3 Code requires ^22.16, ^23.11, or >=24.10.`,
+			logger,
+		})) !== null
 	);
-	if (!(await runCommandImpl(NODESOURCE_SETUP_COMMAND))) {
-		logger.error("Could not configure the NodeSource Node.js 24 repository.");
-		return false;
-	}
-	if (!(await runCommandImpl(NODE_INSTALL_COMMAND))) {
-		logger.error("Could not install Node.js 24.");
-		return false;
-	}
-
-	const installedVersion = await getNodeVersionImpl();
-	if (!isT3NodeVersionSupported(installedVersion)) {
-		logger.error(
-			`Node.js ${installedVersion ?? "is still unavailable"}; T3 Code requires ^22.16, ^23.11, or >=24.10.`,
-		);
-		return false;
-	}
-	return true;
 }
 
 export async function ensureT3Connect({
