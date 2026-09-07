@@ -17,7 +17,7 @@ const CONTACTABLE_DAEMON_STATES = new Set([
 	"auth_failed",
 ]);
 
-function cleanEnvironment(environment) {
+function cleanEnvironment(environment, uid) {
 	const clean = { ...environment };
 	for (const variable of [
 		"PASEO_HOME",
@@ -27,6 +27,10 @@ function cleanEnvironment(environment) {
 		"PASEO_WEB_UI_ENABLED",
 	]) {
 		delete clean[variable];
+	}
+	if (uid === 0) {
+		clean.XDG_RUNTIME_DIR = "/run/user/0";
+		clean.DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/0/bus";
 	}
 	return clean;
 }
@@ -84,12 +88,15 @@ async function nodeRuntime(runner, env) {
 	return { path: executable.stdout.trim(), version: version.stdout.trim() };
 }
 
-async function ensureNodeRuntime(runner, env, logger) {
+async function ensureNodeRuntime(runner, env, logger, uid) {
 	return ensureNode24Runtime({
 		readRuntimeImpl: () => nodeRuntime(runner, env),
 		isRuntimeSupported: (runtime) => Boolean(runtime),
 		runInstallStepImpl: async (step) =>
-			(await runner(step.args, { env, stdio: "inherit" })).exitCode === 0,
+			(await runner(uid === 0 ? step.rootArgs : step.args, {
+				env,
+				stdio: "inherit",
+			})).exitCode === 0,
 		installMessage: "Installing the validated Node.js 24 LTS runtime...",
 		incompatibleMessage: () =>
 			"Node.js 24 is still unavailable after installation.",
@@ -480,29 +487,27 @@ export async function configurePaseoServer(options = {}) {
 	const readNetworkFileImpl =
 		options.readNetworkFileImpl ??
 		((filename) => fsImpl.readFileSync(filename, "utf8"));
-	const env = cleanEnvironment(options.environment ?? process.env);
+	const env = cleanEnvironment(options.environment ?? process.env, uid);
 	const paseoHome = path.join(home, ".paseo");
 	const configPath = path.join(paseoHome, "config.json");
 	const unitPath = path.join(home, ".config", "systemd", "user", UNIT);
 
-	if (uid === 0 || user === "root") {
-		logger.error(
-			"Refusing to configure Paseo as root. Re-run Haoshoku as the normal login user (sudo is requested only for Node.js installation when needed).",
-		);
-		return false;
-	}
 	const configState = validateExistingConfig(configPath, fsImpl, logger);
 	if (!configState) return false;
 	const unitState = inspectManagedUnit(unitPath, fsImpl, logger);
 	if (unitState.exists && !unitState.managed) return false;
-	const runtime = await ensureNodeRuntime(runner, env, logger);
+	const runtime = await ensureNodeRuntime(runner, env, logger, uid);
 	if (!runtime) return false;
 	const cli = await ensurePaseoCli({ home, fsImpl, runner, env, logger });
 	if (!cli) return false;
-	const manager = await runner(["systemctl", "--user", "--version"], { env });
+	const manager = await runner(["systemctl", "--user", "show-environment"], {
+		env,
+	});
 	if (manager.exitCode !== 0) {
 		logger.error(
-			"systemctl --user is unavailable. Log in through a systemd session and retry.",
+			uid === 0
+				? "The root systemd user manager is unavailable at /run/user/0/bus. Ensure systemd-logind is running, enable root lingering with `loginctl enable-linger root`, then retry from the direct root login."
+				: "systemctl --user is unavailable. Log in through a systemd session and retry.",
 		);
 		return false;
 	}

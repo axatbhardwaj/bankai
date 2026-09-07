@@ -1,14 +1,22 @@
 const NODESOURCE_SETUP_COMMAND =
 	"curl -fsSL https://deb.nodesource.com/setup_24.x | sudo bash -";
+const ROOT_NODESOURCE_SETUP_COMMAND =
+	"curl -fsSL https://deb.nodesource.com/setup_24.x | bash -";
 
 export const NODE_24_INSTALL_STEPS = [
 	{
 		args: ["bash", "-c", `set -o pipefail; ${NODESOURCE_SETUP_COMMAND}`],
+		rootArgs: [
+			"bash",
+			"-c",
+			`set -o pipefail; ${ROOT_NODESOURCE_SETUP_COMMAND}`,
+		],
 		command: NODESOURCE_SETUP_COMMAND,
 		error: "Could not configure the NodeSource Node.js 24 repository.",
 	},
 	{
 		args: ["sudo", "apt-get", "install", "-y", "nodejs"],
+		rootArgs: ["apt-get", "install", "-y", "nodejs"],
 		command: "sudo apt install -y nodejs",
 		error: "Could not install Node.js 24.",
 	},
