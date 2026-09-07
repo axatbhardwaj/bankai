@@ -18,6 +18,7 @@ import { configureSkills } from "../helpers/configure_skills.js";
 import { installGhStack } from "../helpers/configure_gh_stack.js";
 import { configureGit } from "../helpers/configure_git.js";
 import { configurePrWatch } from "../helpers/configure_pr_watch.js";
+import { configurePaseoServer } from "../helpers/configure_paseo_server.js";
 import { configureT3CodeServer } from "../helpers/configure_t3_code_server.js";
 import { syncWorktreeCleanup } from "../helpers/configure_worktree_cleanup.js";
 
@@ -351,9 +352,17 @@ export async function runDebianServerSetup() {
 			"Matt Pocock skills were not installed — continuing. Retry with: haoshoku --skills",
 		);
 	}
+	let paseoConfigured = true;
+	if (await promptUser("Configure the native headless Paseo service?", false)) {
+		paseoConfigured = await configurePaseoServer();
+	}
 
 	if (!t3CodeConfigured) {
 		log.error("Debian Server setup finished, but T3 Code was not configured.");
+		return false;
+	}
+	if (!paseoConfigured) {
+		log.error("Debian Server setup finished, but Paseo was not configured.");
 		return false;
 	}
 
