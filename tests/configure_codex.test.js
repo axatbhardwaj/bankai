@@ -55,6 +55,20 @@ describe("Codex config round trip", () => {
 			"LIVE-EDIT",
 		);
 	});
+
+	it("makes the exact live home portable during AGENTS.md backup", async () => {
+		fs.mkdirSync(codexDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(codexDir, "AGENTS.md"),
+			`skill=${codexHome}/.agents/skills/model-routing/SKILL.md\nother=/home/alice/private\n`,
+		);
+
+		await backupCodexConfig({ srcDir: configsDir, codexHome });
+
+		expect(fs.readFileSync(path.join(configsDir, "AGENTS.md"), "utf8")).toBe(
+			"skill=~/.agents/skills/model-routing/SKILL.md\nother=/home/alice/private\n",
+		);
+	});
 });
 
 describe("Codex installation", () => {

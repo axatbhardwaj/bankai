@@ -108,6 +108,32 @@ describe("portable Claude backup boundary", () => {
 			fs.rmSync(backupDir, { recursive: true, force: true });
 		}
 	});
+
+	it("makes the exact live home portable during CLAUDE.md backup", async () => {
+		const claudeHome = fs.mkdtempSync(
+			path.join(os.tmpdir(), "haoshoku-claude-portable-"),
+		);
+		const backupDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), "haoshoku-claude-portable-output-"),
+		);
+		try {
+			const claudeDir = path.join(claudeHome, ".claude");
+			fs.mkdirSync(claudeDir, { recursive: true });
+			fs.writeFileSync(
+				path.join(claudeDir, "CLAUDE.md"),
+				`skill=${claudeHome}/.agents/skills/model-routing/SKILL.md\n`,
+			);
+
+			await backupClaudeConfig({ srcDir: backupDir, claudeHome });
+
+			expect(fs.readFileSync(path.join(backupDir, "CLAUDE.md"), "utf8")).toBe(
+				"skill=~/.agents/skills/model-routing/SKILL.md\n",
+			);
+		} finally {
+			fs.rmSync(claudeHome, { recursive: true, force: true });
+			fs.rmSync(backupDir, { recursive: true, force: true });
+		}
+	});
 });
 
 describe("Claude deny-first ignore template", () => {
