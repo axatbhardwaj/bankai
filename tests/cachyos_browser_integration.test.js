@@ -25,6 +25,7 @@ function userAppDoubles(overrides = {}) {
 		configureCodexImpl: async () => {},
 		configureSkillsImpl: async () => true,
 		syncAgentSkillsImpl: async () => true,
+		syncPaseoProfilesImpl: async () => true,
 		...overrides,
 	};
 }

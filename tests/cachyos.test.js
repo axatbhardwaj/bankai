@@ -43,6 +43,7 @@ describe("user app configuration", () => {
 			configureCodexImpl: record("codex"),
 			configureSkillsImpl: record("skills"),
 			syncAgentSkillsImpl: record("agent-skills"),
+			syncPaseoProfilesImpl: record("paseo-profiles"),
 		});
 
 		expect(events).toEqual([
@@ -60,6 +61,7 @@ describe("user app configuration", () => {
 			"codex",
 			"skills",
 			"agent-skills",
+			"paseo-profiles",
 		]);
 	});
 });

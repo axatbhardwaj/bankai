@@ -55,6 +55,10 @@ import {
 import { configureT3CodeServer } from "./src/helpers/configure_t3_code_server.js";
 import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
 import {
+	backupPaseoProfiles,
+	syncPaseoProfiles,
+} from "./src/helpers/configure_paseo_profiles.js";
+import {
 	backupWorktreeCleanup,
 	syncWorktreeCleanup,
 } from "./src/helpers/configure_worktree_cleanup.js";
@@ -104,9 +108,11 @@ program
 	.option("--skills-update", "Refresh Matt Pocock skills")
 	.option("--skills-list", "List globally installed skills")
 	.option("--agent-skills", "Deploy Haoshoku-owned orchestration skills")
+	.option("--agent-skills-backup", "Backup Haoshoku-owned orchestration skills")
+	.option("--paseo-profiles", "Deploy managed Paseo orchestration policy")
 	.option(
-		"--agent-skills-backup",
-		"Backup Haoshoku-owned orchestration skills",
+		"--paseo-profiles-backup",
+		"Backup the secret-free Paseo orchestration policy",
 	)
 	.option(
 		"--gh-stack",
@@ -294,6 +300,16 @@ async function runAction(options) {
 
 	if (options.agentSkills) {
 		if (!syncAgentSkills()) process.exit(1);
+		return;
+	}
+
+	if (options.paseoProfilesBackup) {
+		if (!backupPaseoProfiles()) process.exit(1);
+		return;
+	}
+
+	if (options.paseoProfiles) {
+		if (!(await syncPaseoProfiles())) process.exit(1);
 		return;
 	}
 

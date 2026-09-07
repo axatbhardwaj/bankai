@@ -91,6 +91,7 @@ function runDefaultSetupWithSafeDoubles({
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_codex.js"))}, () => ({ configureCodex: record("codex") }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_skills.js"))}, () => ({ configureSkills: record("skills", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_agent_skills.js"))}, () => ({ syncAgentSkills: record("agent-skills", true) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_profiles.js"))}, () => ({ syncPaseoProfiles: record("paseo-profiles", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", ${JSON.stringify(t3Result)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_server.js"))}, () => ({ configurePaseoServer: record("paseo-server", ${JSON.stringify(paseoResult)}) }));
 		const { runDebianServerSetup } = await import(${JSON.stringify(debianModule)} + "?default-path-test");
@@ -242,6 +243,7 @@ describe("Debian default path", () => {
 			"skills",
 			"agent-skills",
 			"paseo-server",
+			"paseo-profiles",
 		]);
 		expect(result).toBe(true);
 	});
@@ -254,9 +256,9 @@ describe("Debian default path", () => {
 		expect(result).toBe(true);
 		expect(events).toContainEqual({ type: "helper", name: "t3-code-server" });
 		expect(events).toContainEqual({ type: "helper", name: "paseo-server" });
-		expect(events.findIndex(({ name }) => name === "paseo-server")).toBeLessThan(
-			events.findIndex(({ name }) => name === "t3-code-server"),
-		);
+		expect(
+			events.findIndex(({ name }) => name === "paseo-server"),
+		).toBeLessThan(events.findIndex(({ name }) => name === "t3-code-server"));
 	});
 
 	it("propagates a selected T3 Code setup failure", () => {
