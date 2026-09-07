@@ -46,13 +46,13 @@ function stoppedStatus(home) {
 	};
 }
 
-function readyStatus(home) {
+function readyStatus(home, uid = 1000) {
 	return {
 		...stoppedStatus(home),
 		localDaemon: "running",
 		connectedDaemon: "reachable",
 		pid: 202,
-		owner: "1000@debian",
+		owner: `${uid}@debian`,
 	};
 }
 
@@ -62,6 +62,7 @@ function successfulHarness(
 		afterStartStatus = readyStatus(home),
 		beforeStartStatus = stoppedStatus(home),
 		fail = () => false,
+		nodeVersions = ["v24.10.0"],
 		processCgroup = "/user.slice/user-1000.slice/paseo-daemon.service",
 	} = {},
 ) {
@@ -69,12 +70,16 @@ function successfulHarness(
 	let serviceStarted = false;
 	let serviceEnabled = false;
 	let lingerEnabled = false;
+	let nodeVersionRead = 0;
 	const cli = path.join(home, ".local", "bin", "paseo");
 	const runProcessImpl = async (args, options = {}) => {
 		calls.push({ args, options });
 		if (fail(args)) return { exitCode: 1, stdout: "", stderr: "failed" };
 		if (args[0] === "node" && args[1] === "--version") {
-			return { exitCode: 0, stdout: "v24.10.0\n", stderr: "" };
+			const version =
+				nodeVersions[Math.min(nodeVersionRead, nodeVersions.length - 1)];
+			nodeVersionRead += 1;
+			return { exitCode: 0, stdout: `${version}\n`, stderr: "" };
 		}
 		if (args[0] === "node" && args[1] === "-p") {
 			return { exitCode: 0, stdout: "/usr/bin/node\n", stderr: "" };
@@ -108,7 +113,10 @@ function successfulHarness(
 				stderr: "",
 			};
 		}
-		if (args[0] === "systemctl" && args.includes("--version")) {
+		if (
+			args[0] === "systemctl" &&
+			(args.includes("--version") || args.includes("show-environment"))
+		) {
 			return { exitCode: 0, stdout: "systemd 252\n", stderr: "" };
 		}
 		if (args[0] === "systemctl" && args.includes("is-active")) {
@@ -157,25 +165,116 @@ function successfulHarness(
 }
 
 describe("Paseo server configuration", () => {
-	it("rejects root before reading or mutating user state", async () => {
+	it("configures UID 0 through the root user manager and accepts owner 0", async () => {
 		const home = temporaryHome();
-		const commands = [];
-		const errors = [];
+		const harness = successfulHarness(home, {
+			afterStartStatus: readyStatus(home, 0),
+			processCgroup: "/user.slice/user-0.slice/paseo-daemon.service",
+		});
 		const result = await configurePaseoServer({
-			home,
-			logger: { ...silentLogger, error: (message) => errors.push(message) },
-			runProcessImpl: async (args) => {
-				commands.push(args);
-				return { exitCode: 0, stdout: "", stderr: "" };
+			environment: {
+				DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus",
+				PATH: "/usr/bin",
+				XDG_RUNTIME_DIR: "/run/user/1000",
 			},
+			home,
+			isTTY: false,
+			logger: silentLogger,
+			readProcessFileImpl: () =>
+				"0::/user.slice/user-0.slice/paseo-daemon.service\n",
+			runProcessImpl: harness.runProcessImpl,
+			sleepImpl: async () => {},
 			uid: 0,
 			user: "root",
 		});
 
-		expect(result).toBe(false);
-		expect(commands).toEqual([]);
-		expect(fs.existsSync(path.join(home, ".paseo"))).toBe(false);
-		expect(errors.join("\n")).toContain("normal login user");
+		expect(result).toBe(true);
+		expect(
+			harness.calls.some(
+				({ args }) =>
+					args[0] === "systemctl" && args.includes("show-environment"),
+			),
+		).toBe(true);
+		for (const { args, options } of harness.calls) {
+			if (args[0] !== "systemctl" || !args.includes("--user")) continue;
+			expect(options.env.XDG_RUNTIME_DIR).toBe("/run/user/0");
+			expect(options.env.DBUS_SESSION_BUS_ADDRESS).toBe(
+				"unix:path=/run/user/0/bus",
+			);
+		}
+		expect(
+			harness.calls.some(
+				({ args }) =>
+					args[0] === "loginctl" &&
+					args.includes("show-user") &&
+					args.includes("root"),
+			),
+		).toBe(true);
+		expect(
+			fs.readFileSync(
+				path.join(home, ".config", "systemd", "user", "paseo-daemon.service"),
+				"utf8",
+			),
+		).toContain(`--home ${path.join(home, ".paseo")}`);
+	});
+
+	it("installs Node.js without sudo when UID 0 owns Paseo", async () => {
+		const home = temporaryHome();
+		const harness = successfulHarness(home, {
+			afterStartStatus: readyStatus(home, 0),
+			nodeVersions: ["v22.20.0", "v24.10.0"],
+			processCgroup: "/user.slice/user-0.slice/paseo-daemon.service",
+		});
+
+		expect(
+			await configurePaseoServer({
+				home,
+				isTTY: false,
+				logger: silentLogger,
+				readProcessFileImpl: () =>
+					"0::/user.slice/user-0.slice/paseo-daemon.service\n",
+				runProcessImpl: harness.runProcessImpl,
+				sleepImpl: async () => {},
+				uid: 0,
+				user: "root",
+			}),
+		).toBe(true);
+		expect(harness.calls.map(({ args }) => args)).toContainEqual([
+			"bash",
+			"-c",
+			"set -o pipefail; curl -fsSL https://deb.nodesource.com/setup_24.x | bash -",
+		]);
+		expect(harness.calls.map(({ args }) => args)).toContainEqual([
+			"apt-get",
+			"install",
+			"-y",
+			"nodejs",
+		]);
+	});
+
+	it("fails clearly when the root systemd user manager is unavailable", async () => {
+		const home = temporaryHome();
+		const errors = [];
+		const harness = successfulHarness(home, {
+			fail: (args) => args.includes("show-environment"),
+		});
+
+		expect(
+			await configurePaseoServer({
+				home,
+				logger: { ...silentLogger, error: (message) => errors.push(message) },
+				runProcessImpl: harness.runProcessImpl,
+				uid: 0,
+				user: "root",
+			}),
+		).toBe(false);
+		expect(errors.join("\n")).toContain("root systemd user manager");
+		expect(errors.join("\n")).toContain("/run/user/0/bus");
+		expect(
+			fs.existsSync(
+				path.join(home, ".config", "systemd", "user", "paseo-daemon.service"),
+			),
+		).toBe(false);
 	});
 
 	it("fails closed on malformed config without changing its bytes", async () => {
@@ -220,7 +319,11 @@ describe("Paseo server configuration", () => {
 		});
 
 		expect(result).toBe(false);
-		expect(commands.at(-1)[0]).toBe("bash");
+		expect(commands.at(-1)).toEqual([
+			"bash",
+			"-c",
+			"set -o pipefail; curl -fsSL https://deb.nodesource.com/setup_24.x | sudo bash -",
+		]);
 		expect(errors.join("\n")).toContain("NodeSource");
 		expect(fs.existsSync(path.join(home, ".paseo"))).toBe(false);
 	});

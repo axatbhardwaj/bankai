@@ -342,10 +342,14 @@ step and remains opt-in.
 
 ### Native headless Paseo
 
-Run `haoshoku --server-paseo` as the normal login user to configure only Paseo.
-Do not run it through `sudo`: Haoshoku installs `@getpaseo/cli` under
-`~/.local`, writes a new `~/.paseo/config.json` only when none exists, and
-manages `paseo-daemon.service` as that user's systemd service. A new config
+Run `haoshoku --server-paseo` directly as the account that should own Paseo.
+Normal login users and direct root logins are supported; do not prefix a
+non-root run with `sudo` unless root ownership is intentional. Haoshoku installs
+`@getpaseo/cli` under `~/.local`, writes a new `~/.paseo/config.json` only when
+none exists, and manages `paseo-daemon.service` as that account's systemd user
+service. For root this means `/root/.local`, `/root/.paseo`, and the root user
+manager at `/run/user/0/bus`. If that manager is unavailable, Haoshoku stops
+with recovery guidance instead of targeting another user's session. A new config
 listens on `127.0.0.1:6767`, enables the Paseo MCP endpoint, disables relay,
 and keeps the bundled web UI off. An existing valid JSON object is left
 byte-for-byte untouched, so its listen, authentication, relay, providers,
