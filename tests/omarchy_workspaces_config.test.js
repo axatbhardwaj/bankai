@@ -85,6 +85,9 @@ describe("Omarchy Lua workspace behavior", () => {
 
 	it("starts login services and routes the owned Kitty workspace exactly", () => {
 		for (const overlay of [pc, laptop]) {
+			expect(overlay).toContain(
+				'o.exec_on_start("haoshoku-default-browser")',
+			);
 			expect(
 				overlay.match(/o\.launch_on_start\("t3code"\)/g) ?? [],
 			).toHaveLength(1);

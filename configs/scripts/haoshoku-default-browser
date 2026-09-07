@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly desktop_id="haoshoku-browser.desktop"
+
+xdg-settings set default-web-browser "$desktop_id"
+
+for mime_type in \
+	text/html \
+	x-scheme-handler/http \
+	x-scheme-handler/https \
+	x-scheme-handler/about \
+	x-scheme-handler/unknown; do
+	xdg-mime default "$desktop_id" "$mime_type"
+done

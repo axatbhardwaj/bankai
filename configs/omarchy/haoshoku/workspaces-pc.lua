@@ -2,6 +2,7 @@
 -- Monitor-bound numbered workspace rules are intentionally omitted from this module;
 -- hyprmoncfg owns monitor configuration and receives them through its PC profile.
 
+o.exec_on_start("haoshoku-default-browser")
 o.exec_on_start("haoshoku-special-workspace numbered-login 7 kitty")
 o.exec_on_start("haoshoku-special-workspace assistants")
 o.launch_on_start("t3code")

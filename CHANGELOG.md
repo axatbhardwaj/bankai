@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Reassert `haoshoku-browser.desktop` as the XDG browser and web URL handler
+  at every Omarchy login, so browser or desktop updates cannot silently bypass
+  Haoshoku's most-recently-focused Brave Origin profile routing.
+
 ## 11.5.0 - 2026-09-03
 
 - Revert the mesh-access feature set shipped in 11.3.0 and still present in
