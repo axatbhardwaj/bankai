@@ -33,6 +33,7 @@ function makeFakePrompt(value = true) {
 
 function runDefaultSetupWithSafeDoubles({
 	paseoResult = true,
+	profileResult = true,
 	t3Answer = false,
 	t3Result = true,
 } = {}) {
@@ -91,7 +92,7 @@ function runDefaultSetupWithSafeDoubles({
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_codex.js"))}, () => ({ configureCodex: record("codex") }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_skills.js"))}, () => ({ configureSkills: record("skills", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_agent_skills.js"))}, () => ({ syncAgentSkills: record("agent-skills", true) }));
-		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_profiles.js"))}, () => ({ syncPaseoProfiles: record("paseo-profiles", true) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_profiles.js"))}, () => ({ syncPaseoProfiles: record("paseo-profiles", ${JSON.stringify(profileResult)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", ${JSON.stringify(t3Result)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_server.js"))}, () => ({ configurePaseoServer: record("paseo-server", ${JSON.stringify(paseoResult)}) }));
 		const { runDebianServerSetup } = await import(${JSON.stringify(debianModule)} + "?default-path-test");
@@ -285,6 +286,20 @@ describe("Debian default path", () => {
 			type: "error",
 			message:
 				"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
+		});
+	});
+
+	it("propagates a Paseo orchestration policy sync failure", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			profileResult: false,
+		});
+
+		expect(result).toBe(false);
+		expect(events).toContainEqual({ type: "helper", name: "paseo-profiles" });
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message:
+				"Debian Server setup finished, but the Paseo orchestration policy was not synced.",
 		});
 	});
 });
