@@ -19,7 +19,7 @@ const laptop = fs.readFileSync(
 );
 
 describe("Omarchy Lua workspace behavior", () => {
-	it("routes fixed-workspace apps without fixing T3 Code to a workspace", () => {
+	it("routes fixed-workspace apps without fixing Paseo to a workspace", () => {
 		const expectedRules = [
 			'o.window("^chatgpt$", { workspace = "special:assistants silent" })',
 			'o.window("^com\\\\.anthropic\\\\.Claude$", { workspace = "special:assistants silent" })',
@@ -31,7 +31,7 @@ describe("Omarchy Lua workspace behavior", () => {
 
 		for (const overlay of [pc, laptop]) {
 			for (const rule of expectedRules) expect(overlay).toContain(rule);
-			expect(overlay).not.toContain('o.window("^t3code$"');
+			expect(overlay).not.toContain('o.window("^Paseo$"');
 		}
 	});
 
@@ -62,7 +62,7 @@ describe("Omarchy Lua workspace behavior", () => {
 	it("retains exact application bindings in both device profiles", () => {
 		const commands = [
 			'o.bind("SUPER + I", "Show/focus/hide AI assistants workspace", "haoshoku-special-workspace assistants")',
-			'o.bind("SUPER + T", "T3 Code", o.launch_sole("^t3code$", "t3code"))',
+			'o.bind("SUPER + T", "Paseo", o.launch_sole("^Paseo$", "paseo"))',
 			'o.bind("SUPER + B", "Toggle Flux Brave Origin workspace", "haoshoku-special-workspace browser-toggle flux")',
 			'o.bind("SUPER + D", "Toggle DeFi Brave Origin workspace", "haoshoku-special-workspace browser-toggle defi")',
 			'o.bind("SUPER + SHIFT + G", "Toggle gaming workspace", "haoshoku-gaming-workspace toggle")',
@@ -89,7 +89,7 @@ describe("Omarchy Lua workspace behavior", () => {
 				'o.exec_on_start("haoshoku-default-browser")',
 			);
 			expect(
-				overlay.match(/o\.launch_on_start\("t3code"\)/g) ?? [],
+				overlay.match(/o\.launch_on_start\("paseo"\)/g) ?? [],
 			).toHaveLength(1);
 			expect(overlay).toContain('o.exec_on_start("/usr/bin/kdeconnectd")');
 			expect(overlay).toContain(

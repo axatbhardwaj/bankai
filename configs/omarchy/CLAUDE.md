@@ -119,7 +119,7 @@ exact `haoshoku-ws7` class identifies its owned window; the startup call and the
 post-reload helper use `numbered-login 7 kitty`. Haki and agents use their own
 exact Kitty classes and split sessions. `SUPER+Return` remains Omarchy's
 `xdg-terminal-exec` route, whose XDG default is Kitty; `SUPER+T` uses
-`o.launch_sole("^t3code$", "t3code")`, focusing T3 Code wherever it resides and
+`o.launch_sole("^Paseo$", "paseo")`, focusing Paseo wherever it resides and
 launching it on the current workspace only when absent. The assistants recipe runs
 at login and on `SUPER+I`, managing ChatGPT and Claude Desktop in `special:assistants`;
 Twitch retains its own special workspace.
