@@ -1,6 +1,6 @@
 ---
 name: model-routing
-description: Route work through Astra-led Paseo profiles. Use for Matt Pocock planning and implementation skills, or when specialists improve research, implementation, review, documentation or PR babysitting. Keep ordinary low-impact work proportional.
+description: Route work through Astra-led Paseo profiles. Use for Matt Pocock planning and implementation skills, or when specialists improve exploration, research, implementation, review, explanations, documentation or PR babysitting. Keep ordinary low-impact work proportional.
 ---
 
 # Model routing
@@ -30,7 +30,8 @@ When the user invokes `grill-with-docs`, `to-spec`, `to-tickets`, `implement` or
 - For authored-PR babysitting to merge-ready, use [paseo-pr-babysit](../paseo-pr-babysit/SKILL.md): Muse monitors, Sol repairs, and Opus reviews before the driver publishes. Its monitor heartbeat is owned by the Muse session.
 - For peer PR reviews or an explicitly requested five-angle review, use [paseo-pr-review](../paseo-pr-review/SKILL.md). Its five seats replace the single-review route. An explicit `code-review` request retains that skill's two-axis workflow.
 - For implementation checkpoints and other applicable Git candidates, have `review-opus` run `code-review` once. The driver and implementer do not duplicate its review.
-- Use `docs-muse` for documentation and rendered explainers from accepted evidence.
+- For nontrivial explanations of concepts, systems, workflows, decisions or comparisons, and human-facing HTML reports, use [html-deliverables](../html-deliverables/SKILL.md) automatically. `explainer-content-sol` drafts the Markdown and `explainer-content-opus` reviews its substance, both at medium; after content approval, `explainer-sonnet` builds the HTML and `explainer-review-terra` reviews its presentation and fidelity, both at high. That skill owns the content and site approval gates and takes precedence over the generic implementation, review and documentation routes for this deliverable. Preserve an explicitly selected format or specialized visualization method; trivial facts stay concise.
+- Use `docs-muse` for ordinary documentation from accepted evidence; explanatory deliverables follow `html-deliverables`.
 - Reuse `paseo-advisor` for a second opinion and `paseo-committee` for a hard unresolved disagreement.
 
 Before dispatching review or documentation, read [references/briefings.md](references/briefings.md) and satisfy its briefing contract.

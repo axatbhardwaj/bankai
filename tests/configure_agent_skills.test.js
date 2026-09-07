@@ -30,6 +30,15 @@ function fixture() {
 }
 
 describe("Haoshoku-owned agent skills", () => {
+	it("owns the routing and HTML workflow skills only", () => {
+		expect(AGENT_SKILLS).toEqual([
+			"model-routing",
+			"paseo-pr-babysit",
+			"paseo-pr-review",
+			"html-deliverables",
+		]);
+	});
+
 	it("syncs owned skills and creates portable links for both agents", () => {
 		const { home, projectRoot } = fixture();
 		for (const name of ["paseo", "code-review"]) {

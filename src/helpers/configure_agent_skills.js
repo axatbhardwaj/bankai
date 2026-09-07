@@ -9,6 +9,7 @@ export const AGENT_SKILLS = [
 	"model-routing",
 	"paseo-pr-babysit",
 	"paseo-pr-review",
+	"html-deliverables",
 ];
 
 export const REFERENCED_SKILLS = [
