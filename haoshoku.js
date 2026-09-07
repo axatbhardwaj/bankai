@@ -104,8 +104,11 @@ program
 		"--server-paseo",
 		"Configure the native Paseo headless service on Debian",
 	)
-	.option("--skills", "Install Matt Pocock skills for Claude Code and Codex")
-	.option("--skills-update", "Refresh Matt Pocock skills")
+	.option(
+		"--skills",
+		"Install Matt Pocock and Paseo skills for Claude Code and Codex",
+	)
+	.option("--skills-update", "Refresh Matt Pocock and Paseo skills")
 	.option("--skills-list", "List globally installed skills")
 	.option("--agent-skills", "Deploy Haoshoku-owned orchestration skills")
 	.option("--agent-skills-backup", "Backup Haoshoku-owned orchestration skills")
