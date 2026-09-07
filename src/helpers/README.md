@@ -18,20 +18,22 @@ Use `--claude-backup` and `--codex-backup` after changing the live policy; use
 ## Skills
 
 `configure_skills.js` delegates skill installation to the upstream Skills CLI.
-Haoshoku declares one source, `mattpocock/skills`, and installs all skills from
-that source for Claude Code and Codex. It does not maintain its own clone,
-merge, wrapper, or agent-definition layer.
+Haoshoku declares `mattpocock/skills` and `getpaseo/paseo` as external sources
+for Claude Code and Codex. The new source uses `bunx skills@latest ... -y`;
+Haoshoku does not maintain its own clone or wrapper.
 
-- `--skills` and `--skills-update` both reconcile the Matt Pocock source.
+- `--skills` and `--skills-update` reconcile both external sources.
 - `--skills-list` prints the Skills CLI global inventory.
 - Full Arch and Debian setup performs the same reconciliation after Codex.
 
-Local/system skills owned by Omarchy or the Codex harness are outside this
-operation and are not pruned.
+`configure_agent_skills.js` separately owns the four bundled orchestration
+skills and their portable Claude/Codex links. Other local/system skills are not
+pruned.
 
 ## Headless Paseo
 
 `configure_paseo_server.js` owns the Debian native Paseo CLI, fresh config,
 systemd user service, persistence checks, managed-process verification, and
 optional interactive relay pairing. It deliberately does not install provider
-CLIs or synchronize workflow profiles.
+CLIs. `configure_paseo_profiles.js` separately performs whitelist-only policy
+merge/backup and reloads only a running daemon for the exact target home.

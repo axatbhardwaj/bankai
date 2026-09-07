@@ -41,6 +41,9 @@ The Arch setup:
   still-uninstalled packages individually when a batch fails;
 - installs only JetBrains Mono Nerd Font instead of the conflicting complete
   Nerd Font group;
+- installs the AUR `paseo-bin` desktop app, launches `/usr/bin/paseo` at login,
+  and binds `Super+T` to its exact `Paseo` window class. The absolute desktop
+  path prevents a user-installed Paseo CLI in `~/.local/bin` from shadowing it;
 - keeps Bash as the account shell and adds portable aliases and tool
   initialization through `~/.config/haoshoku/bashrc`;
 - preserves Omarchy's `.bashrc`, lock screen, and core Quickshell/Hyprland
@@ -170,18 +173,27 @@ including bar-widget enablement. Disabling a bar widget through Omarchy's UI is
 therefore reverted on the next deploy. Every other top-level key — including
 `idle`, `plugins`, `disabledPlugins`, `version`, and unknown keys — is preserved.
 
-## Claude and Codex policy
+## Agent and orchestration policy
 
-Haoshoku deploys the current compact personal policy to both engines. Back up
-live edits with:
+Haoshoku deploys the compact Claude/Codex instructions, installs the Matt
+Pocock and upstream Paseo skill sources through the Skills CLI, and syncs only
+its four owned workflow skills: `model-routing`, `paseo-pr-babysit`,
+`paseo-pr-review`, and `html-deliverables`. Back up live edits with:
 
 ```bash
 haoshoku --claude-backup
 haoshoku --codex-backup
+haoshoku --agent-skills-backup
+haoshoku --paseo-profiles-backup
 ```
 
-Claude runtime state and `settings.json` remain machine-local. Haoshoku never
-walks runtime directories, imports agent definitions, or overwrites skills.
+`--paseo-profiles` merges the bundled profile IDs and whitelisted provider
+fields into `~/.paseo/config.json`, preserving unknown profiles, credentials,
+relay/listen/auth settings, and every unrelated key. Its backup writes only
+profile fields plus provider `extends`, `label`, `description`, `command`, and
+`enabled`; it never copies credentials, daemon identity, relay state, or
+runtime files. Claude/Codex runtime state and `settings.json` remain
+machine-local.
 
 ## Claude Remote Control
 
@@ -273,6 +285,10 @@ haoshoku --mimeapps-backup
 haoshoku --skills
 haoshoku --skills-update
 haoshoku --skills-list
+haoshoku --agent-skills
+haoshoku --agent-skills-backup
+haoshoku --paseo-profiles
+haoshoku --paseo-profiles-backup
 haoshoku --gh-stack
 haoshoku --claude-stay-awake
 haoshoku --pr-watch
@@ -306,13 +322,15 @@ Run `haoshoku --help` for the complete current list.
 haoshoku --os debian-server
 ```
 
-The Debian path remains deliberately headless. In addition to its server
-hardening, it installs the portable Claude, Codex, Matt Pocock skills, and PR-watch
-configuration and configures T3 Code's upstream-managed background service. It
-ensures Node.js satisfies T3 Code's current runtime range before running
-`npx --yes t3@latest service install` and verifying the service.
+The Debian path remains deliberately headless. In addition to server hardening,
+it installs the portable Claude/Codex policy, Matt Pocock and upstream Paseo
+skills, Haoshoku-owned workflow skills, PR-watch, and the native Paseo daemon.
+Paseo is required and its managed orchestration policy is synced after the
+service is ready. T3 Code is an optional, default-No compatibility step.
 
-Haoshoku then inspects T3 Connect's machine-readable status. An existing
+When T3 Code is selected, Haoshoku ensures its current Node.js runtime range
+before installing and verifying the upstream-managed service. It then inspects
+T3 Connect's machine-readable status. An existing
 provisioned link is left running without reauthorization or restart. Otherwise,
 Haoshoku runs `npx --yes t3@latest connect link --headless` in the attached
 terminal, allowing T3 to install and verify its managed relay client and guide
@@ -326,7 +344,8 @@ host, change DNS, open that port, or add a firewall rule. After setup, open the
 T3 Code phone app, choose T3 Connect, and sign in with the same account used
 during authorization. The phone does not need Tailscale. Run
 `haoshoku --server-t3-code` to install or repair only this complete server
-component; normal Debian setup uses the same flow.
+component; normal Debian setup offers the same flow without removing existing
+T3 installations or sessions when declined.
 
 If the server previously used Haoshoku v8.5.3's Tailscale integration, inspect
 `tailscale serve status` after confirming T3 Connect works. Only when it still
@@ -335,10 +354,8 @@ shows the old T3 HTTPS handler, remove that handler with
 complete; Haoshoku never changes existing Tailscale routes automatically.
 
 The full Debian path asks about Git, Claude stay-awake, Claude Remote Control,
-automatic worktree cleanup, and native Paseo. It installs Matt Pocock skills
-for Claude Code and Codex through the upstream Skills CLI; `haoshoku --skills`
-can refresh that same source independently. Paseo is offered after the skills
-step and remains opt-in.
+automatic worktree cleanup, and optional T3 Code. `haoshoku --skills` refreshes
+both declared external skill sources independently using Bun's `bunx` runner.
 
 ### Native headless Paseo
 
@@ -376,6 +393,22 @@ phone offer. It does not authenticate an agent provider or prove that a phone
 connected. For local-only access, keep relay disabled and connect through
 Paseo's SSH transport; Haoshoku does not open a port or alter the firewall.
 
+To operate a VPS from a PC agent without enabling a public Paseo port, first
+configure and verify a normal SSH alias in `~/.ssh/config`, then pass that alias
+after each Paseo subcommand (the installed 0.7.2 CLI does not accept a global
+`--host` before the command):
+
+```bash
+ssh my-vps
+paseo ls --host ssh://my-vps --json
+paseo reload --host ssh://my-vps --json
+```
+
+The desktop app can keep the local PC and VPS available through the same app.
+For phone access, run the pairing command on each desired host and accept its
+encrypted relay offer in the app. SSH and relay are independent; neither flow
+causes Haoshoku to expose port 6767.
+
 This setup does not install or authenticate provider CLIs. Install and log in
 to Claude Code, Codex, OpenCode, or another supported provider separately as
 the same user, then verify the daemon's environment and available models:
@@ -385,10 +418,11 @@ paseo provider diagnostic codex
 paseo provider models codex
 ```
 
-Workflow profiles—including any specialist profile set—also remain explicit
-user configuration in `~/.paseo/config.json`; this server flag does not sync
-them. Browser tools require a connected Paseo desktop app because the headless
-daemon brokers browser tabs but does not host a browser itself.
+The standalone `--server-paseo` flag remains lifecycle-only. Full Debian setup
+follows it with `--paseo-profiles` behavior; use that one-shot flag explicitly
+after editing the bundled policy. Browser tools require a connected Paseo
+desktop app because the headless daemon brokers browser tabs but does not host
+a browser itself.
 
 Debian Server does not ask for `deviceType`: that value only selects desktop
 audio and Hyprland/Omarchy variants. For the same reason the Debian path does
