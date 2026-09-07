@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.6.1 - 2026-09-08
+
+- Support direct root ownership for `--server-paseo`, including root's systemd
+  user manager and UID 0 daemon status.
+- Run the NodeSource and Node.js installation steps without `sudo` when already
+  root, while preserving the existing non-root setup path.
+
 ## 11.6.0 - 2026-09-08
 
 - Add `--server-paseo` and an optional Debian setup step for a native headless
