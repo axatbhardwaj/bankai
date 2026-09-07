@@ -27,6 +27,10 @@ import {
 	backupCodexConfig,
 	syncCodexConfig,
 } from "./src/helpers/configure_codex.js";
+import {
+	backupAgentSkills,
+	syncAgentSkills,
+} from "./src/helpers/configure_agent_skills.js";
 import { installGhStack } from "./src/helpers/configure_gh_stack.js";
 import { configureKdeConnectCommands } from "./src/helpers/configure_kde_connect.js";
 import {
@@ -99,6 +103,11 @@ program
 	.option("--skills", "Install Matt Pocock skills for Claude Code and Codex")
 	.option("--skills-update", "Refresh Matt Pocock skills")
 	.option("--skills-list", "List globally installed skills")
+	.option("--agent-skills", "Deploy Haoshoku-owned orchestration skills")
+	.option(
+		"--agent-skills-backup",
+		"Backup Haoshoku-owned orchestration skills",
+	)
 	.option(
 		"--gh-stack",
 		"Install GitHub's gh-stack extension for stacked pull requests",
@@ -275,6 +284,16 @@ async function runAction(options) {
 
 	if (options.skillsList) {
 		if (!(await listSkills())) process.exit(1);
+		return;
+	}
+
+	if (options.agentSkillsBackup) {
+		if (!backupAgentSkills()) process.exit(1);
+		return;
+	}
+
+	if (options.agentSkills) {
+		if (!syncAgentSkills()) process.exit(1);
 		return;
 	}
 

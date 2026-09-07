@@ -11,6 +11,7 @@ import {
 	safeCopyFile,
 } from "../common/utils.js";
 import { configureClaude } from "../helpers/configure_claude.js";
+import { syncAgentSkills } from "../helpers/configure_agent_skills.js";
 import { configureClaudeRemoteControl } from "../helpers/configure_claude_remote_control.js";
 import { configureClaudeStayAwake } from "../helpers/configure_claude_stay_awake.js";
 import { configureCodex } from "../helpers/configure_codex.js";
@@ -348,7 +349,12 @@ export async function runDebianServerSetup() {
 	await configureCodex();
 	if (!(await configureSkills())) {
 		log.warning(
-			"Matt Pocock skills were not installed — continuing. Retry with: haoshoku --skills",
+			"External skills were not fully installed — continuing. Retry with: haoshoku --skills",
+		);
+	}
+	if (!(await syncAgentSkills())) {
+		log.warning(
+			"Haoshoku-owned agent skills were not fully synced — continuing. Retry with: haoshoku --agent-skills",
 		);
 	}
 	const paseoConfigured = await configurePaseoServer();

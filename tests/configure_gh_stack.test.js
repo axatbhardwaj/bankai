@@ -24,6 +24,7 @@ function userAppDoubles(overrides = {}) {
 		syncWorktreeCleanupImpl: async () => {},
 		configureCodexImpl: async () => {},
 		configureSkillsImpl: async () => true,
+		syncAgentSkillsImpl: async () => true,
 		...overrides,
 	};
 }

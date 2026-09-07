@@ -42,6 +42,7 @@ describe("user app configuration", () => {
 			syncWorktreeCleanupImpl: record("worktree-cleanup"),
 			configureCodexImpl: record("codex"),
 			configureSkillsImpl: record("skills"),
+			syncAgentSkillsImpl: record("agent-skills"),
 		});
 
 		expect(events).toEqual([
@@ -58,6 +59,7 @@ describe("user app configuration", () => {
 			"pr-watch",
 			"codex",
 			"skills",
+			"agent-skills",
 		]);
 	});
 });

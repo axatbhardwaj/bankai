@@ -110,6 +110,12 @@ describe("findActiveModeFlags", () => {
 		).toEqual(["serverT3Code", "serverPaseo"]);
 	});
 
+	it("treats owned agent skill sync and backup as exclusive modes", () => {
+		expect(
+			findActiveModeFlags({ agentSkills: true, agentSkillsBackup: true }),
+		).toEqual(["agentSkills", "agentSkillsBackup"]);
+	});
+
 	it("ignores falsy flag values", () => {
 		expect(findActiveModeFlags({ claude: false, skills: undefined })).toEqual(
 			[],

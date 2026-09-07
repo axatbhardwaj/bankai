@@ -176,6 +176,7 @@ function runArchDefaultPath() {
 					syncWorktreeCleanupImpl: record("worktreeCleanup"),
 					configureCodexImpl: record("codex"),
 					configureSkillsImpl: record("skills", true),
+					syncAgentSkillsImpl: record("agentSkills", true),
 				}),
 				configureBraveManagedPoliciesImpl: record("braveManagedPolicies", true),
 				configureHyprmoncfgImpl: record("monitors"),
@@ -253,6 +254,9 @@ function runDebianDefaultPath() {
 			mock.module(${JSON.stringify(helperPath("configure_skills.js"))}, () => ({
 				configureSkills: record("skills", true),
 			}));
+			mock.module(${JSON.stringify(helperPath("configure_agent_skills.js"))}, () => ({
+				syncAgentSkills: record("agentSkills", true),
+			}));
 			mock.module(${JSON.stringify(helperPath("configure_t3_code_server.js"))}, () => ({
 				configureT3CodeServer: record("serverT3Code", true),
 			}));
@@ -325,6 +329,7 @@ function userAppDoubles(overrides = {}) {
 		syncWorktreeCleanupImpl: async () => {},
 		configureCodexImpl: async () => {},
 		configureSkillsImpl: async () => true,
+		syncAgentSkillsImpl: async () => true,
 		...overrides,
 	};
 }

@@ -11,6 +11,7 @@ import {
 	startSudoSession,
 } from "../common/utils.js";
 import { configureAudio } from "../helpers/configure_audio.js";
+import { syncAgentSkills } from "../helpers/configure_agent_skills.js";
 import { configureBash } from "../helpers/configure_bash.js";
 import { configureBraveManagedPolicies } from "../helpers/configure_brave_managed_policies.js";
 import { configureChromiumProfiles } from "../helpers/configure_chromium_profiles.js";
@@ -549,6 +550,7 @@ export async function configureUserApps({
 	syncWorktreeCleanupImpl = syncWorktreeCleanup,
 	configureCodexImpl = configureCodex,
 	configureSkillsImpl = configureSkills,
+	syncAgentSkillsImpl = syncAgentSkills,
 } = {}) {
 	if (await promptUserImpl("Configure git?", true)) {
 		const configureGit =
@@ -612,7 +614,12 @@ export async function configureUserApps({
 	await configureCodexImpl();
 	if (!(await configureSkillsImpl())) {
 		log.warning(
-			"Matt Pocock skills were not installed — continuing. Retry with: haoshoku --skills",
+			"External skills were not fully installed — continuing. Retry with: haoshoku --skills",
+		);
+	}
+	if (!(await syncAgentSkillsImpl())) {
+		log.warning(
+			"Haoshoku-owned agent skills were not fully synced — continuing. Retry with: haoshoku --agent-skills",
 		);
 	}
 }
