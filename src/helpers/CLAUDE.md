@@ -13,10 +13,12 @@ Standalone setup scripts for specific tools.
 | `configure_claude_stay_awake.js` | claude-stay-awake sleep inhibitor deploy/enable/backup | Adding or debugging the Claude sleep inhibitor |
 | `configure_claude_remote_control.js` | Claude Remote Control trust/disclaimer seed, supervisor + user-unit deploy/enable/backup | Adding or debugging persistent Claude Remote Control sessions |
 | `configure_codex.js` | Codex CLI plus personal config sync/backup | Adding Codex setup features or debugging config sync |
-| `configure_skills.js` | Matt Pocock skill installation through the upstream Skills CLI | Updating the shared Claude/Codex skill source |
+| `configure_skills.js` | Matt Pocock and Paseo skill installation through the upstream Skills CLI | Updating the shared Claude/Codex skill sources |
+| `configure_agent_skills.js` | Owned orchestration skill sync, backup, and shared agent links | Adding or debugging managed routing skills |
 | `configure_gh_stack.js` | Idempotent `github/gh-stack` extension install | Adding or debugging stacked-PR tooling setup |
 | `configure_pr_watch.js` | pr-watch PR watcher sync/backup | Adding or debugging the PR watcher deploy |
 | `configure_paseo_server.js` | Native Paseo CLI, loopback config, and persistent user-service setup for Debian servers | Adding or debugging headless Paseo lifecycle and pairing |
+| `configure_paseo_profiles.js` | Whitelist-only Paseo profile/provider policy sync, backup, and safe live reload | Adding or debugging managed orchestration policy |
 | `configure_t3_code_server.js` | Debian T3 Code service plus idempotent T3 Connect lifecycle | Adding or debugging T3 Connect authorization, provisioning, or service verification |
 | `configure_git.js`    | Git user and signing setup             | Modifying automated git configuration         |
 | `configure_hyprmoncfg.js` | Profile JSON sync/backup plus hyprmoncfg package and `hyprmoncfgd.service` setup; never writes `monitors.lua` | Modifying monitor-profile deployment or the hyprmoncfg ownership boundary |

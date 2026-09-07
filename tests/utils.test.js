@@ -7,6 +7,7 @@ import {
 	commandExists,
 	copyDirRecursive,
 	promptUser,
+	portabilizeHome,
 	readConfiguredDeviceType,
 	readDeviceType,
 	runCommand,
@@ -18,6 +19,17 @@ const SAFE_COPY_RACE_WORKER = path.join(
 	"fixtures",
 	"safe-copy-race-worker.js",
 );
+
+describe("portabilizeHome", () => {
+	it("rewrites only the exact home prefix", () => {
+		expect(
+			portabilizeHome(
+				"own=/home/xzat/.agents\nother=/home/alice/private\n",
+				"/home/xzat",
+			),
+		).toBe("own=~/.agents\nother=/home/alice/private\n");
+	});
+});
 
 describe("Utils", () => {
 	it("keeps one authenticated sudo session alive until stopped", async () => {

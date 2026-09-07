@@ -103,7 +103,7 @@ describe("haoshoku-special-workspace", () => {
 	let claudeDesktop;
 	let codexDesktop;
 	let kittyCall;
-	let t3Code;
+	let paseo;
 	let focusedMonitorState;
 	let specialMonitorState;
 	let specialState;
@@ -117,7 +117,7 @@ describe("haoshoku-special-workspace", () => {
 		claudeDesktop = path.join(directory, ["claude", "desktop"].join("-"));
 		codexDesktop = path.join(directory, ["codex", "desktop"].join("-"));
 		kittyCall = path.join(directory, "kitty-call");
-		t3Code = path.join(directory, "t3code");
+		paseo = path.join(directory, "paseo");
 		focusedMonitorState = path.join(directory, "focused-monitor-state");
 		specialMonitorState = path.join(directory, "special-monitor-state");
 		specialState = path.join(directory, "special-workspace-state");
@@ -258,6 +258,10 @@ fi
 		fs.writeFileSync(
 			uwsmApp,
 			`#!/usr/bin/env bash
+	if [[ "$1" == -- && "$2" == /usr/bin/paseo ]]; then
+	  printf 'paseo-desktop\n' >> "$CALL_LOG"
+	  exit 0
+	fi
 exec "$@"
 `,
 		);
@@ -287,9 +291,9 @@ printf 'codex-desktop\n' >> "$CALL_LOG"
 `,
 		);
 		fs.writeFileSync(
-			t3Code,
+			paseo,
 			`#!/usr/bin/env bash
-printf 't3code\n' >> "$CALL_LOG"
+printf 'paseo-cli-shadow\n' >> "$CALL_LOG"
 `,
 		);
 		fs.writeFileSync(
@@ -315,7 +319,7 @@ esac
 		fs.chmodSync(claudeDesktop, 0o755);
 		fs.chmodSync(codexDesktop, 0o755);
 		fs.chmodSync(path.join(directory, "kitty"), 0o755);
-		fs.chmodSync(t3Code, 0o755);
+		fs.chmodSync(paseo, 0o755);
 		fs.chmodSync(path.join(directory, "omakade"), 0o755);
 		fs.chmodSync(chromium, 0o755);
 		fs.chmodSync(helper, 0o755);
@@ -1163,20 +1167,20 @@ exit 17
 		]);
 	});
 
-	it("focuses workspace 1 and launches T3 Code when it is missing", async () => {
-		const result = await run(["numbered", "1", "t3code"]);
+	it("focuses workspace 1 and launches Paseo when it is missing", async () => {
+		const result = await run(["numbered", "1", "paseo"]);
 
 		expect(result.exitCode).toBe(0);
-		expect(dispatchCalls()).toEqual([
-			"dispatch workspace 1",
-			"dispatch exec [workspace 1 silent] uwsm-app -- t3code ",
-			"t3code",
-		]);
+			expect(dispatchCalls()).toEqual([
+				"dispatch workspace 1",
+				"dispatch exec [workspace 1 silent] uwsm-app -- /usr/bin/paseo ",
+				"paseo-desktop",
+			]);
 	});
 
-	it("does not relaunch T3 Code when its client already exists", async () => {
-		const result = await run(["numbered", "1", "t3code"], {
-			clients: JSON.stringify([{ class: "t3code" }]),
+	it("does not relaunch Paseo when its client already exists", async () => {
+		const result = await run(["numbered", "1", "paseo"], {
+			clients: JSON.stringify([{ class: "Paseo" }]),
 		});
 
 		expect(result.exitCode).toBe(0);
@@ -1231,8 +1235,8 @@ printf 'steam\n' >> "$CALL_LOG"
 		]);
 	});
 
-	it("rejects the retired bare T3 Code recipe", async () => {
-		const result = await run(["t3code"]);
+	it("rejects the bare Paseo recipe", async () => {
+		const result = await run(["paseo"]);
 
 		expect(result.exitCode).toBe(2);
 		expect(result.stderr).toContain("unknown workspace recipe");

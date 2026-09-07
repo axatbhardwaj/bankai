@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { log, runCommand, safeCopyFile } from "../common/utils.js";
+import {
+	log,
+	portabilizeHome,
+	runCommand,
+	safeCopyFile,
+} from "../common/utils.js";
 
 const HOME = homedir();
 
@@ -166,8 +171,11 @@ function findAbsoluteHomePath(content) {
 }
 
 /** Copy one live Claude file into the bundle unless its contents leak a home path. */
-function backupClaudeFile(srcPath, destPath, summary) {
-	const content = fs.readFileSync(srcPath);
+function backupClaudeFile(srcPath, destPath, summary, portableHome = null) {
+	const original = fs.readFileSync(srcPath);
+	const content = portableHome
+		? Buffer.from(portabilizeHome(original.toString("utf8"), portableHome))
+		: original;
 	const absoluteHomePath = findAbsoluteHomePath(content);
 	if (absoluteHomePath) {
 		summary.refused += 1;
@@ -178,7 +186,8 @@ function backupClaudeFile(srcPath, destPath, summary) {
 	}
 
 	fs.mkdirSync(path.dirname(destPath), { recursive: true });
-	fs.copyFileSync(srcPath, destPath);
+	if (portableHome) fs.writeFileSync(destPath, content);
+	else fs.copyFileSync(srcPath, destPath);
 	summary.backedUp += 1;
 	return true;
 }
@@ -199,7 +208,14 @@ export async function backupClaudeConfig(options = {}) {
 		const liveFile = file.dest ?? file.src;
 		const livePath = claudeFilePath(liveFile, claudeHome);
 		if (fs.existsSync(livePath)) {
-			if (backupClaudeFile(livePath, path.join(srcDir, file.src), summary)) {
+			if (
+				backupClaudeFile(
+					livePath,
+					path.join(srcDir, file.src),
+					summary,
+					file.src === "CLAUDE.md" ? claudeHome : null,
+				)
+			) {
 				log.info(`Backed up ${liveFile} to ${file.src}`);
 			}
 		}

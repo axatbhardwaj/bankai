@@ -42,6 +42,8 @@ describe("user app configuration", () => {
 			syncWorktreeCleanupImpl: record("worktree-cleanup"),
 			configureCodexImpl: record("codex"),
 			configureSkillsImpl: record("skills"),
+			syncAgentSkillsImpl: record("agent-skills"),
+			syncPaseoProfilesImpl: record("paseo-profiles"),
 		});
 
 		expect(events).toEqual([
@@ -58,6 +60,8 @@ describe("user app configuration", () => {
 			"pr-watch",
 			"codex",
 			"skills",
+			"agent-skills",
+			"paseo-profiles",
 		]);
 	});
 });

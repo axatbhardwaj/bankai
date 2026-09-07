@@ -32,8 +32,10 @@ function makeFakePrompt(value = true) {
 }
 
 function runDefaultSetupWithSafeDoubles({
-	paseoAnswer = true,
 	paseoResult = true,
+	profileResult = true,
+	t3Answer = false,
+	t3Result = true,
 } = {}) {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "haoshoku-debian-path-"));
 	const modulePath = (relativePath) =>
@@ -54,7 +56,7 @@ function runDefaultSetupWithSafeDoubles({
 			"Install Claude Remote Control services with all permission checks bypassed? This permanently sets bypassPermissionsModeAccepted: true in ~/.claude.json for every Claude Code session on this machine, not only these services. To undo it, edit ~/.claude.json and remove the flag or set it to false.",
 			"Enable automatic git worktree cleanup? This enables a persistent weekly timer that runs cleanup-worktrees.sh --apply and deletes eligible worktrees.",
 		]);
-		const paseoPrompt = "Configure the native headless Paseo service?";
+		const t3Prompt = "Also configure the T3 Code service?";
 		const writeFileSync = actualFs.writeFileSync.bind(actualFs);
 		actualFs.writeFileSync = (target, ...args) => {
 			const tempRoot = path.resolve(process.env.TMPDIR);
@@ -69,7 +71,7 @@ function runDefaultSetupWithSafeDoubles({
 				log: { dim() {}, error(message) { events.push({ type: "error", message }); }, info() {}, success() {}, warning() {} },
 			promptUser: async (message, initial) => {
 				events.push({ type: "prompt", message, initial });
-				if (message === paseoPrompt) return ${JSON.stringify(paseoAnswer)};
+				if (message === t3Prompt) return ${JSON.stringify(t3Answer)};
 				return promptAnswers.has(message);
 			},
 			runCommand: async () => true,
@@ -89,7 +91,9 @@ function runDefaultSetupWithSafeDoubles({
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_worktree_cleanup.js"))}, () => ({ syncWorktreeCleanup: record("worktree-cleanup") }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_codex.js"))}, () => ({ configureCodex: record("codex") }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_skills.js"))}, () => ({ configureSkills: record("skills", true) }));
-		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", true) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_agent_skills.js"))}, () => ({ syncAgentSkills: record("agent-skills", true) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_profiles.js"))}, () => ({ syncPaseoProfiles: record("paseo-profiles", ${JSON.stringify(profileResult)}) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", ${JSON.stringify(t3Result)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_server.js"))}, () => ({ configurePaseoServer: record("paseo-server", ${JSON.stringify(paseoResult)}) }));
 		const { runDebianServerSetup } = await import(${JSON.stringify(debianModule)} + "?default-path-test");
 		const result = await runDebianServerSetup();
@@ -223,8 +227,12 @@ describe("Debian default path", () => {
 		expect(prompts.some(({ message }) => message.includes("device"))).toBe(
 			false,
 		);
+		expect(prompts).toContainEqual({
+			type: "prompt",
+			message: "Also configure the T3 Code service?",
+			initial: false,
+		});
 		expect(helpers).toEqual([
-			"t3-code-server",
 			"git",
 			"claude",
 			"gh-stack",
@@ -234,22 +242,37 @@ describe("Debian default path", () => {
 			"worktree-cleanup",
 			"codex",
 			"skills",
+			"agent-skills",
 			"paseo-server",
+			"paseo-profiles",
 		]);
 		expect(result).toBe(true);
 	});
 
-	it("allows declining the optional Paseo component", () => {
+	it("configures T3 Code only when its optional prompt is accepted", () => {
 		const { events, result } = runDefaultSetupWithSafeDoubles({
-			paseoAnswer: false,
+			t3Answer: true,
 		});
 
 		expect(result).toBe(true);
+		expect(events).toContainEqual({ type: "helper", name: "t3-code-server" });
+		expect(events).toContainEqual({ type: "helper", name: "paseo-server" });
 		expect(
-			events.some(
-				(event) => event.type === "helper" && event.name === "paseo-server",
-			),
-		).toBe(false);
+			events.findIndex(({ name }) => name === "paseo-server"),
+		).toBeLessThan(events.findIndex(({ name }) => name === "t3-code-server"));
+	});
+
+	it("propagates a selected T3 Code setup failure", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			t3Answer: true,
+			t3Result: false,
+		});
+
+		expect(result).toBe(false);
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message: "Debian Server setup finished, but T3 Code was not configured.",
+		});
 	});
 
 	it("propagates a selected Paseo setup failure", () => {
@@ -263,6 +286,20 @@ describe("Debian default path", () => {
 			type: "error",
 			message:
 				"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
+		});
+	});
+
+	it("propagates a Paseo orchestration policy sync failure", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			profileResult: false,
+		});
+
+		expect(result).toBe(false);
+		expect(events).toContainEqual({ type: "helper", name: "paseo-profiles" });
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message:
+				"Debian Server setup finished, but the Paseo orchestration policy was not synced.",
 		});
 	});
 });

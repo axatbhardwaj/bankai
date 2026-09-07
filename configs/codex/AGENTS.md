@@ -15,5 +15,13 @@ Preferences:
   granular commits that are easy to recover or cherry-pick.
 - we always use the gh stack (the gh cli extension)
 
-Platform: agents run on T3 Code (Linux); I drive them from the t3-code
-app on Android.
+Platform: agents run on Paseo (Linux); I drive them from the Paseo app on
+Android and desktop.
+
+## Model routing
+
+For engineering work needing planning, research, implementation, independent
+review, or explainers, use the shared model-routing skill at
+`~/.agents/skills/model-routing/SKILL.md`. Astra drives through Paseo profiles;
+assigned workers stay within their brief. Keep ordinary low-impact tasks direct.
+This routing supersedes older paired-orchestration and model-casting guidance.

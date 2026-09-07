@@ -11,6 +11,7 @@ import {
 	safeCopyFile,
 } from "../common/utils.js";
 import { configureClaude } from "../helpers/configure_claude.js";
+import { syncAgentSkills } from "../helpers/configure_agent_skills.js";
 import { configureClaudeRemoteControl } from "../helpers/configure_claude_remote_control.js";
 import { configureClaudeStayAwake } from "../helpers/configure_claude_stay_awake.js";
 import { configureCodex } from "../helpers/configure_codex.js";
@@ -19,6 +20,7 @@ import { installGhStack } from "../helpers/configure_gh_stack.js";
 import { configureGit } from "../helpers/configure_git.js";
 import { configurePrWatch } from "../helpers/configure_pr_watch.js";
 import { configurePaseoServer } from "../helpers/configure_paseo_server.js";
+import { syncPaseoProfiles } from "../helpers/configure_paseo_profiles.js";
 import { configureT3CodeServer } from "../helpers/configure_t3_code_server.js";
 import { syncWorktreeCleanup } from "../helpers/configure_worktree_cleanup.js";
 
@@ -305,7 +307,6 @@ export async function runDebianServerSetup() {
 	await installDocker();
 	await setupFirewall();
 	await configureFail2ban();
-	const t3CodeConfigured = await configureT3CodeServer();
 
 	// Debian Server deliberately receives only portable/headless developer tools.
 	// Device type is not asked because it routes audio and Hyprland/Omarchy
@@ -349,22 +350,36 @@ export async function runDebianServerSetup() {
 	await configureCodex();
 	if (!(await configureSkills())) {
 		log.warning(
-			"Matt Pocock skills were not installed — continuing. Retry with: haoshoku --skills",
+			"External skills were not fully installed — continuing. Retry with: haoshoku --skills",
 		);
 	}
-	let paseoConfigured = true;
-	if (await promptUser("Configure the native headless Paseo service?", false)) {
-		paseoConfigured = await configurePaseoServer();
+	if (!(await syncAgentSkills())) {
+		log.warning(
+			"Haoshoku-owned agent skills were not fully synced — continuing. Retry with: haoshoku --agent-skills",
+		);
 	}
-
-	if (!t3CodeConfigured) {
-		log.error("Debian Server setup finished, but T3 Code was not configured.");
-		return false;
+	const paseoConfigured = await configurePaseoServer();
+	const paseoProfilesConfigured = paseoConfigured
+		? await syncPaseoProfiles()
+		: false;
+	let t3CodeConfigured = true;
+	if (await promptUser("Also configure the T3 Code service?", false)) {
+		t3CodeConfigured = await configureT3CodeServer();
 	}
 	if (!paseoConfigured) {
 		log.error(
 			"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
 		);
+		return false;
+	}
+	if (!paseoProfilesConfigured) {
+		log.error(
+			"Debian Server setup finished, but the Paseo orchestration policy was not synced.",
+		);
+		return false;
+	}
+	if (!t3CodeConfigured) {
+		log.error("Debian Server setup finished, but T3 Code was not configured.");
 		return false;
 	}
 

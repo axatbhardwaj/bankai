@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { log, runCommand, safeCopyFile } from "../common/utils.js";
+import {
+	log,
+	portabilizeHome,
+	runCommand,
+	safeCopyFile,
+} from "../common/utils.js";
 
 const HOME = homedir();
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
@@ -74,7 +79,11 @@ export async function backupCodexConfig(options = {}) {
 		if (fs.existsSync(livePath)) {
 			const destPath = path.join(srcDir, file.src);
 			fs.mkdirSync(path.dirname(destPath), { recursive: true });
-			fs.copyFileSync(livePath, destPath);
+			const portable = portabilizeHome(
+				fs.readFileSync(livePath, "utf8"),
+				codexHome,
+			);
+			fs.writeFileSync(destPath, portable);
 			log.info(`Backed up ${file.src}`);
 		}
 	}

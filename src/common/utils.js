@@ -11,6 +11,12 @@ export const log = {
 	dim: (msg) => console.log(chalk.gray(msg)),
 };
 
+/** Replace only this machine's exact absolute home prefix in portable prose. */
+export function portabilizeHome(content, home) {
+	const prefix = home.endsWith(path.sep) ? home : `${home}${path.sep}`;
+	return content.replaceAll(prefix, `~${path.sep}`);
+}
+
 export async function runCommand(command, options = { check: true }) {
 	if (options.log !== false) log.dim(`Executing: ${command}`);
 

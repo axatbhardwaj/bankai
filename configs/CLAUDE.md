@@ -24,6 +24,8 @@ Template configuration files copied to user's `~/.config/` during setup.
 | `claude-remote-control/` | Claude Remote Control tmux supervisor + systemd user-unit template | Modifying persistent Claude sessions, restart behavior, or attach lifecycle |
 | `claude-stay-awake/` | Claude CLI sleep-inhibitor watcher and systemd user unit | Modifying suspend blocking or session detection |
 | `codex/`        | Codex compact personal policy | Modifying deployed Codex agent guidance   |
+| `agent-skills/` | Haoshoku-owned portable orchestration skills | Updating routing, review, or explainer workflow policy |
+| `paseo/`        | Whitelist-only Paseo profile/provider policy | Updating managed orchestration profiles without credentials |
 | `hyprmoncfg/`   | Authored monitor/workspace profile JSON consumed by hyprmoncfg; Haoshoku NEVER writes generated `monitors.lua` | Modifying monitor layouts or monitor-bound workspace rules without crossing the hyprmoncfg ownership boundary |
 | `kde/`          | KDE Ocean theme bundle (5 components)   | Modifying KDE theme deployment            |
 | `kwin/`         | KWin script placing KDE Activity windows on outputs by connector name | Modifying activity-window output placement |
