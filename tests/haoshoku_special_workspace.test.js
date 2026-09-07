@@ -258,6 +258,10 @@ fi
 		fs.writeFileSync(
 			uwsmApp,
 			`#!/usr/bin/env bash
+	if [[ "$1" == -- && "$2" == /usr/bin/paseo ]]; then
+	  printf 'paseo-desktop\n' >> "$CALL_LOG"
+	  exit 0
+	fi
 exec "$@"
 `,
 		);
@@ -289,7 +293,7 @@ printf 'codex-desktop\n' >> "$CALL_LOG"
 		fs.writeFileSync(
 			paseo,
 			`#!/usr/bin/env bash
-printf 'paseo\n' >> "$CALL_LOG"
+printf 'paseo-cli-shadow\n' >> "$CALL_LOG"
 `,
 		);
 		fs.writeFileSync(
@@ -1167,11 +1171,11 @@ exit 17
 		const result = await run(["numbered", "1", "paseo"]);
 
 		expect(result.exitCode).toBe(0);
-		expect(dispatchCalls()).toEqual([
-			"dispatch workspace 1",
-			"dispatch exec [workspace 1 silent] uwsm-app -- paseo ",
-			"paseo",
-		]);
+			expect(dispatchCalls()).toEqual([
+				"dispatch workspace 1",
+				"dispatch exec [workspace 1 silent] uwsm-app -- /usr/bin/paseo ",
+				"paseo-desktop",
+			]);
 	});
 
 	it("does not relaunch Paseo when its client already exists", async () => {

@@ -62,7 +62,7 @@ describe("Omarchy Lua workspace behavior", () => {
 	it("retains exact application bindings in both device profiles", () => {
 		const commands = [
 			'o.bind("SUPER + I", "Show/focus/hide AI assistants workspace", "haoshoku-special-workspace assistants")',
-			'o.bind("SUPER + T", "Paseo", o.launch_sole("^Paseo$", "paseo"))',
+			'o.bind("SUPER + T", "Paseo", o.launch_sole("^Paseo$", "/usr/bin/paseo"))',
 			'o.bind("SUPER + B", "Toggle Flux Brave Origin workspace", "haoshoku-special-workspace browser-toggle flux")',
 			'o.bind("SUPER + D", "Toggle DeFi Brave Origin workspace", "haoshoku-special-workspace browser-toggle defi")',
 			'o.bind("SUPER + SHIFT + G", "Toggle gaming workspace", "haoshoku-gaming-workspace toggle")',
@@ -89,7 +89,7 @@ describe("Omarchy Lua workspace behavior", () => {
 				'o.exec_on_start("haoshoku-default-browser")',
 			);
 			expect(
-				overlay.match(/o\.launch_on_start\("paseo"\)/g) ?? [],
+				overlay.match(/o\.launch_on_start\("\/usr\/bin\/paseo"\)/g) ?? [],
 			).toHaveLength(1);
 			expect(overlay).toContain('o.exec_on_start("/usr/bin/kdeconnectd")');
 			expect(overlay).toContain(
