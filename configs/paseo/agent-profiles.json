@@ -1,0 +1,188 @@
+{
+	"version": 1,
+	"agentProfiles": [
+		{
+			"id": "fable-planner",
+			"name": "fable-planner",
+			"provider": "claude",
+			"model": "claude-fable-5-1",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Persistent planning partner for Astra. Examine architecture, design tradeoffs, acceptance criteria and plan revisions. Return decisions and evidence; stay within the assigned planning task."
+		},
+		{
+			"id": "research-sonnet",
+			"name": "research-sonnet",
+			"provider": "claude",
+			"model": "claude-sonnet-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "medium",
+			"notes": "Research requirements, documentation, prior decisions and alternatives. For substantial research, investigate independently before reading the Sol research conclusions. Return sources, uncertainties and implications; product code stays unchanged."
+		},
+		{
+			"id": "research-sol-medium",
+			"name": "research-sol-medium",
+			"provider": "codex",
+			"model": "gpt-5.6-sol",
+			"modeId": "full-access",
+			"thinkingOptionId": "medium",
+			"notes": "Research code paths, dependencies, tests and implementation constraints; verify documentation against code. Return source locations, evidence and uncertainties. Product code stays unchanged; write research notes only when assigned."
+		},
+		{
+			"id": "research-grok",
+			"name": "research-grok",
+			"provider": "grok",
+			"model": "grok-4.6",
+			"notes": "Targeted current external research when it adds value. Return authoritative sources, dates, evidence and unresolved questions. Stay within the research brief."
+		},
+		{
+			"id": "implement-sol-high",
+			"name": "implement-sol-high",
+			"provider": "codex",
+			"model": "gpt-5.6-sol",
+			"modeId": "full-access",
+			"thinkingOptionId": "high",
+			"notes": "Implement code, meaningful tests and repairs in the assigned task worktree. Follow the selected Matt skill when invoked. Return changed revision and verification evidence for independent Opus review; use gh stack for authorized Git delivery."
+		},
+		{
+			"id": "review-opus",
+			"name": "review-opus",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Independent review of the exact candidate revision and its spec in an isolated checkout. Use code-review for applicable Git review; keep Standards and Spec findings distinct. Own the verdict, return evidence and avoid product edits. External review submission requires user authority."
+		},
+		{
+			"id": "docs-muse",
+			"name": "docs-muse",
+			"provider": "opencode",
+			"model": "opencode/muse-spark-1.3-contributor-free",
+			"modeId": "build",
+			"thinkingOptionId": "medium",
+			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: Sol and Opus prepare Markdown, then Sonnet and Terra create and review HTML. Return artifacts and evidence; publish only when authorized."
+		},
+		{
+			"id": "pr-security-opus",
+			"name": "pr-security-opus",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Security and trust boundaries: authorization, validation, secrets and abuse paths."
+		},
+		{
+			"id": "pr-correctness-grok",
+			"name": "pr-correctness-grok",
+			"provider": "opencode",
+			"model": "opencode-go/grok-4.6",
+			"modeId": "plan",
+			"thinkingOptionId": "medium",
+			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Correctness and failure paths: logic, edge cases, concurrency, retries and partial failures."
+		},
+		{
+			"id": "pr-integration-sol",
+			"name": "pr-integration-sol",
+			"provider": "codex",
+			"model": "gpt-5.6-sol",
+			"modeId": "full-access",
+			"thinkingOptionId": "medium",
+			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Integration and regressions: callers, API contracts, compatibility, migrations and meaningful test gaps."
+		},
+		{
+			"id": "pr-requirements-muse",
+			"name": "pr-requirements-muse",
+			"provider": "opencode",
+			"model": "opencode/muse-spark-1.3-contributor-free",
+			"modeId": "plan",
+			"thinkingOptionId": "medium",
+			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Requirements and user behavior: acceptance criteria, missing behavior and confusing user scenarios."
+		},
+		{
+			"id": "pr-architecture-opus",
+			"name": "pr-architecture-opus",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Architecture and maintainability: module boundaries, abstraction, coupling and documented repository conventions. Tie findings to concrete consequences; distinguish suggestions from defects."
+		},
+		{
+			"id": "pr-monitor-muse",
+			"name": "pr-monitor-muse",
+			"provider": "opencode",
+			"model": "opencode/muse-spark-1.3-contributor-free",
+			"modeId": "build",
+			"thinkingOptionId": "low",
+			"notes": "Monitor one authored PR through paseo-pr-babysit. Read GitHub state and maintain only the assigned monitor snapshot and own heartbeat. Report changed failures, feedback, blockers or readiness evidence to the driver. Keep product files unchanged. Never implement, launch workers, push, post replies, resolve threads or merge. Use five-minute heartbeat ticks; return a compact no-change result when unchanged."
+		},
+		{
+			"id": "explore-sonnet",
+			"name": "explore-sonnet",
+			"provider": "claude",
+			"model": "claude-sonnet-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Map modules, repository conventions and documented intent; identify relevant source and decision locations. Perform only the bounded exploration assigned by the driver. Return source locations, evidence and uncertainties; keep product files unchanged. Write exploration notes only to the assigned output path. Do not launch a routing team or take implementation or review ownership."
+		},
+		{
+			"id": "explore-terra",
+			"name": "explore-terra",
+			"provider": "codex",
+			"model": "gpt-5.6-terra",
+			"modeId": "full-access",
+			"thinkingOptionId": "high",
+			"notes": "Trace execution paths, callers, dependencies and relevant tests; identify existing implementation seams. Perform only the bounded exploration assigned by the driver. Return source locations, evidence and uncertainties; keep product files unchanged. Write exploration notes only to the assigned output path. Do not launch a routing team or take implementation or review ownership."
+		},
+		{
+			"id": "explainer-sonnet",
+			"name": "explainer-sonnet",
+			"provider": "claude",
+			"model": "claude-sonnet-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "high",
+			"notes": "Build and repair the HTML site using html-deliverables from the exact Opus-approved Markdown file. Preserve approved claims, caveats and sources; return substantive content changes to Sol and Opus. Validate and inspect desktop/mobile rendering and reduced motion. Return HTML path, SHA-256, Markdown digest and render evidence for Terra. Stay within the assigned artifact scope; no routing team or publication."
+		},
+		{
+			"id": "explainer-review-terra",
+			"name": "explainer-review-terra",
+			"provider": "codex",
+			"model": "gpt-5.6-terra",
+			"modeId": "full-access",
+			"thinkingOptionId": "high",
+			"notes": "Independently review the HTML site and its desktop/mobile rendering using html-deliverables. Verify fidelity to the exact Opus-approved Markdown, first-screen comprehension, accessibility, overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to HTML and Markdown SHA-256 with evidence. Keep artifacts unchanged; visual repairs go to Sonnet, content changes to Sol and Opus. No nested routing team, generic code-review or publication."
+		},
+		{
+			"id": "explainer-content-sol",
+			"name": "explainer-content-sol",
+			"provider": "codex",
+			"model": "gpt-5.6-sol",
+			"modeId": "full-access",
+			"thinkingOptionId": "medium",
+			"notes": "Draft and repair the explanatory content as a Markdown file using html-deliverables. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the Markdown path, SHA-256 and source evidence for Opus content review. Keep site creation with Sonnet after Opus approval; stay within the assigned scope and do not launch a routing team or publish."
+		},
+		{
+			"id": "explainer-content-opus",
+			"name": "explainer-content-opus",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "medium",
+			"notes": "Independently review the explanatory Markdown content before HTML creation using html-deliverables. Verify reasoning, source accuracy, coverage, readability and uncertainty. Return APPROVE or REQUEST_CHANGES bound to the exact Markdown SHA-256, with concrete corrections for Sol. Review content changes again before site delivery. Keep the artifact unchanged; no nested routing team, generic code-review or publication."
+		}
+	],
+	"providers": {
+		"grok": {
+			"extends": "acp",
+			"label": "Grok",
+			"description": "xAI's Grok Build agentic coding CLI with plan mode and parallel subagents. Requires a SuperGrok or X Premium+ subscription.",
+			"command": ["grok", "agent", "stdio"]
+		},
+		"copilot": {
+			"enabled": false
+		},
+		"pi": {
+			"enabled": false
+		}
+	}
+}
