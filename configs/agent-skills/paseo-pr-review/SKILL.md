@@ -1,0 +1,47 @@
+---
+name: paseo-pr-review
+description: Use when reviewing a peer's pull request or when the user requests a five-angle, multi-model PR review through Paseo.
+---
+
+# Paseo PR review
+
+The main conversation drives five independent reviews of one immutable PR revision, then validates and consolidates the evidence. Use `paseo` for session mechanics and `model-routing` for capability checks and recovery. This workflow replaces the single `review-opus` route for peer PR reviews; implementation checkpoint reviews retain that route. An explicit request for `code-review` retains its own two-axis workflow.
+
+## Review seats
+
+| Angle | Paseo profile | Focus |
+| --- | --- | --- |
+| Security and trust boundaries | `pr-security-opus` | Authorization, validation, secrets, abuse paths |
+| Correctness and failure paths | `pr-correctness-grok` | Logic, edge cases, races, retries, partial failures |
+| Integration and regressions | `pr-integration-sol` | Callers, contracts, compatibility, migrations, test gaps |
+| Requirements and user behavior | `pr-requirements-muse` | Acceptance criteria, missing behavior, confusing scenarios |
+| Architecture and maintainability | `pr-architecture-opus` | Boundaries, abstractions, coupling, repository conventions |
+
+Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all five profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable Muse; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.
+
+## Prepare and dispatch
+
+1. Resolve the PR URL, repository, number, current head SHA, target base SHA and merge-base. Fetch those objects and verify the checkout HEAD matches the recorded head. For stacked PRs use the actual PR target and inspect the gh stack so ancestor changes are not accidentally attributed to this PR.
+2. Read the PR description, linked issue/spec and applicable repository instructions and standards. Give every seat the same source snapshot and diff range. If intent is missing or contradictory, surface the gap to the user; other angles may proceed while requirements coverage remains incomplete. If the user confirms there is no spec, explicitly bound that angle to the agreed PR intent and report the limitation.
+3. Create separate checkouts pinned to the same head for the five seats. Use task-owned scratch paths for outputs and tests. Each brief includes PR identity, head/base/merge-base, diff command, source pointers, profile notes, assigned angle, checkout path and return contract below. Tests must run without modifying another seat's checkout.
+4. Launch five Paseo agents independently with completion notifications. Materialize the profile settings using `paseo`; record each angle's agent/workspace IDs and launch settings in one concise handoff artifact. Workers directly perform their assigned review: they do not invoke `code-review`, launch another team, edit product code or submit reviews. Keep initial findings private from other seats until all initial reports arrive. Report important cross-angle discoveries with their angle tags rather than discarding them.
+
+## Return contract and synthesis
+
+Each worker returns the reviewed SHAs, angle, inspected paths and scenarios, checks actually run and their results, limitations, and either findings or an explicit no-findings result. Every finding includes severity, file/line, concrete trigger, consequence, evidence and a suggested correction. Tag documented-standard and specification findings distinctly. Architecture preferences are suggestions unless supported by a concrete defect or documented rule. Lack of evidence is an uncertainty, not a finding.
+
+Use repository severity definitions when present; otherwise use P0 critical, P1 high, P2 medium and P3 low, with suggestions separate. A seat may report no executable checks, with the reason; required checks blocked by its mode go to the driver for targeted validation. Read-only review is a task constraint, not a claim that every provider enforces a filesystem sandbox. Verify checkout cleanliness on return and investigate unexpected product changes before accepting the report.
+
+The driver waits for all five reports or records the blocked seats. Validate actionable findings against the pinned code, merge duplicate root causes while retaining angle attribution, and resolve contradictions through focused follow-ups to the existing reviewers. Evidence determines the result; model votes do not. Targeted validation is synthesis, not a sixth complete review. Incomplete or failed seats cannot produce a clean overall verdict. On interruption, inspect the recorded Paseo sessions and resume existing agents before creating replacements.
+
+For an explicit transient launch failure, inspect the recorded session and retry once; authentication or unsupported-capability errors block the seat immediately. Long-running agents are not failures: use completion notifications, and inspect liveness on a reported error or missed agreed deadline. If a focused follow-up leaves a material disagreement unresolved, the driver records the uncertainty and marks the result INCOMPLETE; advisory escalation uses `paseo-committee` when needed.
+
+Deliver one report with PR identity and reviewed SHA, recommendation, severity-ordered findings, distinguishable Standards and Spec findings, five-angle coverage, validation and limitations. A recommendation is separate from CI/merge readiness. Refresh the PR head, base and checks before final delivery: if either revision changed, label the old review stale and rerun the five angles for the new candidate before claiming current coverage.
+
+Use COMPLETE, INCOMPLETE or STALE as the report's coverage status, separate from its recommendation. Resume sessions for the same candidate; use fresh sessions for a changed candidate. Automatically rerun once after revision movement. If it moves again, return STALE with the reviewed and current SHAs and await a stable target instead of looping indefinitely.
+
+## GitHub delivery
+
+Default to a review report in the conversation. Submit only when the user explicitly authorizes GitHub review submission; merge needs its own authorization. Immediately before authorized submission, recheck head/base and bind the review to the reviewed head. Submit the consolidated `APPROVE` or `REQUEST_CHANGES` verdict, at most 399 lines, and verify the resulting review ID, actor, state, commit and body. If the PR moved, re-review first. Never turn an incomplete review into approval.
+
+Example invocation: `$paseo-pr-review https://github.com/OWNER/REPO/pull/123`
