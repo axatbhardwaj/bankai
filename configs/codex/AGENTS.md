@@ -24,5 +24,4 @@ For engineering work needing planning, research, implementation, independent
 review, or explainers, use the shared model-routing skill at
 `~/.agents/skills/model-routing/SKILL.md`. Astra drives through Paseo profiles;
 assigned workers stay within their brief. Keep ordinary low-impact tasks direct.
-Dvandva is retired for new work; this routing supersedes older Dvandva and
-model-casting guidance.
+This routing supersedes older paired-orchestration and model-casting guidance.
