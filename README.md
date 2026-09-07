@@ -263,6 +263,7 @@ haoshoku --claude-update
 haoshoku --codex
 haoshoku --codex-backup
 haoshoku --server-t3-code
+haoshoku --server-paseo
 haoshoku --device-type laptop
 haoshoku --kde-connect-commands
 haoshoku --audio
@@ -334,9 +335,56 @@ shows the old T3 HTTPS handler, remove that handler with
 complete; Haoshoku never changes existing Tailscale routes automatically.
 
 The full Debian path asks about Git, Claude stay-awake, Claude Remote Control,
-and automatic worktree cleanup. It installs Matt Pocock skills for Claude Code
-and Codex through the upstream Skills CLI; `haoshoku --skills` can refresh that
-same source independently.
+automatic worktree cleanup, and native Paseo. It installs Matt Pocock skills
+for Claude Code and Codex through the upstream Skills CLI; `haoshoku --skills`
+can refresh that same source independently. Paseo is offered after the skills
+step and remains opt-in.
+
+### Native headless Paseo
+
+Run `haoshoku --server-paseo` as the normal login user to configure only Paseo.
+Do not run it through `sudo`: Haoshoku installs `@getpaseo/cli` under
+`~/.local`, writes a new `~/.paseo/config.json` only when none exists, and
+manages `paseo-daemon.service` as that user's systemd service. A new config
+listens on `127.0.0.1:6767`, enables the Paseo MCP endpoint, disables relay,
+and keeps the bundled web UI off. An existing valid JSON object is left
+byte-for-byte untouched, so its listen, authentication, relay, providers,
+profiles, and unknown settings remain authoritative. Edit that file directly,
+then use `paseo reload`; restart only when Paseo reports a restart-required
+setting.
+
+The unit runs `paseo daemon start --foreground --home ~/.paseo`, restarts only
+after failure, and enables user lingering for startup after reboot and logout.
+Haoshoku refuses to replace a foreign unit or take over an unmanaged/desktop
+daemon. Useful lifecycle and recovery commands are:
+
+```bash
+systemctl --user status paseo-daemon.service
+systemctl --user restart paseo-daemon.service
+journalctl --user -u paseo-daemon.service -n 100
+paseo daemon status --home ~/.paseo
+```
+
+In an attached terminal Haoshoku optionally runs
+`paseo daemon pair --relay --home ~/.paseo`; otherwise it prints that command
+for later. Pairing enables Paseo's end-to-end encrypted relay and creates a
+phone offer. It does not authenticate an agent provider or prove that a phone
+connected. For local-only access, keep relay disabled and connect through
+Paseo's SSH transport; Haoshoku does not open a port or alter the firewall.
+
+This setup does not install or authenticate provider CLIs. Install and log in
+to Claude Code, Codex, OpenCode, or another supported provider separately as
+the same user, then verify the daemon's environment and available models:
+
+```bash
+paseo provider diagnostic codex
+paseo provider models codex
+```
+
+Workflow profiles—including any specialist profile set—also remain explicit
+user configuration in `~/.paseo/config.json`; this server flag does not sync
+them. Browser tools require a connected Paseo desktop app because the headless
+daemon brokers browser tabs but does not host a browser itself.
 
 Debian Server does not ask for `deviceType`: that value only selects desktop
 audio and Hyprland/Omarchy variants. For the same reason the Debian path does
