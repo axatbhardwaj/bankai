@@ -360,6 +360,82 @@ describe("Paseo server configuration", () => {
 		}
 	});
 
+	it("restarts a healthy managed daemon when its unit definition changes", async () => {
+		const home = temporaryHome();
+		const harness = successfulHarness(home);
+		const options = {
+			home,
+			isTTY: false,
+			logger: silentLogger,
+			readProcessFileImpl: () =>
+				"0::/user.slice/user-1000.slice/paseo-daemon.service\n",
+			runProcessImpl: harness.runProcessImpl,
+			sleepImpl: async () => {},
+			uid: 1000,
+			user: "alice",
+		};
+
+		expect(await configurePaseoServer(options)).toBe(true);
+		const unitPath = path.join(
+			home,
+			".config",
+			"systemd",
+			"user",
+			"paseo-daemon.service",
+		);
+		fs.writeFileSync(unitPath, "# Managed by Haoshoku\n[Service]\nExecStart=/old\n");
+		const firstCallCount = harness.calls.length;
+
+		expect(await configurePaseoServer(options)).toBe(true);
+		const rerunCalls = harness.calls.slice(firstCallCount);
+		expect(
+			rerunCalls.some(
+				({ args }) =>
+					args[0] === "systemctl" &&
+					args.includes("restart") &&
+					args.includes("paseo-daemon.service"),
+			),
+		).toBe(true);
+	});
+
+	it("fails when a changed managed unit cannot be restarted", async () => {
+		const home = temporaryHome();
+		let failRestart = false;
+		const errors = [];
+		const harness = successfulHarness(home, {
+			fail: (args) => failRestart && args.includes("restart"),
+		});
+		const options = {
+			home,
+			isTTY: false,
+			logger: { ...silentLogger, error: (message) => errors.push(message) },
+			readProcessFileImpl: () =>
+				"0::/user.slice/user-1000.slice/paseo-daemon.service\n",
+			runProcessImpl: harness.runProcessImpl,
+			sleepImpl: async () => {},
+			uid: 1000,
+			user: "alice",
+		};
+
+		expect(await configurePaseoServer(options)).toBe(true);
+		fs.writeFileSync(
+			path.join(
+				home,
+				".config",
+				"systemd",
+				"user",
+				"paseo-daemon.service",
+			),
+			"# Managed by Haoshoku\n[Service]\nExecStart=/old\n",
+		);
+		failRestart = true;
+
+		expect(await configurePaseoServer(options)).toBe(false);
+		expect(errors.join("\n")).toContain(
+			"Could not restart paseo-daemon.service",
+		);
+	});
+
 	it("keeps a compatible user-owned CLI without running npm install", async () => {
 		const home = temporaryHome();
 		const cli = path.join(home, ".local", "bin", "paseo");

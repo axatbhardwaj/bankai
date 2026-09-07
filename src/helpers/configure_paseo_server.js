@@ -392,36 +392,16 @@ function daemonIsContactable(status) {
 	return CONTACTABLE_DAEMON_STATES.has(status.connectedDaemon);
 }
 
-async function verifyPersistence(runner, env, user, logger) {
-	const enabled = await runner(["systemctl", "--user", "is-enabled", UNIT], {
-		env,
-	});
-	if (enabled.exitCode !== 0 || enabled.stdout.trim() !== "enabled") {
-		logger.error(`Could not verify that ${UNIT} is enabled.`);
-		return false;
-	}
-	const linger = await runner(
-		["loginctl", "show-user", user, "--property", "Linger", "--value"],
-		{ env },
-	);
-	if (linger.exitCode !== 0 || linger.stdout.trim() !== "yes") {
-		logger.error(
-			`Could not verify user lingering. Retry: loginctl enable-linger ${user}`,
-		);
-		return false;
-	}
-	return true;
-}
-
 async function ensureEnabled(runner, env, logger) {
-	const current = await runner(["systemctl", "--user", "is-enabled", UNIT], {
-		env,
-	});
+	const inspect = () =>
+		runner(["systemctl", "--user", "is-enabled", UNIT], { env });
+	let current = await inspect();
 	if (current.exitCode === 0 && current.stdout.trim() === "enabled")
 		return true;
 	const enable = await runner(["systemctl", "--user", "enable", UNIT], { env });
-	if (enable.exitCode === 0) return true;
-	logger.error(`Could not enable ${UNIT}.`);
+	if (enable.exitCode === 0) current = await inspect();
+	if (current.exitCode === 0 && current.stdout.trim() === "enabled") return true;
+	logger.error(`Could not enable and verify ${UNIT}.`);
 	return false;
 }
 
@@ -531,7 +511,7 @@ export async function configurePaseoServer(options = {}) {
 	if (!(await ensureEnabled(runner, env, logger))) return false;
 	if (!(await ensureLinger(runner, env, user, logger))) return false;
 
-	if (!managedAndReady) {
+	if (unitWrite.changed || !managedAndReady) {
 		const active = await serviceIsActive(runner, env);
 		const action = active ? "restart" : "start";
 		const started = await runner(["systemctl", "--user", action, UNIT], {
@@ -543,6 +523,7 @@ export async function configurePaseoServer(options = {}) {
 			);
 			return false;
 		}
+		let ready = false;
 		for (let attempt = 0; attempt < readyAttempts; attempt += 1) {
 			status = await readStatus(cli, paseoHome, runner, env);
 			if (
@@ -555,27 +536,18 @@ export async function configurePaseoServer(options = {}) {
 					readProcessFileImpl,
 				}))
 			) {
+				ready = true;
 				break;
 			}
 			if (attempt < readyAttempts - 1) await sleep(READY_INTERVAL_MS);
 		}
-		if (
-			!status ||
-			!(await statusBelongsToService({
-				status,
-				uid,
-				runner,
-				env,
-				readProcessFileImpl,
-			}))
-		) {
+		if (!ready) {
 			logger.error(
 				`Paseo did not become ready under ${UNIT}. Inspect: journalctl --user -u ${UNIT} -n 100`,
 			);
 			return false;
 		}
 	}
-	if (!(await verifyPersistence(runner, env, user, logger))) return false;
 
 	logger.success(
 		`Paseo is configured and reachable through ${UNIT}; provider authentication and phone pairing are separate steps.`,
