@@ -1,5 +1,13 @@
 # Changelog
 
+## 11.6.0 - 2026-09-08
+
+- Add `--server-paseo` and an optional Debian setup step for a native headless
+  Paseo daemon with a persistent systemd user service and optional relay pairing.
+- Preserve existing Paseo configuration, default fresh installs to localhost,
+  refuse unmanaged daemon conflicts, and restart changed managed services.
+- Share the Node runtime bootstrap while preserving T3 compatibility checks.
+
 ## 11.5.1 - 2026-09-07
 
 - Reassert `haoshoku-browser.desktop` as the XDG browser and web URL handler
