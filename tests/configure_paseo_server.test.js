@@ -404,8 +404,43 @@ describe("Paseo server configuration", () => {
 				path.join(home, ".config", "systemd", "user", "paseo-daemon.service"),
 			),
 		).toBe(false);
+		expect(fs.existsSync(path.join(home, ".paseo", "config.json"))).toBe(
+			false,
+		);
 		expect(errors.join("\n")).toContain("unmanaged or desktop");
 		expect(errors.join("\n")).toContain("Stop it explicitly");
+	});
+
+	it("reports a cross-home listen conflict without claiming this home is running", async () => {
+		const home = temporaryHome();
+		const errors = [];
+		const harness = successfulHarness(home, {
+			beforeStartStatus: {
+				...stoppedStatus(home),
+				connectedDaemon: "reachable",
+			},
+		});
+
+		expect(
+			await configurePaseoServer({
+				home,
+				isTTY: false,
+				logger: { ...silentLogger, error: (message) => errors.push(message) },
+				runProcessImpl: harness.runProcessImpl,
+				uid: 1000,
+				user: "alice",
+			}),
+		).toBe(false);
+		expect(fs.existsSync(path.join(home, ".paseo", "config.json"))).toBe(
+			false,
+		);
+		expect(errors.join("\n")).toContain(
+			"127.0.0.1:6767 is already serving another Paseo daemon",
+		);
+		expect(errors.join("\n")).toContain("different listen address");
+		expect(errors.join("\n")).not.toContain(
+			`already using ${path.join(home, ".paseo")}`,
+		);
 	});
 
 	it("leaves a foreign unit untouched", async () => {
@@ -433,6 +468,9 @@ describe("Paseo server configuration", () => {
 			}),
 		).toBe(false);
 		expect(fs.readFileSync(unitPath, "utf8")).toBe(foreignUnit);
+		expect(fs.existsSync(path.join(home, ".paseo", "config.json"))).toBe(
+			false,
+		);
 		expect(
 			harness.calls.some(
 				({ args }) => args[0] === "systemctl" && args.includes("daemon-reload"),

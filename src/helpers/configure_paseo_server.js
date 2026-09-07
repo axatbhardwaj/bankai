@@ -9,6 +9,11 @@ const MINIMUM_PASEO_VERSION = [0, 7, 2];
 const UNIT = "paseo-daemon.service";
 const READY_ATTEMPTS = 15;
 const READY_INTERVAL_MS = 1000;
+const CONTACTABLE_DAEMON_STATES = new Set([
+	"reachable",
+	"auth_required",
+	"auth_failed",
+]);
 
 function cleanEnvironment(environment) {
 	const clean = { ...environment };
@@ -253,6 +258,19 @@ function writeManagedUnit(unitPath, content, fsImpl, logger) {
 	return { changed: true, valid: true };
 }
 
+function inspectManagedUnit(unitPath, fsImpl, logger) {
+	if (!fsImpl.existsSync(unitPath)) return { exists: false, managed: false };
+	const managed = fsImpl
+		.readFileSync(unitPath, "utf8")
+		.startsWith("# Managed by Haoshoku\n");
+	if (!managed) {
+		logger.error(
+			`Refusing to replace foreign unit ${unitPath}. Disable or migrate it, then retry.`,
+		);
+	}
+	return { exists: true, managed };
+}
+
 function parseStatus(result, paseoHome) {
 	if (result.exitCode !== 0) return null;
 	try {
@@ -365,10 +383,13 @@ async function statusProcessBelongsToService({
 
 async function statusBelongsToService(options) {
 	return (
-		["reachable", "auth_required", "auth_failed"].includes(
-			options.status.connectedDaemon,
-		) && (await statusProcessBelongsToService(options))
+		daemonIsContactable(options.status) &&
+		(await statusProcessBelongsToService(options))
 	);
+}
+
+function daemonIsContactable(status) {
+	return CONTACTABLE_DAEMON_STATES.has(status.connectedDaemon);
 }
 
 async function verifyPersistence(runner, env, user, logger) {
@@ -460,12 +481,9 @@ export async function configurePaseoServer(options = {}) {
 		);
 		return false;
 	}
-	if (!configState.exists) createFreshConfig(configPath, fsImpl);
-
 	const unitContent = buildUnit({ cli, home, nodePath: runtime.path });
-	const existingManagedUnit =
-		fsImpl.existsSync(unitPath) &&
-		fsImpl.readFileSync(unitPath, "utf8").startsWith("# Managed by Haoshoku\n");
+	const unitState = inspectManagedUnit(unitPath, fsImpl, logger);
+	if (unitState.exists && !unitState.managed) return false;
 	let status = await readStatus(cli, paseoHome, runner, env);
 	if (!status) {
 		logger.error(
@@ -473,13 +491,16 @@ export async function configurePaseoServer(options = {}) {
 		);
 		return false;
 	}
-	const daemonRunning =
-		status.localDaemon === "running" ||
-		["reachable", "auth_required", "auth_failed"].includes(
-			status.connectedDaemon,
+	if (status.localDaemon === "stopped" && daemonIsContactable(status)) {
+		logger.error(
+			`${status.listen ?? "The configured listen address"} is already serving another Paseo daemon while ${paseoHome} is stopped. Stop or reconfigure that daemon, or configure this home with a different listen address, then retry.`,
 		);
+		return false;
+	}
+	const daemonRunning =
+		status.localDaemon === "running" || daemonIsContactable(status);
 	const managedProcess =
-		existingManagedUnit &&
+		unitState.managed &&
 		(await statusProcessBelongsToService({
 			status,
 			uid,
@@ -487,17 +508,14 @@ export async function configurePaseoServer(options = {}) {
 			env,
 			readProcessFileImpl,
 		}));
-	const managedAndReady =
-		managedProcess &&
-		["reachable", "auth_required", "auth_failed"].includes(
-			status.connectedDaemon,
-		);
+	const managedAndReady = managedProcess && daemonIsContactable(status);
 	if (daemonRunning && !managedProcess) {
 		logger.error(
 			`An unmanaged or desktop Paseo daemon is already using ${paseoHome}. Stop it explicitly, confirm "${cli} daemon status --home ${paseoHome}" reports stopped, then retry.`,
 		);
 		return false;
 	}
+	if (!configState.exists) createFreshConfig(configPath, fsImpl);
 
 	const unitWrite = writeManagedUnit(unitPath, unitContent, fsImpl, logger);
 	if (!unitWrite.valid) return false;
