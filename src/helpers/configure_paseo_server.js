@@ -7,6 +7,7 @@ import { log, promptUser } from "../common/utils.js";
 const PASEO_PACKAGE = "@getpaseo/cli";
 const MINIMUM_PASEO_VERSION = [0, 7, 2];
 const UNIT = "paseo-daemon.service";
+const DEFAULT_LISTEN = "127.0.0.1:6767";
 const READY_ATTEMPTS = 15;
 const READY_INTERVAL_MS = 1000;
 const CONTACTABLE_DAEMON_STATES = new Set([
@@ -186,22 +187,80 @@ function validateExistingConfig(configPath, fsImpl, logger) {
 	}
 }
 
-function createFreshConfig(configPath, fsImpl) {
+function createFreshConfig(configPath, fsImpl, logger) {
 	const config = {
 		$schema: "https://paseo.sh/schemas/paseo.config.v1.json",
 		version: 1,
 		daemon: {
-			listen: "127.0.0.1:6767",
+			listen: DEFAULT_LISTEN,
 			relay: { enabled: false },
 			mcp: { enabled: true },
 		},
 		features: { webUi: { enabled: false } },
 	};
-	fsImpl.mkdirSync(path.dirname(configPath), { recursive: true, mode: 0o700 });
-	fsImpl.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, {
-		flag: "wx",
-		mode: 0o600,
-	});
+	try {
+		fsImpl.mkdirSync(path.dirname(configPath), { recursive: true, mode: 0o700 });
+		fsImpl.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, {
+			flag: "wx",
+			mode: 0o600,
+		});
+		return true;
+	} catch (error) {
+		if (error?.code === "EEXIST") {
+			return validateExistingConfig(configPath, fsImpl, logger)?.exists === true;
+		}
+		logger.error(`Could not create ${configPath} (${error.message}).`);
+		return false;
+	}
+}
+
+function defaultListenIsFree(readNetworkFileImpl) {
+	try {
+		const listeners = readNetworkFileImpl("/proc/net/tcp");
+		for (const line of listeners.split("\n").slice(1)) {
+			const fields = line.trim().split(/\s+/);
+			const [address, port] = (fields[1] ?? "").split(":");
+			if (
+				port === "1A6F" &&
+				fields[3] === "0A" &&
+				(address === "0100007F" || address === "00000000")
+			) {
+				return false;
+			}
+		}
+		return true;
+	} catch {
+		return null;
+	}
+}
+
+function freshHomeIsSafe({
+	paseoHome,
+	fsImpl,
+	readNetworkFileImpl,
+	logger,
+}) {
+	const pidPath = path.join(paseoHome, "paseo.pid");
+	if (fsImpl.existsSync(pidPath)) {
+		logger.error(
+			`Found ${pidPath} without config.json. Refusing to inspect or take over this Paseo home; stop or migrate its daemon, or remove the stale PID file after verifying no Paseo process uses it, then retry.`,
+		);
+		return false;
+	}
+	const listenIsFree = defaultListenIsFree(readNetworkFileImpl);
+	if (listenIsFree === false) {
+		logger.error(
+			`${DEFAULT_LISTEN} is already serving another Paseo daemon. Stop or reconfigure that daemon, or configure this home with a different listen address, then retry.`,
+		);
+		return false;
+	}
+	if (listenIsFree === null) {
+		logger.error(
+			`Could not verify that ${DEFAULT_LISTEN} is free without starting Paseo. Inspect /proc/net/tcp and retry.`,
+		);
+		return false;
+	}
+	return true;
 }
 
 function systemdValue(value) {
@@ -437,6 +496,9 @@ export async function configurePaseoServer(options = {}) {
 		options.readProcessFileImpl ??
 		((pid, filename) =>
 			fsImpl.readFileSync(`/proc/${pid}/${filename}`, "utf8"));
+	const readNetworkFileImpl =
+		options.readNetworkFileImpl ??
+		((filename) => fsImpl.readFileSync(filename, "utf8"));
 	const env = cleanEnvironment(options.environment ?? process.env);
 	const paseoHome = path.join(home, ".paseo");
 	const configPath = path.join(paseoHome, "config.json");
@@ -450,6 +512,8 @@ export async function configurePaseoServer(options = {}) {
 	}
 	const configState = validateExistingConfig(configPath, fsImpl, logger);
 	if (!configState) return false;
+	const unitState = inspectManagedUnit(unitPath, fsImpl, logger);
+	if (unitState.exists && !unitState.managed) return false;
 	const runtime = await ensureNodeRuntime(runner, env, logger);
 	if (!runtime) return false;
 	const cli = await ensurePaseoCli({ home, fsImpl, runner, env, logger });
@@ -461,9 +525,21 @@ export async function configurePaseoServer(options = {}) {
 		);
 		return false;
 	}
+	const currentConfigState = validateExistingConfig(configPath, fsImpl, logger);
+	if (!currentConfigState) return false;
+	if (
+		!currentConfigState.exists &&
+		(!freshHomeIsSafe({
+			paseoHome,
+			fsImpl,
+			readNetworkFileImpl,
+			logger,
+		}) ||
+			!createFreshConfig(configPath, fsImpl, logger))
+	)
+		return false;
+
 	const unitContent = buildUnit({ cli, home, nodePath: runtime.path });
-	const unitState = inspectManagedUnit(unitPath, fsImpl, logger);
-	if (unitState.exists && !unitState.managed) return false;
 	let status = await readStatus(cli, paseoHome, runner, env);
 	if (!status) {
 		logger.error(
@@ -495,8 +571,6 @@ export async function configurePaseoServer(options = {}) {
 		);
 		return false;
 	}
-	if (!configState.exists) createFreshConfig(configPath, fsImpl);
-
 	const unitWrite = writeManagedUnit(unitPath, unitContent, fsImpl, logger);
 	if (!unitWrite.valid) return false;
 	if (unitWrite.changed) {

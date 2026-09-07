@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { configurePaseoServer } from "../src/helpers/configure_paseo_server.js";
+import { configurePaseoServer as configurePaseoServerImpl } from "../src/helpers/configure_paseo_server.js";
 
 const homes = [];
 const silentLogger = {
@@ -13,6 +13,13 @@ const silentLogger = {
 	success() {},
 	warning() {},
 };
+
+function configurePaseoServer(options) {
+	return configurePaseoServerImpl({
+		readNetworkFileImpl: () => "",
+		...options,
+	});
+}
 
 function temporaryHome() {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "haoshoku-paseo-"));
@@ -84,6 +91,15 @@ function successfulHarness(
 			return { exitCode: 0, stdout: "0.7.2\n", stderr: "" };
 		}
 		if (args[0] === cli && args[1] === "daemon" && args[2] === "status") {
+			const configPath = path.join(home, ".paseo", "config.json");
+			if (!fs.existsSync(configPath)) {
+				fs.mkdirSync(path.dirname(configPath), { recursive: true });
+				fs.writeFileSync(
+					configPath,
+					'{"version":1,"daemon":{"listen":"127.0.0.1:6767","relay":{"enabled":false}},"app":{"baseUrl":"https://app.paseo.sh"}}\n',
+					{ mode: 0o600 },
+				);
+			}
 			return {
 				exitCode: 0,
 				stdout: JSON.stringify(
@@ -304,6 +320,34 @@ describe("Paseo server configuration", () => {
 		expect(harness.calls.some(({ args }) => args.includes("pair"))).toBe(false);
 	});
 
+	it("preserves a valid config created during the fresh-home preflight", async () => {
+		const home = temporaryHome();
+		const configPath = path.join(home, ".paseo", "config.json");
+		const racedConfig =
+			'{"version":1,"daemon":{"listen":"custom.sock"},"unknown":"keep"}\n';
+		const harness = successfulHarness(home);
+
+		expect(
+			await configurePaseoServer({
+				home,
+				isTTY: false,
+				logger: silentLogger,
+				readNetworkFileImpl: () => {
+					fs.mkdirSync(path.dirname(configPath), { recursive: true });
+					fs.writeFileSync(configPath, racedConfig, { flag: "wx" });
+					return "sl local_address rem_address st\n";
+				},
+				readProcessFileImpl: () =>
+					"0::/user.slice/user-1000.slice/paseo-daemon.service\n",
+				runProcessImpl: harness.runProcessImpl,
+				sleepImpl: async () => {},
+				uid: 1000,
+				user: "alice",
+			}),
+		).toBe(true);
+		expect(fs.readFileSync(configPath, "utf8")).toBe(racedConfig);
+	});
+
 	it("preserves existing config bytes and reruns without restarting a working daemon", async () => {
 		const home = temporaryHome();
 		const configPath = path.join(home, ".paseo", "config.json");
@@ -458,8 +502,12 @@ describe("Paseo server configuration", () => {
 		expect(harness.calls.some(({ args }) => args[0] === "npm")).toBe(false);
 	});
 
-	it("refuses an unmanaged running daemon before writing a unit", async () => {
+	it("refuses an unmanaged running daemon without changing its config", async () => {
 		const home = temporaryHome();
+		const configPath = path.join(home, ".paseo", "config.json");
+		fs.mkdirSync(path.dirname(configPath), { recursive: true });
+		const existingConfig = '{"version":1,"unknown":"keep"}\n';
+		fs.writeFileSync(configPath, existingConfig);
 		const errors = [];
 		const harness = successfulHarness(home, {
 			beforeStartStatus: readyStatus(home),
@@ -480,9 +528,7 @@ describe("Paseo server configuration", () => {
 				path.join(home, ".config", "systemd", "user", "paseo-daemon.service"),
 			),
 		).toBe(false);
-		expect(fs.existsSync(path.join(home, ".paseo", "config.json"))).toBe(
-			false,
-		);
+		expect(fs.readFileSync(configPath, "utf8")).toBe(existingConfig);
 		expect(errors.join("\n")).toContain("unmanaged or desktop");
 		expect(errors.join("\n")).toContain("Stop it explicitly");
 	});
@@ -502,6 +548,8 @@ describe("Paseo server configuration", () => {
 				home,
 				isTTY: false,
 				logger: { ...silentLogger, error: (message) => errors.push(message) },
+				readNetworkFileImpl: () =>
+					"sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt uid timeout inode\n0: 0100007F:1A6F 00000000:0000 0A 00000000:00000000 00:00000000 00000000 1000 0 1\n",
 				runProcessImpl: harness.runProcessImpl,
 				uid: 1000,
 				user: "alice",
@@ -517,6 +565,41 @@ describe("Paseo server configuration", () => {
 		expect(errors.join("\n")).not.toContain(
 			`already using ${path.join(home, ".paseo")}`,
 		);
+		expect(
+			harness.calls.some(
+				({ args }) => args[0] === harness.cli && args.includes("status"),
+			),
+		).toBe(false);
+	});
+
+	it("refuses an ambiguous PID file before asking status to seed config", async () => {
+		const home = temporaryHome();
+		const paseoHome = path.join(home, ".paseo");
+		fs.mkdirSync(paseoHome, { recursive: true });
+		fs.writeFileSync(
+			path.join(paseoHome, "paseo.pid"),
+			'{"pid":202,"startedAt":"2026-09-08T00:00:00.000Z"}\n',
+		);
+		const errors = [];
+		const harness = successfulHarness(home);
+
+		expect(
+			await configurePaseoServer({
+				home,
+				isTTY: false,
+				logger: { ...silentLogger, error: (message) => errors.push(message) },
+				runProcessImpl: harness.runProcessImpl,
+				uid: 1000,
+				user: "alice",
+			}),
+		).toBe(false);
+		expect(fs.existsSync(path.join(paseoHome, "config.json"))).toBe(false);
+		expect(errors.join("\n")).toContain("paseo.pid without config.json");
+		expect(
+			harness.calls.some(
+				({ args }) => args[0] === harness.cli && args.includes("status"),
+			),
+		).toBe(false);
 	});
 
 	it("leaves a foreign unit untouched", async () => {
