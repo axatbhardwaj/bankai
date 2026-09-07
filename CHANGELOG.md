@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.5.1 - 2026-09-07
 
 - Reassert `haoshoku-browser.desktop` as the XDG browser and web URL handler
   at every Omarchy login, so browser or desktop updates cannot silently bypass
