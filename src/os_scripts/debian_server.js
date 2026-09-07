@@ -305,7 +305,6 @@ export async function runDebianServerSetup() {
 	await installDocker();
 	await setupFirewall();
 	await configureFail2ban();
-	const t3CodeConfigured = await configureT3CodeServer();
 
 	// Debian Server deliberately receives only portable/headless developer tools.
 	// Device type is not asked because it routes audio and Hyprland/Omarchy
@@ -352,19 +351,19 @@ export async function runDebianServerSetup() {
 			"Matt Pocock skills were not installed — continuing. Retry with: haoshoku --skills",
 		);
 	}
-	let paseoConfigured = true;
-	if (await promptUser("Configure the native headless Paseo service?", false)) {
-		paseoConfigured = await configurePaseoServer();
-	}
-
-	if (!t3CodeConfigured) {
-		log.error("Debian Server setup finished, but T3 Code was not configured.");
-		return false;
+	const paseoConfigured = await configurePaseoServer();
+	let t3CodeConfigured = true;
+	if (await promptUser("Also configure the T3 Code service?", false)) {
+		t3CodeConfigured = await configureT3CodeServer();
 	}
 	if (!paseoConfigured) {
 		log.error(
 			"Debian Server setup finished, but Paseo setup or pairing is incomplete.",
 		);
+		return false;
+	}
+	if (!t3CodeConfigured) {
+		log.error("Debian Server setup finished, but T3 Code was not configured.");
 		return false;
 	}
 
