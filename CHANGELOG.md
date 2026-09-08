@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.7.2 - 2026-09-08
 
 - Replace the three managed Muse Spark Free documentation, PR requirements,
   and PR monitoring profiles with GLM 5.3 Flash, including bundled workflow
