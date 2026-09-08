@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.7.1 - 2026-09-08
 
 - Sync the bundled `paseo-pr-review` skill so peer PR reviews submit the
   consolidated verdict automatically, while preserving report-only overrides,
