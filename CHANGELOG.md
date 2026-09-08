@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Sync the bundled `paseo-pr-review` skill so peer PR reviews submit the
+  consolidated verdict automatically, while preserving report-only overrides,
+  separate merge authorization, and exact-head receipt validation.
+
 ## 11.7.0 - 2026-09-08
 
 - Make Paseo the default orchestrator: install `paseo-bin` on Arch, launch the
