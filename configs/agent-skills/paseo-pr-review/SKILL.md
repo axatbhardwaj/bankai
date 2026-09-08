@@ -42,6 +42,10 @@ Use COMPLETE, INCOMPLETE or STALE as the report's coverage status, separate from
 
 ## GitHub delivery
 
-Default to a review report in the conversation. Submit only when the user explicitly authorizes GitHub review submission; merge needs its own authorization. Immediately before authorized submission, recheck head/base and bind the review to the reviewed head. Submit the consolidated `APPROVE` or `REQUEST_CHANGES` verdict, at most 399 lines, and verify the resulting review ID, actor, state, commit and body. If the PR moved, re-review first. Never turn an incomplete review into approval.
+When the user asks for a PR review, automatically submit the consolidated GitHub review after synthesis, then return the review link and a concise summary in the conversation. This is the user's standing submission preference; no separate confirmation is needed. An explicit report-only, draft-only or do-not-submit instruction overrides this default. Merge needs its own authorization.
+
+Immediately before submission, recheck head/base and bind the review to the reviewed head. Submit `APPROVE` when the completed review has no blocking findings, or `REQUEST_CHANGES` for validated blocking findings; include non-blocking findings and material limitations in the body, at most 399 lines. If the PR moved, re-review first. Incomplete coverage alone is not a code defect: continue the missing work or report the blocker rather than inventing a change request or approval. If the user accepts an explicitly disclosed narrower review scope, assess completion within that scope and retain the exclusions in the submitted body.
+
+Verify the resulting review ID, actor, state, commit and exact body. If a submission has an ambiguous outcome, inspect existing reviews before retrying so the same review is not posted twice.
 
 Example invocation: `$paseo-pr-review https://github.com/OWNER/REPO/pull/123`
