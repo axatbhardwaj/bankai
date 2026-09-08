@@ -195,6 +195,13 @@ profile fields plus provider `extends`, `label`, `description`, `command`, and
 runtime files. Claude/Codex runtime state and `settings.json` remain
 machine-local.
 
+Ordinary documentation uses `docs-glm`, PR requirements review uses
+`pr-requirements-glm`, and cheap PR monitoring uses `pr-monitor-glm`. These
+profiles run GLM 5.3 Flash through OpenCode Go. During an upgrade, Haoshoku
+removes each corresponding retired managed Muse profile (`docs-muse`,
+`pr-requirements-muse`, or `pr-monitor-muse`) only when its GLM replacement is
+present in the bundled policy; custom profile IDs remain untouched.
+
 ## Claude Remote Control
 
 The optional Claude Remote Control setup runs persistent Claude sessions from

@@ -10,7 +10,7 @@ One user invocation in the driver authorizes delegation of the work inside that 
 
 ## Planning: grill-with-docs, to-spec and to-tickets
 
-Use `fable-planner` as the persistent planning partner. Astra and Fable reconcile the problem, design choices, codebase constraints, test seams, spec and ticket dependencies. The driver conducts the user conversation and owns the final spec/tickets; the generic `docs-muse` route does not replace this planning ownership.
+Use `fable-planner` as the persistent planning partner. Astra and Fable reconcile the problem, design choices, codebase constraints, test seams, spec and ticket dependencies. The driver conducts the user conversation and owns the final spec/tickets; the generic `docs-glm` route does not replace this planning ownership.
 
 Use researchers independently to establish the facts:
 

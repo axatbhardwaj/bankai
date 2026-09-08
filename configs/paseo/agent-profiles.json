@@ -54,12 +54,12 @@
 			"notes": "Independent review of the exact candidate revision and its spec in an isolated checkout. Use code-review for applicable Git review; keep Standards and Spec findings distinct. Own the verdict, return evidence and avoid product edits. External review submission requires user authority."
 		},
 		{
-			"id": "docs-muse",
-			"name": "docs-muse",
+			"id": "docs-glm",
+			"name": "docs-glm",
 			"provider": "opencode",
-			"model": "opencode/muse-spark-1.3-contributor-free",
+			"model": "opencode-go/glm-5.3-flash",
 			"modeId": "build",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "high",
 			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: Sol and Opus prepare Markdown, then Sonnet and Terra create and review HTML. Return artifacts and evidence; publish only when authorized."
 		},
 		{
@@ -90,12 +90,12 @@
 			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Integration and regressions: callers, API contracts, compatibility, migrations and meaningful test gaps."
 		},
 		{
-			"id": "pr-requirements-muse",
-			"name": "pr-requirements-muse",
+			"id": "pr-requirements-glm",
+			"name": "pr-requirements-glm",
 			"provider": "opencode",
-			"model": "opencode/muse-spark-1.3-contributor-free",
+			"model": "opencode-go/glm-5.3-flash",
 			"modeId": "plan",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "high",
 			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Requirements and user behavior: acceptance criteria, missing behavior and confusing user scenarios."
 		},
 		{
@@ -108,10 +108,10 @@
 			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Architecture and maintainability: module boundaries, abstraction, coupling and documented repository conventions. Tie findings to concrete consequences; distinguish suggestions from defects."
 		},
 		{
-			"id": "pr-monitor-muse",
-			"name": "pr-monitor-muse",
+			"id": "pr-monitor-glm",
+			"name": "pr-monitor-glm",
 			"provider": "opencode",
-			"model": "opencode/muse-spark-1.3-contributor-free",
+			"model": "opencode-go/glm-5.3-flash",
 			"modeId": "build",
 			"thinkingOptionId": "low",
 			"notes": "Monitor one authored PR through paseo-pr-babysit. Read GitHub state and maintain only the assigned monitor snapshot and own heartbeat. Report changed failures, feedback, blockers or readiness evidence to the driver. Keep product files unchanged. Never implement, launch workers, push, post replies, resolve threads or merge. Use five-minute heartbeat ticks; return a compact no-change result when unchanged."
