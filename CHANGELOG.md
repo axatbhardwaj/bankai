@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Replace the three managed Muse Spark Free documentation, PR requirements,
+  and PR monitoring profiles with GLM 5.3 Flash, including bundled workflow
+  references and conditional cleanup of the retired managed profile IDs.
+
 ## 11.7.1 - 2026-09-08
 
 - Sync the bundled `paseo-pr-review` skill so peer PR reviews submit the

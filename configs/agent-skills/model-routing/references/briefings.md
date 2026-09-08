@@ -19,7 +19,7 @@ Opus invokes `code-review` once for that candidate. Its required native Standard
 
 For explanatory deliverables, read [html-deliverables](../../html-deliverables/SKILL.md). Its imported template and validator are standalone resources. The driver supplies audience, question, authoritative source pointers, scope, output paths and delivery constraints. The content brief assigns Markdown to Sol and substantive review to Opus; the site brief gives Sonnet and Terra the exact approved Markdown and its review receipt. The skill owns model assignments, repair routing and approval evidence. A site review cannot replace the content review.
 
-For ordinary documentation, the `docs-muse` brief supplies acceptance criteria suited to the deliverable:
+For ordinary documentation, the `docs-glm` brief supplies acceptance criteria suited to the deliverable:
 
 - put the answer or result, why it matters, and next action first;
 - cite the source for material claims;

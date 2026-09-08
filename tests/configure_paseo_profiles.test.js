@@ -29,6 +29,33 @@ const policy = {
 	},
 };
 
+const glmProfiles = [
+	{
+		id: "docs-glm",
+		name: "docs-glm",
+		provider: "opencode",
+		model: "opencode-go/glm-5.3-flash",
+		modeId: "build",
+		thinkingOptionId: "high",
+	},
+	{
+		id: "pr-requirements-glm",
+		name: "pr-requirements-glm",
+		provider: "opencode",
+		model: "opencode-go/glm-5.3-flash",
+		modeId: "plan",
+		thinkingOptionId: "high",
+	},
+	{
+		id: "pr-monitor-glm",
+		name: "pr-monitor-glm",
+		provider: "opencode",
+		model: "opencode-go/glm-5.3-flash",
+		modeId: "build",
+		thinkingOptionId: "low",
+	},
+];
+
 afterEach(() => {
 	for (const root of roots.splice(0)) {
 		fs.rmSync(root, { recursive: true, force: true });
@@ -123,6 +150,114 @@ describe("Paseo orchestration policy", () => {
 			env: { GROK_TOKEN: "keep" },
 			...policy.providers.grok,
 		});
+	});
+
+	it("replaces retired managed profiles without disturbing unrelated live state", () => {
+		const upgradedPolicy = {
+			...policy,
+			agentProfiles: [...policy.agentProfiles, ...glmProfiles],
+		};
+		const live = {
+			version: 7,
+			daemon: {
+				auth: { password: "bcrypt" },
+				relay: { enabled: true, token: "keep" },
+				listen: "127.0.0.1:7777",
+				state: { currentAgentId: "keep-running" },
+				agentProfiles: [
+					{ id: "docs-muse", model: "retired-customized" },
+					{ id: "pr-requirements-muse", model: "retired" },
+					{ id: "pr-monitor-muse", model: "retired" },
+					{ id: "personal", provider: "opencode", model: "keep" },
+				],
+			},
+			agents: {
+				providers: {
+					opencode: { env: { OPENCODE_API_KEY: "keep" } },
+					private: { command: ["keep-provider"] },
+				},
+			},
+			app: { baseUrl: "https://private.example" },
+		};
+
+		const merged = mergePaseoPolicy(live, upgradedPolicy);
+
+		expect(mergePaseoPolicy(merged, upgradedPolicy)).toEqual(merged);
+		expect(merged.version).toBe(7);
+		expect(merged.daemon).toMatchObject({
+			auth: live.daemon.auth,
+			relay: live.daemon.relay,
+			listen: live.daemon.listen,
+			state: live.daemon.state,
+		});
+		expect(merged.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			...glmProfiles,
+			{ id: "personal", provider: "opencode", model: "keep" },
+		]);
+		expect(merged.agents.providers.opencode).toEqual(
+			live.agents.providers.opencode,
+		);
+		expect(merged.agents.providers.private).toEqual(
+			live.agents.providers.private,
+		);
+		expect(merged.app).toEqual(live.app);
+	});
+
+	it("removes a retired profile only when its replacement is managed", () => {
+		const retired = [
+			{ id: "docs-muse", model: "keep-until-replacement" },
+			{ id: "pr-requirements-muse", model: "keep-until-replacement" },
+			{ id: "pr-monitor-muse", model: "retire" },
+		];
+		const merged = mergePaseoPolicy(
+			{ daemon: { agentProfiles: retired } },
+			{ ...policy, agentProfiles: [...policy.agentProfiles, glmProfiles[2]] },
+		);
+
+		expect(merged.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			glmProfiles[2],
+			retired[0],
+			retired[1],
+		]);
+	});
+
+	it("ships the GLM documentation and PR workflow routes", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const bundledPolicy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const routed = bundledPolicy.agentProfiles
+			.filter(({ id }) => glmProfiles.some((profile) => profile.id === id))
+			.map(({ notes: _notes, ...profile }) => profile);
+
+		expect(routed).toEqual(glmProfiles);
+		expect(
+			bundledPolicy.agentProfiles.map(({ id }) => id),
+		).not.toContainAnyValues([
+			"docs-muse",
+			"pr-requirements-muse",
+			"pr-monitor-muse",
+		]);
+
+		const skillExpectations = {
+			"model-routing/SKILL.md": ["docs-glm", "GLM monitors"],
+			"model-routing/references/briefings.md": ["docs-glm"],
+			"model-routing/references/matt-workflows.md": ["docs-glm"],
+			"paseo-pr-babysit/SKILL.md": ["pr-monitor-glm"],
+			"paseo-pr-review/SKILL.md": ["pr-requirements-glm"],
+		};
+		for (const [relativePath, expected] of Object.entries(skillExpectations)) {
+			const contents = fs.readFileSync(
+				path.join(projectRoot, "configs", "agent-skills", relativePath),
+				"utf8",
+			);
+			for (const value of expected) expect(contents).toContain(value);
+		}
 	});
 
 	it("writes a minimal fresh config without invoking Paseo", async () => {

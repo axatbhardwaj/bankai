@@ -21,6 +21,11 @@ const PROVIDER_FIELDS = [
 	"command",
 	"enabled",
 ];
+const RETIRED_MANAGED_PROFILE_REPLACEMENTS = new Map([
+	["docs-muse", "docs-glm"],
+	["pr-requirements-muse", "pr-requirements-glm"],
+	["pr-monitor-muse", "pr-monitor-glm"],
+]);
 
 function isObject(value) {
 	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -61,8 +66,15 @@ export function mergePaseoPolicy(liveConfig, policy) {
 		: {};
 
 	const managedIds = new Set(policy.agentProfiles.map(({ id }) => id));
+	const retiredManagedIds = new Set(
+		[...RETIRED_MANAGED_PROFILE_REPLACEMENTS]
+			.filter(([, replacementId]) => managedIds.has(replacementId))
+			.map(([retiredId]) => retiredId),
+	);
 	const unmanagedProfiles = Array.isArray(merged.daemon.agentProfiles)
-		? merged.daemon.agentProfiles.filter(({ id } = {}) => !managedIds.has(id))
+		? merged.daemon.agentProfiles.filter(
+				({ id } = {}) => !managedIds.has(id) && !retiredManagedIds.has(id),
+			)
 		: [];
 	merged.daemon.agentProfiles = [
 		...structuredClone(policy.agentProfiles),

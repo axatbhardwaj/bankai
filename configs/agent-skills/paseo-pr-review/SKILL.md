@@ -14,10 +14,10 @@ The main conversation drives five independent reviews of one immutable PR revisi
 | Security and trust boundaries | `pr-security-opus` | Authorization, validation, secrets, abuse paths |
 | Correctness and failure paths | `pr-correctness-grok` | Logic, edge cases, races, retries, partial failures |
 | Integration and regressions | `pr-integration-sol` | Callers, contracts, compatibility, migrations, test gaps |
-| Requirements and user behavior | `pr-requirements-muse` | Acceptance criteria, missing behavior, confusing scenarios |
+| Requirements and user behavior | `pr-requirements-glm` | Acceptance criteria, missing behavior, confusing scenarios |
 | Architecture and maintainability | `pr-architecture-opus` | Boundaries, abstractions, coupling, repository conventions |
 
-Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all five profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable Muse; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.
+Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all five profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable GLM; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.
 
 ## Prepare and dispatch
 
