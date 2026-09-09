@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.7.5 - 2026-09-09
+
+- Make decision-oriented HTML deliverables put named options, the recommendation,
+  rationale, and one ask in a concise visible front layer. Add fresh cold-reader
+  review and validator coverage for ordering, visibility, and the 400-word ceiling.
+
 ## 11.7.4 - 2026-09-09
 
 - Remove OpenCode from managed workflow routes. Keep documentation,
