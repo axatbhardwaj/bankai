@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 11.7.7 - 2026-09-09
+
+- Keep PR review and babysitting workspaces under the repository’s existing Paseo
+  project. Require explicit project ownership and verify workspace placement
+  before launching workers, preventing temporary role checkouts from becoming
+  separate sidebar projects.
 
 - Add validated `~/.config/haoshoku/paseo-tasks.json` defaults and CLI controls
   for future Paseo task metadata and archive-or-keep cleanup policy, preserving
