@@ -26,9 +26,10 @@ Haoshoku does not maintain its own clone or wrapper.
 - `--skills-list` prints the Skills CLI global inventory.
 - Full Arch and Debian setup performs the same reconciliation after Codex.
 
-`configure_agent_skills.js` separately owns the four bundled orchestration
-skills and their portable Claude/Codex links. Other local/system skills are not
-pruned.
+`configure_agent_skills.js` separately syncs three Haoshoku-owned orchestration
+skills plus the pinned upstream `visual-explainer`, with portable Claude/Codex
+links for both sets. Backup writes only the three owned skills; other
+local/system skills are not pruned.
 
 ## Headless Paseo
 

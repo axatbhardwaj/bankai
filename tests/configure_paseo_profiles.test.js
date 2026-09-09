@@ -501,6 +501,13 @@ describe("Paseo orchestration policy", () => {
 		expect(contents[0]).toContain("Ordinary prose remains prose");
 		expect(contents[2]).toContain("visual-explainer.json");
 		expect(contents[2]).toContain("fixed `dark` or `light`");
+		expect(contents[2]).toContain("regardless of the OS preference");
+		expect(contents[2]).toContain(
+			"remove or override any `prefers-color-scheme`",
+		);
+		expect(contents[2]).toContain(
+			"For `system`, retain responsive theme media queries",
+		);
 		for (const content of contents) {
 			expect(content).not.toContain("html-deliverables");
 			expect(content).not.toContain("exact approved Markdown");
