@@ -37,6 +37,9 @@ function deployModeFeaturesFromCli() {
 	// branches, so exclude them instead of claiming default-path coverage.
 	const excludedNonDefaultModes = new Set([
 		"--claude-update",
+		// The default setup persists dark through agent-skills sync. This flag is
+		// only an explicit preference override, not another deploy capability.
+		"--explainer-theme",
 		"--skills",
 		"--skills-update",
 		"--3-4-migrate",

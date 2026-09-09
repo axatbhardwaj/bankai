@@ -1,5 +1,16 @@
 # Changelog
 
+## 11.7.5 - 2026-09-09
+
+- Replace the owned HTML-deliverables workflow with the pinned upstream
+  visual-explainer skill, keeping ordinary prose in its requested format and
+  retaining proportional source and visual review through existing profiles.
+- Add a persisted `dark`, `light`, or `system` explainer theme preference with
+  dark as the default, and archive the retired live skill before removing only
+  its managed Claude/Codex links.
+- Give every bundled Paseo profile a readable display name while preserving its
+  stable internal ID and runtime configuration.
+
 ## 11.7.4 - 2026-09-09
 
 - Remove OpenCode from managed workflow routes. Keep documentation,

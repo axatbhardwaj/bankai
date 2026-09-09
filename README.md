@@ -176,9 +176,11 @@ therefore reverted on the next deploy. Every other top-level key — including
 ## Agent and orchestration policy
 
 Haoshoku deploys the compact Claude/Codex instructions, installs the Matt
-Pocock and upstream Paseo skill sources through the Skills CLI, and syncs only
-its four owned workflow skills: `model-routing`, `paseo-pr-babysit`,
-`paseo-pr-review`, and `html-deliverables`. Back up live edits with:
+Pocock and upstream Paseo skill sources through the Skills CLI, and syncs its
+three owned workflow skills: `model-routing`, `paseo-pr-babysit`, and
+`paseo-pr-review`. It also installs the pinned upstream `visual-explainer`
+payload without treating it as a Haoshoku-owned backup source. Back up live
+edits with:
 
 ```bash
 haoshoku --claude-backup
@@ -194,6 +196,14 @@ profile fields plus provider `extends`, `label`, `description`, `command`, and
 `enabled`; it never copies credentials, daemon identity, relay state, or
 runtime files. Claude/Codex runtime state and `settings.json` remain
 machine-local.
+
+The visual explainer defaults to a fixed dark theme. Set and persist a different
+preference with `haoshoku --explainer-theme dark|light|system`; an explicit
+theme in a request takes precedence. Fixed dark or light output uses the full
+upstream renderer, while the system theme may use quick mode. On the first
+sync after this migration, Haoshoku archives the retired shared
+`html-deliverables` skill under `~/.config/haoshoku/retired-agent-skills/`
+before removing only its managed Claude/Codex links.
 
 Ordinary documentation uses `docs-glm`; PR correctness and requirements review
 use `pr-correctness-grok` and `pr-requirements-glm`. These legacy IDs run
@@ -212,13 +222,15 @@ waking the driver, while failures and renewal needs are deduplicated and sent
 to the driver for acknowledgement and coordination.
 
 Substantial research pairs `research-opus` at high effort with
-`research-sol-medium` at medium. Explanatory HTML uses a separate
-`explainer-opus` presentation profile at medium after high-effort Opus content
-approval. Upgrades retire the former `research-sonnet` and `explainer-sonnet`
-IDs only when their respective replacements are bundled. `fable-planner`
-remains high effort and joins Astra for evidence-backed consensus on new
-high-stakes decisions; ordinary work stays direct, and separate Opus candidate
-review plus human publication authority remain unchanged.
+`research-sol-medium` at medium. Requested visual artifacts use the
+`explainer-opus` presentation profile and the pinned upstream visual-explainer;
+source-content and independent visual review profiles remain available when
+the artifact's risk warrants them. Ordinary prose stays prose, with no
+mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
+and `explainer-sonnet` IDs only when their respective replacements are bundled.
+`fable-planner` remains high effort and joins Astra for evidence-backed
+consensus on new high-stakes decisions; ordinary work stays direct, and human
+publication authority remains unchanged.
 
 ## Claude Remote Control
 
@@ -312,6 +324,7 @@ haoshoku --skills-update
 haoshoku --skills-list
 haoshoku --agent-skills
 haoshoku --agent-skills-backup
+haoshoku --explainer-theme dark
 haoshoku --paseo-profiles
 haoshoku --paseo-profiles-backup
 haoshoku --gh-stack
