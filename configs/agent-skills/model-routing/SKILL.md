@@ -7,6 +7,8 @@ description: Route work through Astra-led Paseo profiles. Use for Matt Pocock pl
 
 Use `paseo` for agent, workspace, profile, and notification mechanics. Before each launch, call `list_profiles`, read the selected profile's notes, confirm provider availability with `list_providers`, and validate its configured model and effort with `list_models` and `inspect_provider`. Profile IDs are durable policy keys; names are display labels, and exact runtime settings live in profiles. Report a missing or unavailable capability in the main conversation without substituting defaults. Put the selected profile's relevant notes into the worker brief because `create_agent` does not inject them.
 
+Before the first delegation for a future task, read `~/.config/haoshoku/paseo-tasks.json`. When it is valid and enabled, read [references/task-lifecycle.md](references/task-lifecycle.md) and apply that lifecycle to the task. A missing or invalid file fails closed: leave agent metadata and cleanup unchanged, then report that `haoshoku --paseo-tasks` must repair or create the configuration.
+
 ## Ownership
 
 The main conversation is the task driver and alone creates Paseo specialist agents. It owns scope, acceptance, routing, synthesis, decisions, recovery, and the final result. Use the main conversation's selected model and reasoning settings. It creates only needed seats and validates returned evidence.
