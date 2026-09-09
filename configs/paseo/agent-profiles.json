@@ -152,7 +152,7 @@
 			"id": "explainer-review-terra",
 			"name": "Visual Review",
 			"provider": "codex",
-			"model": "gpt-5.6-terra",
+			"model": "gpt-5.6-sol",
 			"modeId": "full-access",
 			"thinkingOptionId": "high",
 			"notes": "Independently review a rendered visual artifact against its supplied sources. Verify source accuracy, first-screen comprehension, requested theme, accessibility, desktop/mobile overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to the exact HTML SHA-256 with evidence. Keep artifacts unchanged; route repairs to the assigned author. No nested routing team, generic code-review or publication."

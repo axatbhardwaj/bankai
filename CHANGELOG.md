@@ -1,5 +1,9 @@
 # Changelog
 
+## 11.7.6 - 2026-09-09
+
+- Use Sol at high effort for Visual Review while preserving the existing profile ID and review responsibilities.
+
 ## 11.7.5 - 2026-09-09
 
 - Replace the owned HTML-deliverables workflow with the pinned upstream
