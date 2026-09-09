@@ -195,12 +195,21 @@ profile fields plus provider `extends`, `label`, `description`, `command`, and
 runtime files. Claude/Codex runtime state and `settings.json` remain
 machine-local.
 
-Ordinary documentation uses `docs-glm`, PR requirements review uses
-`pr-requirements-glm`, and cheap PR monitoring uses `pr-monitor-glm`. These
-profiles run GLM 5.3 Flash through OpenCode Go. During an upgrade, Haoshoku
-removes each corresponding retired managed Muse profile (`docs-muse`,
-`pr-requirements-muse`, or `pr-monitor-muse`) only when its GLM replacement is
-present in the bundled policy; custom profile IDs remain untouched.
+Ordinary documentation uses `docs-glm`; PR correctness and requirements review
+use `pr-correctness-grok` and `pr-requirements-glm`. These legacy IDs run
+Claude Opus 5 at medium effort. Recurring PR monitoring keeps the stable
+`pr-monitor-glm` ID, while `watchdog-grok` checks its health; both use
+standalone Grok 4.6 without mode or thinking-option fields. The bundled
+`grok agent stdio` command leaves OIDC authentication to the Grok CLI and adds
+no API-key override. During an upgrade, Haoshoku removes each corresponding
+retired managed Muse profile (`docs-muse`, `pr-requirements-muse`, or
+`pr-monitor-muse`) only when its replacement is present in the bundled policy;
+custom profile IDs remain untouched.
+
+PR babysitting launches the Grok monitor and watchdog as separate sessions.
+Each owns its own expiring heartbeat; healthy ticks update snapshots without
+waking the driver, while failures and renewal needs are deduplicated and sent
+to the driver for acknowledgement and coordination.
 
 Substantial research pairs `research-opus` at high effort with
 `research-sol-medium` at medium. Explanatory HTML uses a separate
@@ -426,7 +435,7 @@ encrypted relay offer in the app. SSH and relay are independent; neither flow
 causes Haoshoku to expose port 6767.
 
 This setup does not install or authenticate provider CLIs. Install and log in
-to Claude Code, Codex, OpenCode, or another supported provider separately as
+to Claude Code, Codex, Grok, or another supported provider separately as
 the same user, then verify the daemon's environment and available models:
 
 ```bash

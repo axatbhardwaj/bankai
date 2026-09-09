@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.7.4 - 2026-09-09
+
+- Remove OpenCode from managed workflow routes. Keep documentation,
+  correctness, and requirements on Claude Opus 5 at medium effort; use
+  provider-native Grok 4.6 for separate recurring monitor and watchdog
+  sessions whose healthy heartbeats remain snapshot-only.
+
 ## 11.7.3 - 2026-09-09
 
 - Route substantial research through Opus at high effort and explanatory HTML
