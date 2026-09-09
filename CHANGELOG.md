@@ -8,6 +8,8 @@
 - Add a persisted `dark`, `light`, or `system` explainer theme preference with
   dark as the default, and archive the retired live skill before removing only
   its managed Claude/Codex links.
+- Give every bundled Paseo profile a readable display name while preserving its
+  stable internal ID and runtime configuration.
 
 ## 11.7.4 - 2026-09-09
 

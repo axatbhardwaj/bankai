@@ -32,13 +32,13 @@ const policy = {
 const recurringGrokProfiles = [
 	{
 		id: "pr-monitor-glm",
-		name: "pr-monitor-glm",
+		name: "PR Monitor",
 		provider: "grok",
 		model: "grok-4.6",
 	},
 	{
 		id: "watchdog-grok",
-		name: "watchdog-grok",
+		name: "Monitor Watchdog",
 		provider: "grok",
 		model: "grok-4.6",
 	},
@@ -47,7 +47,7 @@ const recurringGrokProfiles = [
 const legacyWorkflowProfiles = [
 	{
 		id: "docs-glm",
-		name: "docs-glm",
+		name: "Documentation",
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
@@ -55,7 +55,7 @@ const legacyWorkflowProfiles = [
 	},
 	{
 		id: "pr-requirements-glm",
-		name: "pr-requirements-glm",
+		name: "PR Requirements Review",
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "plan",
@@ -67,7 +67,7 @@ const legacyWorkflowProfiles = [
 const opusReplacementProfiles = [
 	{
 		id: "research-opus",
-		name: "research-opus",
+		name: "Requirements Research",
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
@@ -75,7 +75,7 @@ const opusReplacementProfiles = [
 	},
 	{
 		id: "explainer-opus",
-		name: "explainer-opus",
+		name: "Visual Explainer",
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
