@@ -25,6 +25,8 @@ const RETIRED_MANAGED_PROFILE_REPLACEMENTS = new Map([
 	["docs-muse", "docs-glm"],
 	["pr-requirements-muse", "pr-requirements-glm"],
 	["pr-monitor-muse", "pr-monitor-glm"],
+	["research-sonnet", "research-opus"],
+	["explainer-sonnet", "explainer-opus"],
 ]);
 
 function isObject(value) {

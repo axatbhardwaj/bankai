@@ -8,15 +8,15 @@
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "high",
-			"notes": "Persistent planning partner for Astra. Examine architecture, design tradeoffs, acceptance criteria and plan revisions. Return decisions and evidence; stay within the assigned planning task."
+			"notes": "Persistent planning and decision partner for Astra. Examine architecture, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
 		},
 		{
-			"id": "research-sonnet",
-			"name": "research-sonnet",
+			"id": "research-opus",
+			"name": "research-opus",
 			"provider": "claude",
-			"model": "claude-sonnet-5",
+			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "high",
 			"notes": "Research requirements, documentation, prior decisions and alternatives. For substantial research, investigate independently before reading the Sol research conclusions. Return sources, uncertainties and implications; product code stays unchanged."
 		},
 		{
@@ -60,7 +60,7 @@
 			"model": "opencode-go/glm-5.3-flash",
 			"modeId": "build",
 			"thinkingOptionId": "high",
-			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: Sol and Opus prepare Markdown, then Sonnet and Terra create and review HTML. Return artifacts and evidence; publish only when authorized."
+			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: Sol and Opus prepare Markdown, then Opus and Terra create and review HTML. Return artifacts and evidence; publish only when authorized."
 		},
 		{
 			"id": "pr-security-opus",
@@ -122,7 +122,7 @@
 			"provider": "claude",
 			"model": "claude-sonnet-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "xhigh",
 			"notes": "Map modules, repository conventions and documented intent; identify relevant source and decision locations. Perform only the bounded exploration assigned by the driver. Return source locations, evidence and uncertainties; keep product files unchanged. Write exploration notes only to the assigned output path. Do not launch a routing team or take implementation or review ownership."
 		},
 		{
@@ -135,12 +135,12 @@
 			"notes": "Trace execution paths, callers, dependencies and relevant tests; identify existing implementation seams. Perform only the bounded exploration assigned by the driver. Return source locations, evidence and uncertainties; keep product files unchanged. Write exploration notes only to the assigned output path. Do not launch a routing team or take implementation or review ownership."
 		},
 		{
-			"id": "explainer-sonnet",
-			"name": "explainer-sonnet",
+			"id": "explainer-opus",
+			"name": "explainer-opus",
 			"provider": "claude",
-			"model": "claude-sonnet-5",
+			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "medium",
 			"notes": "Build and repair the HTML site using html-deliverables from the exact Opus-approved Markdown file. Preserve approved claims, caveats and sources; return substantive content changes to Sol and Opus. Validate and inspect desktop/mobile rendering and reduced motion. Return HTML path, SHA-256, Markdown digest and render evidence for Terra. Stay within the assigned artifact scope; no routing team or publication."
 		},
 		{
@@ -150,7 +150,7 @@
 			"model": "gpt-5.6-terra",
 			"modeId": "full-access",
 			"thinkingOptionId": "high",
-			"notes": "Independently review the HTML site and its desktop/mobile rendering using html-deliverables. Verify fidelity to the exact Opus-approved Markdown, first-screen comprehension, accessibility, overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to HTML and Markdown SHA-256 with evidence. Keep artifacts unchanged; visual repairs go to Sonnet, content changes to Sol and Opus. No nested routing team, generic code-review or publication."
+			"notes": "Independently review the HTML site and its desktop/mobile rendering using html-deliverables. Verify fidelity to the exact Opus-approved Markdown, first-screen comprehension, accessibility, overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to HTML and Markdown SHA-256 with evidence. Keep artifacts unchanged; visual repairs go to the Opus presentation worker, content changes to Sol and the Opus content reviewer. No nested routing team, generic code-review or publication."
 		},
 		{
 			"id": "explainer-content-sol",
@@ -159,7 +159,7 @@
 			"model": "gpt-5.6-sol",
 			"modeId": "full-access",
 			"thinkingOptionId": "medium",
-			"notes": "Draft and repair the explanatory content as a Markdown file using html-deliverables. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the Markdown path, SHA-256 and source evidence for Opus content review. Keep site creation with Sonnet after Opus approval; stay within the assigned scope and do not launch a routing team or publish."
+			"notes": "Draft and repair the explanatory content as a Markdown file using html-deliverables. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the Markdown path, SHA-256 and source evidence for Opus content review. Keep site creation with Opus after content approval; stay within the assigned scope and do not launch a routing team or publish."
 		},
 		{
 			"id": "explainer-content-opus",
@@ -167,7 +167,7 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "high",
 			"notes": "Independently review the explanatory Markdown content before HTML creation using html-deliverables. Verify reasoning, source accuracy, coverage, readability and uncertainty. Return APPROVE or REQUEST_CHANGES bound to the exact Markdown SHA-256, with concrete corrections for Sol. Review content changes again before site delivery. Keep the artifact unchanged; no nested routing team, generic code-review or publication."
 		}
 	],

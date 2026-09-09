@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Route substantial research through Opus at high effort and explanatory HTML
+  presentation through a separate Opus profile at medium, while raising Opus
+  content review and Sonnet exploration to their intended efforts. Upgrades
+  retire the two superseded Sonnet profile IDs only when their replacements are
+  bundled.
+- Expand high-effort Fable from planning into evidence-backed consensus with
+  Astra for new high-stakes decisions, with bounded reconciliation, explicit
+  escalation, and independent Opus candidate review preserved.
+
 ## 11.7.2 - 2026-09-08
 
 - Replace the three managed Muse Spark Free documentation, PR requirements,
