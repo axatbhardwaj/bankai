@@ -84,7 +84,6 @@ class ContractParser(HTMLParser):
         self.inside_decision_options = False
         self.decision_recommendations = []
         self.decision_asks = []
-        self.decision_front_depth = 0
         self.decision_front_text = []
         self.decision_front_visibility = []
         self.visibility_stack = []
@@ -177,10 +176,6 @@ class ContractParser(HTMLParser):
         )
         if tag not in VOID_ELEMENTS:
             self.visibility_stack.append((tag, bool(hidden_here), tag == "details"))
-        if self.decision_front_depth and tag not in VOID_ELEMENTS:
-            self.decision_front_depth += 1
-        elif tag == "section" and "data-decision-front" in values:
-            self.decision_front_depth = 1
         self._close_implicit_text_blocks(tag, IMPLICIT_START_CLOSE)
         self._extend_text_blocks(tag)
         self._close_implicit_section_exclusions(tag, IMPLICIT_START_CLOSE)
@@ -314,8 +309,6 @@ class ContractParser(HTMLParser):
             self.figure = None
         if tag == "table" and self.inside_decision_options:
             self.inside_decision_options = False
-        if self.decision_front_depth and tag not in VOID_ELEMENTS:
-            self.decision_front_depth -= 1
         if tag not in VOID_ELEMENTS:
             for index in range(len(self.visibility_stack) - 1, -1, -1):
                 if self.visibility_stack[index][0] == tag:
@@ -325,7 +318,17 @@ class ContractParser(HTMLParser):
             self.foot_depth -= 1
 
     def handle_data(self, data):
-        if self.decision_front_depth:
+        in_summary = any(
+            section_id == "summary" for section_id, _ in self.section_stack
+        )
+        visible = all(not hidden for _, hidden, _ in self.visibility_stack)
+        inside_details = any(
+            disclosure for _, _, disclosure in self.visibility_stack
+        )
+        inside_details_label = inside_details and any(
+            tag == "summary" for tag, _, _ in self.visibility_stack
+        )
+        if in_summary and visible and (not inside_details or inside_details_label):
             self.decision_front_text.append(data)
         if self.title_depth:
             self.title.append(data)

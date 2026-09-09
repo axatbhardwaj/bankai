@@ -34,7 +34,7 @@ source gap before drafting. For source-heavy, visual, or code explanations,
 read [references/content-patterns.md](references/content-patterns.md).
 
 When the artifact asks readers to choose among options, use `decision` as its
-`artifact_type` and make the decision layer 250–400 visible words. In that
+`artifact_type` and target 250–400 visible words for the decision layer. In that
 front layer:
 
 1. State the recommendation in plain words and why it fits.
@@ -175,8 +175,9 @@ contrast, clipped content, horizontal page overflow, figure-local scrolling,
 and reduced-motion behavior. Read the first viewport as the intended human:
 the answer, meaning, status, and next action must be clear without opening
 technical details. For decisions, measure the collapsed visible-word budget
-and verify the header plus marked front layer stays within 250–400 visible
-words and contains every decision-critical item.
+and verify the header plus marked front layer contains every decision-critical
+item. Static validation enforces the 400-word ceiling; the cold reviewer judges
+whether a shorter surface is complete. Do not add padding to reach 250 words.
 Static validation complements, rather than replaces, this comprehension and
 rendered-layout review.
 

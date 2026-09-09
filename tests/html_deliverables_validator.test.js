@@ -62,7 +62,7 @@ const options = `<table data-options><tbody>
 </tbody></table>`;
 
 describe("HTML deliverable decision contract", () => {
-	it("accepts a compact decision front without a forced figure", () => {
+	it("accepts a compact decision front below the prose target without padding", () => {
 		const result = validate({
 			artifactType: "decision",
 			summary: `<section id="summary" data-reader-summary data-decision-front>
@@ -104,6 +104,44 @@ ${options}<p data-recommendation>Use the existing preflight.</p>
 		expect(result.stderr.toString()).toContain(
 			"decision front exceeds 400 words",
 		);
+	});
+
+	it("excludes collapsed technical details from the visible front budget", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+${options}<p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p><details class="technical">
+<summary>Full evidence</summary><p>${"word ".repeat(420)}</p></details></section>`,
+		});
+
+		expect(result.exitCode).toBe(0);
+	});
+
+	it("stops front capture at the section when a paragraph end tag is omitted", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+<p>Short introduction${options}<p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p></section>`,
+			decisionBody: `Settled.<p>${"scope-word ".repeat(450)}</p>`,
+		});
+
+		expect(result.exitCode).toBe(0);
+	});
+
+	it("handles omitted table row and cell end tags inside the front", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+<table data-options><tr data-option><td>Existing preflight<td>Smallest build.
+<tr data-option><td>Exact simulation<td>More control.</table>
+<p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p></section>`,
+			decisionBody: `Settled.<p>${"scope-word ".repeat(450)}</p>`,
+		});
+
+		expect(result.exitCode).toBe(0);
 	});
 
 	it("rejects letter-ready options placed after the recommendation", () => {
