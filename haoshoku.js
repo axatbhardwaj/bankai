@@ -59,6 +59,7 @@ import {
 } from "./src/helpers/configure_pr_watch.js";
 import { configureSkills, listSkills } from "./src/helpers/configure_skills.js";
 import { configureT3CodeServer } from "./src/helpers/configure_t3_code_server.js";
+import { setExplainerTheme } from "./src/helpers/configure_visual_explainer.js";
 import {
 	backupWorktreeCleanup,
 	syncWorktreeCleanup,
@@ -110,8 +111,12 @@ program
 	)
 	.option("--skills-update", "Refresh Matt Pocock and Paseo skills")
 	.option("--skills-list", "List globally installed skills")
-	.option("--agent-skills", "Deploy Haoshoku-owned orchestration skills")
+	.option("--agent-skills", "Deploy Haoshoku agent skills")
 	.option("--agent-skills-backup", "Backup Haoshoku-owned orchestration skills")
+	.option(
+		"--explainer-theme <theme>",
+		"Set visual-explainer theme (dark, light, system)",
+	)
 	.option("--paseo-profiles", "Deploy managed Paseo orchestration policy")
 	.option(
 		"--paseo-profiles-backup",
@@ -303,6 +308,11 @@ async function runAction(options) {
 
 	if (options.agentSkills) {
 		if (!syncAgentSkills()) process.exit(1);
+		return;
+	}
+
+	if (options.explainerTheme) {
+		if (!setExplainerTheme(options.explainerTheme)) process.exitCode = 1;
 		return;
 	}
 
