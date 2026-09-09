@@ -196,10 +196,11 @@ runtime files. Claude/Codex runtime state and `settings.json` remain
 machine-local.
 
 Ordinary documentation uses `docs-glm`, PR requirements review uses
-`pr-requirements-glm`, and cheap PR monitoring uses `pr-monitor-glm`. These
-profiles run GLM 5.3 Flash through OpenCode Go. During an upgrade, Haoshoku
+`pr-requirements-glm`, and PR monitoring uses `pr-monitor-glm`. These
+profiles, plus correctness reviewer `pr-correctness-grok`, run Claude Opus 5
+at medium effort. Their legacy IDs remain stable. During an upgrade, Haoshoku
 removes each corresponding retired managed Muse profile (`docs-muse`,
-`pr-requirements-muse`, or `pr-monitor-muse`) only when its GLM replacement is
+`pr-requirements-muse`, or `pr-monitor-muse`) only when its replacement is
 present in the bundled policy; custom profile IDs remain untouched.
 
 Substantial research pairs `research-opus` at high effort with

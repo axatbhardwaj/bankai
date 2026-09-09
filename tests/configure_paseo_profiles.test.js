@@ -231,7 +231,10 @@ describe("Paseo orchestration policy", () => {
 		];
 		const merged = mergePaseoPolicy(
 			{ daemon: { agentProfiles: retired } },
-			{ ...policy, agentProfiles: [...policy.agentProfiles, legacyWorkflowProfiles[2]] },
+			{
+				...policy,
+				agentProfiles: [...policy.agentProfiles, legacyWorkflowProfiles[2]],
+			},
 		);
 
 		expect(merged.daemon.agentProfiles).toEqual([
@@ -342,6 +345,7 @@ describe("Paseo orchestration policy", () => {
 				({ provider }) => provider === "opencode",
 			),
 		).toBe(false);
+		expect(profiles.get("pr-correctness-grok")?.modeId).toBe("plan");
 		expect(profiles.has("research-sonnet")).toBe(false);
 		expect(profiles.has("explainer-sonnet")).toBe(false);
 		expect(profiles.get("research-sol-medium")?.thinkingOptionId).toBe(
@@ -496,7 +500,9 @@ describe("Paseo orchestration policy", () => {
 			),
 		);
 		const routed = bundledPolicy.agentProfiles
-			.filter(({ id }) => legacyWorkflowProfiles.some((profile) => profile.id === id))
+			.filter(({ id }) =>
+				legacyWorkflowProfiles.some((profile) => profile.id === id),
+			)
 			.map(({ notes: _notes, ...profile }) => profile);
 
 		expect(routed).toEqual(legacyWorkflowProfiles);

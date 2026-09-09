@@ -1,6 +1,6 @@
 ---
 name: paseo-pr-babysit
-description: Use when babysitting an authored PR until CI and review feedback are addressed and it is merge-ready, or when the user requests cheap PR monitoring with Sol fixes and Opus review before publication.
+description: Use when babysitting an authored PR until CI and review feedback are addressed and it is merge-ready, or when the user requests PR monitoring with Sol fixes and Opus review before publication.
 ---
 
 # Paseo PR babysitting
@@ -55,6 +55,6 @@ Opus monitor proposes readiness; the driver independently confirms two consecuti
 
 Only then report MERGE_READY with SHA, CI/feedback/review evidence and stop the heartbeat. If the PR closes or merges externally, Opus monitor signals CLOSED and deletes its own timer even if the driver is unavailable; the driver stops its watchdog and reports that state without claiming this workflow merged it. Stop on user cancellation too. Ask Opus monitor to delete its own recorded heartbeat, delete the driver watchdog, and verify both receipts; do not report a watch stopped while its timer remains active. Keep terminal evidence for later resume and start a fresh readiness check if reactivated.
 
-Continue waiting for running CI and external approvals. After three failed attempts to resolve the same root cause without new evidence, block that repair and report the exact dependency; keep cheap observation active for changes. Authentication, unavailable models and protected-branch restrictions are blockers to surface, not reasons to bypass controls. Repeated publication drift pauses repair until a stable target is observed. Report active/waiting/blocked state, owner and next action; reserve completion for verified readiness or an explicit stop.
+Continue waiting for running CI and external approvals. After three failed attempts to resolve the same root cause without new evidence, block that repair and report the exact dependency; keep observation active for changes. Authentication, unavailable models and protected-branch restrictions are blockers to surface, not reasons to bypass controls. Repeated publication drift pauses repair until a stable target is observed. Report active/waiting/blocked state, owner and next action; reserve completion for verified readiness or an explicit stop.
 
 Example invocation: `$paseo-pr-babysit <PR URL> — fix CI and feedback, push and reply after Opus review; stop at merge-ready.`
