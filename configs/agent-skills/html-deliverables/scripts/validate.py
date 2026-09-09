@@ -78,6 +78,15 @@ class ContractParser(HTMLParser):
         self.active_section_exclusions = []
         self.reader_summary_ids = []
         self.summary_item_locations = {}
+        self.decision_front_ids = []
+        self.decision_options = []
+        self.decision_option_items = []
+        self.inside_decision_options = False
+        self.decision_recommendations = []
+        self.decision_asks = []
+        self.decision_front_depth = 0
+        self.decision_front_text = []
+        self.element_order = 0
         self.h1_before_sections = []
         self.thesis_before_sections = []
         self.status_before_sections = False
@@ -149,8 +158,13 @@ class ContractParser(HTMLParser):
         self.doctype |= decl.lower() == "doctype html"
 
     def handle_starttag(self, tag, attrs):
+        self.element_order += 1
         values = dict(attrs)
         classes = set(values.get("class", "").split())
+        if self.decision_front_depth and tag not in VOID_ELEMENTS:
+            self.decision_front_depth += 1
+        elif tag == "section" and "data-decision-front" in values:
+            self.decision_front_depth = 1
         self._close_implicit_text_blocks(tag, IMPLICIT_START_CLOSE)
         self._extend_text_blocks(tag)
         self._close_implicit_section_exclusions(tag, IMPLICIT_START_CLOSE)
@@ -195,6 +209,20 @@ class ContractParser(HTMLParser):
             self.active_section_texts.append(section_text)
             if is_reader_summary:
                 self.reader_summary_ids.append(section_id)
+            if "data-decision-front" in values:
+                self.decision_front_ids.append(section_id)
+        in_summary = any(section_id == "summary" for section_id, _ in self.section_stack)
+        if "data-options" in values:
+            self.decision_options.append((self.element_order, tag, in_summary))
+            self.inside_decision_options = tag == "table"
+        if "data-option" in values:
+            self.decision_option_items.append(
+                (tag, in_summary, self.inside_decision_options)
+            )
+        if "data-recommendation" in values:
+            self.decision_recommendations.append((self.element_order, in_summary))
+        if "data-decision-ask" in values:
+            self.decision_asks.append((self.element_order, in_summary))
         if "data-summary" in values:
             summary_kind = values["data-summary"]
             self._start_text_block(f"summary:{summary_kind}", tag)
@@ -256,10 +284,16 @@ class ContractParser(HTMLParser):
         if tag == "figure" and self.figure is not None:
             self.figures.append(self.figure)
             self.figure = None
+        if tag == "table" and self.inside_decision_options:
+            self.inside_decision_options = False
+        if self.decision_front_depth:
+            self.decision_front_depth -= 1
         if self.foot_depth and tag in {"p", "div", "footer"}:
             self.foot_depth -= 1
 
     def handle_data(self, data):
+        if self.decision_front_depth:
+            self.decision_front_text.append(data)
         if self.title_depth:
             self.title.append(data)
         if self.meta_depth and self.meta_blocks and self.meta_blocks[-1] is not None:
@@ -292,6 +326,7 @@ def validate(path):
         return [f"cannot parse HTML: {error}"]
 
     errors = []
+    kind = ""
     if parser.required_placeholders:
         errors.append("unreplaced REQUIRED content placeholder")
     if not parser.doctype:
@@ -379,20 +414,21 @@ def validate(path):
     elif not "".join(next_answers[0]).strip():
         errors.append("expected one non-empty next-action statement")
     summary_item_outside = False
-    for kind in ("outcome", "meaning", "next"):
-        items = parser.text_blocks.get(f"summary:{kind}", [])
+    for summary_kind in ("outcome", "meaning", "next"):
+        items = parser.text_blocks.get(f"summary:{summary_kind}", [])
         if len(items) > 1:
-            errors.append(f"duplicate {kind} summary items")
-        elif not items:
-            errors.append(f"expected one non-empty {kind} summary item")
-        answers = parser.text_blocks.get(f"summary-answer:{kind}", [])
+            errors.append(f"duplicate {summary_kind} summary items")
+        elif not items and kind != "decision":
+            errors.append(f"expected one non-empty {summary_kind} summary item")
+        answers = parser.text_blocks.get(f"summary-answer:{summary_kind}", [])
         if len(answers) > 1:
-            errors.append(f"duplicate {kind} summary answers")
+            errors.append(f"duplicate {summary_kind} summary answers")
         elif not answers:
-            errors.append(f"expected one designated {kind} summary answer")
+            if kind != "decision":
+                errors.append(f"expected one designated {summary_kind} summary answer")
         elif not "".join(answers[0]).strip():
-            errors.append(f"expected one non-empty {kind} summary answer")
-        if False in parser.summary_item_locations.get(kind, []):
+            errors.append(f"expected one non-empty {summary_kind} summary answer")
+        if False in parser.summary_item_locations.get(summary_kind, []):
             summary_item_outside = True
     if summary_item_outside:
         errors.append("summary items must be inside #summary")
@@ -415,8 +451,6 @@ def validate(path):
         errors.append("expected one non-empty thesis statement")
     elif parser.thesis_before_sections != [True]:
         errors.append("thesis statement must appear before the first section")
-    if not parser.figures:
-        errors.append("at least one figure is required")
     for figure in parser.figures:
         if not figure["svg"]:
             errors.append("every figure needs an inline SVG")
@@ -426,6 +460,35 @@ def validate(path):
             errors.append("every figure needs a non-empty figcaption")
     if not "".join(parser.foot_text).strip():
         errors.append("missing non-empty .foot stamp")
+    if kind == "decision":
+        if parser.decision_front_ids != ["summary"]:
+            errors.append("expected #summary to be the one decision front")
+        front_words = len(re.findall(r"\S+", " ".join(parser.decision_front_text)))
+        if front_words > 400:
+            errors.append("decision front exceeds 400 words")
+        if len(parser.decision_options) != 1:
+            errors.append("expected one decision options table")
+        elif parser.decision_options[0][1] != "table":
+            errors.append("data-options must mark a table")
+        elif not parser.decision_options[0][2]:
+            errors.append("decision options must be inside the decision front")
+        option_items = [
+            item for item in parser.decision_option_items
+            if item == ("tr", True, True)
+        ]
+        if len(option_items) < 2:
+            errors.append("decision options table needs at least two data-option rows")
+        if len(parser.decision_recommendations) != 1:
+            errors.append("expected one decision recommendation")
+        elif not parser.decision_recommendations[0][1]:
+            errors.append("decision recommendation must be inside the decision front")
+        if len(parser.decision_asks) != 1:
+            errors.append("expected one decision ask")
+        elif not parser.decision_asks[0][1]:
+            errors.append("decision ask must be inside the decision front")
+        if parser.decision_options and parser.decision_recommendations:
+            if parser.decision_options[0][0] > parser.decision_recommendations[0][0]:
+                errors.append("decision options must precede the recommendation")
     return errors
 
 
