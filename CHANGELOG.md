@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.7.3 - 2026-09-09
 
 - Route substantial research through Opus at high effort and explanatory HTML
   presentation through a separate Opus profile at medium, while raising Opus
