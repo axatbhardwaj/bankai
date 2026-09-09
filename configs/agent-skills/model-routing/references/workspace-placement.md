@@ -12,14 +12,15 @@ under the existing project that owns the task target.
    checkout, record its canonical common directory with
    `git -C <checkout> rev-parse --path-format=absolute --git-common-dir` and
    identify the canonical main-checkout root that owns that common directory.
-2. Read the existing Paseo project registry with its IDs and registered paths.
-   For Git tasks, select the project registered at the canonical main-checkout
-   root, then verify its Git common directory matches the target checkout. Do
-   not select task, role, or other scratch projects merely because their linked
-   checkouts have the same common directory. For non-Git tasks, select the
-   existing project whose canonical registered root owns the target directory.
-   For cross-repository work, select the target's project, not automatically the
-   driver's project.
+2. Read the existing Paseo project registry with `paseo project ls --json`,
+   which returns each project's `projectId`, `name`, `kind`, and registered
+   `path`. For Git tasks, select the project registered at the canonical
+   main-checkout root, then verify its Git common directory matches the target
+   checkout. Do not select task, role, or other scratch projects merely because
+   their linked checkouts have the same common directory. For non-Git tasks,
+   select the existing project whose canonical registered root owns the target
+   directory. For cross-repository work, select the target's project, not
+   automatically the driver's project.
 3. Treat no canonical match or multiple plausible canonical roots as a
    placement blocker. Report the target directory, Git identity when present,
    candidate projects, and the registry action needed from the driver or user.
@@ -31,12 +32,21 @@ under the existing project that owns the task target.
 1. If the selected workflow reuses an existing workspace, verify through MCP
    `list_workspaces` that its `projectId` is the resolved owner and that its path
    is suitable for the task, then launch with that `workspaceId`.
-2. If the selected workflow requires a new workspace, create it with both the
-   selected path and resolved existing project ID. With tools, pass `projectId`
-   to `create_workspace`. With the CLI, use:
+2. If the selected workflow already created a checkout, register that checkout
+   with the resolved existing project ID. With tools, pass its path and
+   `projectId` to `create_workspace`. With the CLI, use:
 
    ```bash
    paseo workspace create --project <project-id> --isolation local --path <checkout> --title <title> --json
+   ```
+
+   Here `--isolation local` registers the existing checkout path; it does not
+   flatten an existing Git worktree, which Paseo still reports with worktree
+   kind and isolation. To create a new Paseo-managed worktree, preserve the
+   selected workflow's worktree arguments and add the resolved project:
+
+   ```bash
+   paseo workspace create --project <project-id> --isolation worktree <workflow-specific arguments> --json
    ```
 
 3. Before launching an agent in a new workspace, verify through MCP
