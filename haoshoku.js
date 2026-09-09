@@ -52,6 +52,10 @@ import {
 	backupPaseoProfiles,
 	syncPaseoProfiles,
 } from "./src/helpers/configure_paseo_profiles.js";
+import {
+	ensurePaseoTaskConfig,
+	setPaseoTaskConfig,
+} from "./src/helpers/configure_paseo_tasks.js";
 import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
 import {
 	backupPrWatch,
@@ -69,6 +73,12 @@ import { runCachyOSSetup } from "./src/os_scripts/cachyos.js";
 import { runDebianServerSetup } from "./src/os_scripts/debian_server.js";
 
 const program = new Command();
+
+function parseEnabledState(value) {
+	if (value === "enabled") return true;
+	if (value === "disabled") return false;
+	return null;
+}
 
 program
 	.name("haoshoku")
@@ -113,6 +123,19 @@ program
 	.option("--skills-list", "List globally installed skills")
 	.option("--agent-skills", "Deploy Haoshoku agent skills")
 	.option("--agent-skills-backup", "Backup Haoshoku-owned orchestration skills")
+	.option("--paseo-tasks", "Configure the default Paseo task lifecycle policy")
+	.option(
+		"--paseo-tasks-enabled <state>",
+		"Set Paseo task lifecycle (enabled or disabled)",
+	)
+	.option(
+		"--paseo-task-cleanup <mode>",
+		"Set completed-task cleanup (archive or keep)",
+	)
+	.option(
+		"--paseo-task-renaming <state>",
+		"Set task chat renaming (enabled or disabled)",
+	)
 	.option(
 		"--explainer-theme <theme>",
 		"Set visual-explainer theme (dark, light, system)",
@@ -308,6 +331,40 @@ async function runAction(options) {
 
 	if (options.agentSkills) {
 		if (!syncAgentSkills()) process.exit(1);
+		return;
+	}
+
+	if (options.paseoTasks) {
+		if (!ensurePaseoTaskConfig()) process.exitCode = 1;
+		return;
+	}
+
+	if (options.paseoTasksEnabled !== undefined) {
+		const enabled = parseEnabledState(options.paseoTasksEnabled);
+		if (enabled === null || !setPaseoTaskConfig({ enabled })) {
+			if (enabled === null) {
+				log.error("Paseo task lifecycle must be enabled or disabled.");
+			}
+			process.exitCode = 1;
+		}
+		return;
+	}
+
+	if (options.paseoTaskCleanup !== undefined) {
+		if (!setPaseoTaskConfig({ cleanup: options.paseoTaskCleanup })) {
+			process.exitCode = 1;
+		}
+		return;
+	}
+
+	if (options.paseoTaskRenaming !== undefined) {
+		const renameChats = parseEnabledState(options.paseoTaskRenaming);
+		if (renameChats === null || !setPaseoTaskConfig({ renameChats })) {
+			if (renameChats === null) {
+				log.error("Paseo task renaming must be enabled or disabled.");
+			}
+			process.exitCode = 1;
+		}
 		return;
 	}
 

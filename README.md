@@ -205,6 +205,41 @@ sync after this migration, Haoshoku archives the retired shared
 `html-deliverables` skill under `~/.config/haoshoku/retired-agent-skills/`
 before removing only its managed Claude/Codex links.
 
+`haoshoku --agent-skills` also ensures
+`~/.config/haoshoku/paseo-tasks.json`. Its defaults enable the future-task
+lifecycle, readable `<Task or PR> · <Role>` chat names, and archival after the
+parent records completion. Configure it independently with:
+
+```bash
+haoshoku --paseo-tasks
+haoshoku --paseo-tasks-enabled enabled
+haoshoku --paseo-tasks-enabled disabled
+haoshoku --paseo-task-renaming enabled
+haoshoku --paseo-task-renaming disabled
+haoshoku --paseo-task-cleanup archive
+haoshoku --paseo-task-cleanup keep
+```
+
+The config merge preserves unknown fields. Malformed JSON or invalid owned
+fields are left byte-for-byte untouched and return failure; the routing policy
+then makes no metadata or cleanup changes. `keep` disables completion cleanup
+without disabling shared task labels.
+
+This is a bundled model-routing convention implemented with existing Paseo
+metadata and preferred no-force archive commands, not a new daemon feature,
+timer, state engine, or native UI grouping/filter. Paseo 0.7.2 performs the
+running-state check before its archive API call, so it cannot guarantee atomic
+idle-only archival; the convention requires owner quiescence, no pending
+launches, and an immediate recheck, retaining ambiguous workers. Each future
+run gets an identity made
+from its human task slug, full parent agent ID, and a fresh run discriminator;
+an explicit handoff roster of real Paseo agent IDs and inspected Paseo parentage
+bind cleanup to that run. Provider-native subagents remain inside their owning
+Paseo agent's report and never receive Paseo lifecycle commands. Existing chats
+are not inferred or migrated. Phone and desktop clients on the same daemon see
+the same metadata; each independent agent host must run its own Haoshoku
+configuration.
+
 Ordinary documentation uses `docs-glm`; PR correctness and requirements review
 use `pr-correctness-grok` and `pr-requirements-glm`. These legacy IDs run
 Claude Opus 5 at medium effort. Recurring PR monitoring keeps the stable
@@ -325,6 +360,10 @@ haoshoku --skills-list
 haoshoku --agent-skills
 haoshoku --agent-skills-backup
 haoshoku --explainer-theme dark
+haoshoku --paseo-tasks
+haoshoku --paseo-tasks-enabled disabled
+haoshoku --paseo-task-renaming disabled
+haoshoku --paseo-task-cleanup keep
 haoshoku --paseo-profiles
 haoshoku --paseo-profiles-backup
 haoshoku --gh-stack

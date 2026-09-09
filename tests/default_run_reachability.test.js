@@ -40,6 +40,12 @@ function deployModeFeaturesFromCli() {
 		// The default setup persists dark through agent-skills sync. This flag is
 		// only an explicit preference override, not another deploy capability.
 		"--explainer-theme",
+		// Agent-skills sync ensures the Paseo task defaults. These flags only
+		// create or override that preference outside the default setup path.
+		"--paseo-tasks",
+		"--paseo-tasks-enabled",
+		"--paseo-task-cleanup",
+		"--paseo-task-renaming",
 		"--skills",
 		"--skills-update",
 		"--3-4-migrate",

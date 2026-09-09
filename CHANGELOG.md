@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Add validated `~/.config/haoshoku/paseo-tasks.json` defaults and CLI controls
+  for future Paseo task metadata and archive-or-keep cleanup policy, preserving
+  custom fields and leaving invalid config untouched.
+- Add a bundled model-routing lifecycle convention for unique per-run task
+  labels, readable role names, explicit parentage-checked rosters, recorded
+  completion evidence, and preferred no-force archival with its non-atomic
+  preflight limitation documented. This adds no timer, chat migration,
+  workspace deletion, or native Paseo UI grouping.
+
 ## 11.7.6 - 2026-09-09
 
 - Use Sol at high effort for Visual Review while preserving the existing profile ID and review responsibilities.
