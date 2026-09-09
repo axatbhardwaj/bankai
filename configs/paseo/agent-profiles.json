@@ -56,10 +56,10 @@
 		{
 			"id": "docs-glm",
 			"name": "docs-glm",
-			"provider": "opencode",
-			"model": "opencode-go/glm-5.3-flash",
-			"modeId": "build",
-			"thinkingOptionId": "high",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "medium",
 			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: explainer-content-sol drafts Markdown, explainer-content-opus reviews it, then explainer-opus builds and explainer-review-terra reviews HTML. Return artifacts and evidence; publish only when authorized."
 		},
 		{
@@ -74,8 +74,8 @@
 		{
 			"id": "pr-correctness-grok",
 			"name": "pr-correctness-grok",
-			"provider": "opencode",
-			"model": "opencode-go/grok-4.6",
+			"provider": "claude",
+			"model": "claude-opus-5",
 			"modeId": "plan",
 			"thinkingOptionId": "medium",
 			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Correctness and failure paths: logic, edge cases, concurrency, retries and partial failures."
@@ -92,10 +92,10 @@
 		{
 			"id": "pr-requirements-glm",
 			"name": "pr-requirements-glm",
-			"provider": "opencode",
-			"model": "opencode-go/glm-5.3-flash",
+			"provider": "claude",
+			"model": "claude-opus-5",
 			"modeId": "plan",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "medium",
 			"notes": "Review only the assigned angle of the pinned PR revision in an isolated checkout. Return evidence, file/line references, coverage and limitations. Keep product files unchanged; do not launch nested reviews or submit to GitHub. Requirements and user behavior: acceptance criteria, missing behavior and confusing user scenarios."
 		},
 		{
@@ -110,10 +110,10 @@
 		{
 			"id": "pr-monitor-glm",
 			"name": "pr-monitor-glm",
-			"provider": "opencode",
-			"model": "opencode-go/glm-5.3-flash",
-			"modeId": "build",
-			"thinkingOptionId": "low",
+			"provider": "claude",
+			"model": "claude-opus-5",
+			"modeId": "bypassPermissions",
+			"thinkingOptionId": "medium",
 			"notes": "Monitor one authored PR through paseo-pr-babysit. Read GitHub state and maintain only the assigned monitor snapshot and own heartbeat. Report changed failures, feedback, blockers or readiness evidence to the driver. Keep product files unchanged. Never implement, launch workers, push, post replies, resolve threads or merge. Use five-minute heartbeat ticks; return a compact no-change result when unchanged."
 		},
 		{

@@ -17,7 +17,7 @@ The main conversation drives five independent reviews of one immutable PR revisi
 | Requirements and user behavior | `pr-requirements-glm` | Acceptance criteria, missing behavior, confusing scenarios |
 | Architecture and maintainability | `pr-architecture-opus` | Boundaries, abstractions, coupling, repository conventions |
 
-Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all five profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable GLM; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.
+Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all five profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable Opus; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.
 
 ## Prepare and dispatch
 

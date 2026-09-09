@@ -29,30 +29,30 @@ const policy = {
 	},
 };
 
-const glmProfiles = [
+const legacyWorkflowProfiles = [
 	{
 		id: "docs-glm",
 		name: "docs-glm",
-		provider: "opencode",
-		model: "opencode-go/glm-5.3-flash",
-		modeId: "build",
-		thinkingOptionId: "high",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
 	},
 	{
 		id: "pr-requirements-glm",
 		name: "pr-requirements-glm",
-		provider: "opencode",
-		model: "opencode-go/glm-5.3-flash",
+		provider: "claude",
+		model: "claude-opus-5",
 		modeId: "plan",
-		thinkingOptionId: "high",
+		thinkingOptionId: "medium",
 	},
 	{
 		id: "pr-monitor-glm",
 		name: "pr-monitor-glm",
-		provider: "opencode",
-		model: "opencode-go/glm-5.3-flash",
-		modeId: "build",
-		thinkingOptionId: "low",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
 	},
 ];
 
@@ -174,7 +174,7 @@ describe("Paseo orchestration policy", () => {
 	it("replaces retired managed profiles without disturbing unrelated live state", () => {
 		const upgradedPolicy = {
 			...policy,
-			agentProfiles: [...policy.agentProfiles, ...glmProfiles],
+			agentProfiles: [...policy.agentProfiles, ...legacyWorkflowProfiles],
 		};
 		const live = {
 			version: 7,
@@ -211,7 +211,7 @@ describe("Paseo orchestration policy", () => {
 		});
 		expect(merged.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			...glmProfiles,
+			...legacyWorkflowProfiles,
 			{ id: "personal", provider: "opencode", model: "keep" },
 		]);
 		expect(merged.agents.providers.opencode).toEqual(
@@ -231,12 +231,12 @@ describe("Paseo orchestration policy", () => {
 		];
 		const merged = mergePaseoPolicy(
 			{ daemon: { agentProfiles: retired } },
-			{ ...policy, agentProfiles: [...policy.agentProfiles, glmProfiles[2]] },
+			{ ...policy, agentProfiles: [...policy.agentProfiles, legacyWorkflowProfiles[2]] },
 		);
 
 		expect(merged.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			glmProfiles[2],
+			legacyWorkflowProfiles[2],
 			retired[0],
 			retired[1],
 		]);
@@ -325,6 +325,23 @@ describe("Paseo orchestration policy", () => {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
 		}
+		for (const id of [
+			"docs-glm",
+			"pr-correctness-grok",
+			"pr-requirements-glm",
+			"pr-monitor-glm",
+		]) {
+			expect(profiles.get(id)).toMatchObject({
+				provider: "claude",
+				model: "claude-opus-5",
+				thinkingOptionId: "medium",
+			});
+		}
+		expect(
+			bundledPolicy.agentProfiles.some(
+				({ provider }) => provider === "opencode",
+			),
+		).toBe(false);
 		expect(profiles.has("research-sonnet")).toBe(false);
 		expect(profiles.has("explainer-sonnet")).toBe(false);
 		expect(profiles.get("research-sol-medium")?.thinkingOptionId).toBe(
@@ -357,7 +374,13 @@ describe("Paseo orchestration policy", () => {
 		for (const profile of bundledPolicy.agentProfiles) {
 			if (
 				profile.model === "claude-opus-5" &&
-				profile.id !== "explainer-opus"
+				![
+					"explainer-opus",
+					"docs-glm",
+					"pr-correctness-grok",
+					"pr-requirements-glm",
+					"pr-monitor-glm",
+				].includes(profile.id)
 			) {
 				expect(profile.thinkingOptionId, profile.id).toBe("high");
 			}
@@ -464,7 +487,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("ships the GLM documentation and PR workflow routes", () => {
+	it("ships the Opus documentation and PR workflow routes", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -473,10 +496,10 @@ describe("Paseo orchestration policy", () => {
 			),
 		);
 		const routed = bundledPolicy.agentProfiles
-			.filter(({ id }) => glmProfiles.some((profile) => profile.id === id))
+			.filter(({ id }) => legacyWorkflowProfiles.some((profile) => profile.id === id))
 			.map(({ notes: _notes, ...profile }) => profile);
 
-		expect(routed).toEqual(glmProfiles);
+		expect(routed).toEqual(legacyWorkflowProfiles);
 		expect(
 			bundledPolicy.agentProfiles.map(({ id }) => id),
 		).not.toContainAnyValues([
@@ -486,7 +509,7 @@ describe("Paseo orchestration policy", () => {
 		]);
 
 		const skillExpectations = {
-			"model-routing/SKILL.md": ["docs-glm", "GLM monitors"],
+			"model-routing/SKILL.md": ["docs-glm", "Opus monitors"],
 			"model-routing/references/briefings.md": ["docs-glm"],
 			"model-routing/references/matt-workflows.md": ["docs-glm"],
 			"paseo-pr-babysit/SKILL.md": ["pr-monitor-glm"],

@@ -1,5 +1,10 @@
 # Changelog
 
+## 11.7.4 - 2026-09-09
+
+- Replace all four managed OpenCode workflow routes with Claude Opus 5 at
+  medium effort, preserving profile IDs and updating workflow instructions.
+
 ## 11.7.3 - 2026-09-09
 
 - Route substantial research through Opus at high effort and explanatory HTML
