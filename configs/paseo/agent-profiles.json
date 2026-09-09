@@ -60,7 +60,7 @@
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "medium",
-			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: explainer-content-sol drafts Markdown, explainer-content-opus reviews it, then explainer-opus builds and explainer-review-terra reviews HTML. Return artifacts and evidence; publish only when authorized."
+			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Ordinary prose stays prose. When a visual artifact is requested, the driver may route it through the pinned upstream visual-explainer skill. Return artifacts and evidence; publish only when authorized."
 		},
 		{
 			"id": "pr-security-opus",
@@ -146,7 +146,7 @@
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "medium",
-			"notes": "Build and repair the HTML site using html-deliverables from the exact Opus-approved Markdown file. Preserve approved claims, caveats and sources; return substantive content changes to explainer-content-sol and explainer-content-opus. Validate and inspect desktop/mobile rendering and reduced motion. Return HTML path, SHA-256, Markdown digest and render evidence for Terra. Stay within the assigned artifact scope; no routing team or publication."
+			"notes": "Build and repair requested HTML visual artifacts using the pinned upstream visual-explainer skill. Read ~/.config/haoshoku/visual-explainer.json before rendering; an explicit per-request theme overrides it. A fixed dark or light theme uses the full renderer even when quick mode was requested, with the fallback explained; system may use quick mode. Verify claims against supplied sources and inspect desktop/mobile rendering and reduced motion. Return the HTML path, SHA-256 and render evidence. Stay within the assigned artifact scope; no routing team or publication."
 		},
 		{
 			"id": "explainer-review-terra",
@@ -155,7 +155,7 @@
 			"model": "gpt-5.6-terra",
 			"modeId": "full-access",
 			"thinkingOptionId": "high",
-			"notes": "Independently review the HTML site and its desktop/mobile rendering using html-deliverables. Verify fidelity to the exact Opus-approved Markdown, first-screen comprehension, accessibility, overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to HTML and Markdown SHA-256 with evidence. Keep artifacts unchanged; visual repairs go to the Opus presentation worker, content changes to Sol and the Opus content reviewer. No nested routing team, generic code-review or publication."
+			"notes": "Independently review a rendered visual artifact against its supplied sources. Verify source accuracy, first-screen comprehension, requested theme, accessibility, desktop/mobile overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to the exact HTML SHA-256 with evidence. Keep artifacts unchanged; route repairs to the assigned author. No nested routing team, generic code-review or publication."
 		},
 		{
 			"id": "explainer-content-sol",
@@ -164,7 +164,7 @@
 			"model": "gpt-5.6-sol",
 			"modeId": "full-access",
 			"thinkingOptionId": "medium",
-			"notes": "Draft and repair the explanatory content as a Markdown file using html-deliverables. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the Markdown path, SHA-256 and source evidence for Opus content review. Keep site creation with Opus after content approval; stay within the assigned scope and do not launch a routing team or publish."
+			"notes": "Prepare or repair source-backed explanatory content only when assigned. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the requested artifact and source evidence. This is optional support, not a mandatory stage before visual-explainer rendering; do not launch a routing team or publish."
 		},
 		{
 			"id": "explainer-content-opus",
@@ -173,7 +173,7 @@
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "high",
-			"notes": "Independently review the explanatory Markdown content before HTML creation using html-deliverables. Verify reasoning, source accuracy, coverage, readability and uncertainty. Return APPROVE or REQUEST_CHANGES bound to the exact Markdown SHA-256, with concrete corrections for Sol. Review content changes again before site delivery. Keep the artifact unchanged; no nested routing team, generic code-review or publication."
+			"notes": "Independently review explanatory content when its risk or accuracy needs a dedicated content pass. Verify reasoning, source accuracy, coverage, readability and uncertainty; return APPROVE or REQUEST_CHANGES bound to the reviewed artifact with concrete corrections. This is not a required precursor to visual-explainer rendering. Keep the artifact unchanged; no nested routing team, generic code-review or publication."
 		}
 	],
 	"providers": {

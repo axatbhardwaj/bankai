@@ -375,17 +375,23 @@ describe("Paseo orchestration policy", () => {
 			"high",
 		);
 		expect(profiles.get("docs-glm")?.notes).toContain(
-			"explainer-content-opus reviews it",
+			"Ordinary prose stays prose",
 		);
-		expect(profiles.get("docs-glm")?.notes).toContain("explainer-opus builds");
+		expect(profiles.get("docs-glm")?.notes).toContain("visual-explainer");
 		expect(profiles.get("explainer-opus")?.notes).toContain(
-			"explainer-content-sol and explainer-content-opus",
+			"~/.config/haoshoku/visual-explainer.json",
+		);
+		expect(profiles.get("explainer-opus")?.notes).toContain(
+			"fixed dark or light",
+		);
+		expect(profiles.get("explainer-opus")?.notes).toContain(
+			"explicit per-request theme overrides",
 		);
 		expect(profiles.get("explainer-review-terra")?.notes).toContain(
-			"Opus presentation worker",
+			"source accuracy",
 		);
 		expect(profiles.get("explainer-content-sol")?.notes).toContain(
-			"site creation with Opus",
+			"only when assigned",
 		);
 
 		for (const profile of bundledPolicy.agentProfiles) {
@@ -477,14 +483,13 @@ describe("Paseo orchestration policy", () => {
 		expect(mattWorkflows).toContain("satisfies the consensus gate once");
 	});
 
-	it("keeps bundled research and explainer workflow routes consistent", () => {
+	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
 		const files = [
 			"model-routing/SKILL.md",
 			"model-routing/references/matt-workflows.md",
 			"model-routing/references/briefings.md",
-			"html-deliverables/SKILL.md",
 		];
 		const contents = files.map((relativePath) =>
 			fs.readFileSync(path.join(skillRoot, relativePath), "utf8"),
@@ -492,12 +497,13 @@ describe("Paseo orchestration policy", () => {
 
 		expect(contents[0]).toContain("`research-opus`");
 		expect(contents[1]).toContain("`research-opus`");
-		expect(contents[2]).toContain("separate Opus presentation worker");
-		expect(contents[3]).toContain("Presentation — `explainer-opus` (medium)");
-		expect(contents[3]).toContain(
-			"Content approval — `explainer-content-opus` (high)",
-		);
+		expect(contents[0]).toContain("visual-explainer");
+		expect(contents[0]).toContain("Ordinary prose remains prose");
+		expect(contents[2]).toContain("visual-explainer.json");
+		expect(contents[2]).toContain("fixed `dark` or `light`");
 		for (const content of contents) {
+			expect(content).not.toContain("html-deliverables");
+			expect(content).not.toContain("exact approved Markdown");
 			expect(content).not.toContain("research-sonnet");
 			expect(content).not.toContain("explainer-sonnet");
 		}

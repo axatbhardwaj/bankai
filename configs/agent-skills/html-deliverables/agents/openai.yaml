@@ -1,6 +1,0 @@
-interface:
-  display_name: "Human-facing HTML Deliverables"
-  short_description: "Create evidence-backed, answer-first explainers"
-  default_prompt: "Use $html-deliverables to explain this clearly and, when HTML is appropriate, produce the reviewed content-first deliverable."
-policy:
-  allow_implicit_invocation: true

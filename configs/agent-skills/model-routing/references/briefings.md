@@ -25,7 +25,7 @@ Fable can inspect relevant code or diffs as evidence for the decision, but does 
 
 ## Documentation and explainers
 
-For explanatory deliverables, read [html-deliverables](../../html-deliverables/SKILL.md). Its imported template and validator are standalone resources. The driver supplies audience, question, authoritative source pointers, scope, output paths and delivery constraints. The content brief assigns Markdown to Sol and substantive review to Opus; the site brief gives the separate Opus presentation worker and Terra the exact approved Markdown and its review receipt. The skill owns model assignments, repair routing and approval evidence. A site review cannot replace the content review.
+For a requested visual artifact, use the installed upstream `visual-explainer` skill. The driver supplies audience, question, authoritative source pointers, scope, output path, delivery constraints, and resolved theme. An explicit per-request theme wins; otherwise read `~/.config/haoshoku/visual-explainer.json` and default to `dark`. Use full rendering for fixed `dark` or `light`, even if quick mode was requested, and explain the fallback; `system` may use quick mode. Assign source-content or independent visual review profiles only when the artifact's risk warrants them. Do not require an intermediate Markdown file or digest gate.
 
 For ordinary documentation, the `docs-glm` brief supplies acceptance criteria suited to the deliverable:
 
@@ -33,4 +33,4 @@ For ordinary documentation, the `docs-glm` brief supplies acceptance criteria su
 - cite the source for material claims;
 - return the artifact and evidence for the claims and requested checks.
 
-Keep ordinary documentation proportional. The imported HTML resources do not require a Dvandva run or its retired orchestration protocol.
+Keep ordinary documentation proportional and in the requested format. Visual-explainer does not turn ordinary prose into HTML automatically.

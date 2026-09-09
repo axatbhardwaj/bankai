@@ -29,7 +29,6 @@ const RETIRED_PATTERNS = [
 // Their references either prohibit the retired workflow or preserve source
 // provenance; allowing only these exact files keeps the general boundary firm.
 const CAPTURED_POLICY_EXCEPTIONS = new Set([
-	"configs/agent-skills/html-deliverables/SKILL.md",
 	"configs/agent-skills/model-routing/SKILL.md",
 	"configs/agent-skills/model-routing/references/briefings.md",
 ]);
