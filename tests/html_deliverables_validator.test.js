@@ -122,6 +122,81 @@ ${options}<p data-recommendation>Use the existing preflight.</p>
 		);
 	});
 
+	it("rejects options inside a collapsed technical disclosure", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+<details class="technical"><summary>Options</summary>${options}</details>
+<p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p></section>`,
+		});
+
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr.toString()).toContain(
+			"decision options must be visible without opening disclosures",
+		);
+	});
+
+	it("rejects options hidden by an ancestor", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+<div hidden>${options}</div><p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p></section>`,
+		});
+
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr.toString()).toContain(
+			"decision options must be visible by default",
+		);
+	});
+
+	it("rejects a hidden recommendation marker", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+${options}<p data-recommendation hidden>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p></section>`,
+		});
+
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr.toString()).toContain(
+			"decision recommendation must be visible by default",
+		);
+	});
+
+	it("rejects an ask inside a technical disclosure", () => {
+		const result = validate({
+			artifactType: "decision",
+			summary: `<section id="summary" data-reader-summary data-decision-front>
+${options}<p data-recommendation>Use the existing preflight.</p>
+<details class="technical"><summary>Ask</summary>
+<p data-decision-ask>Approve it?</p></details></section>`,
+		});
+
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr.toString()).toContain(
+			"decision ask must be visible without opening disclosures",
+		);
+	});
+
+	for (const voidElement of ["<br/>", '<img src="x" alt="x"/>', "<hr/>"]) {
+		it(`counts words after ${voidElement} inside the decision front`, () => {
+			const result = validate({
+				artifactType: "decision",
+				summary: `<section id="summary" data-reader-summary data-decision-front>
+<p>Before ${voidElement} after.</p>${options}
+<p data-recommendation>Use the existing preflight.</p>
+<p data-decision-ask>Approve it?</p><p>${"word ".repeat(401)}</p></section>`,
+			});
+
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr.toString()).toContain(
+				"decision front exceeds 400 words",
+			);
+		});
+	}
+
 	it("keeps ordinary artifact validation compatible without a figure", () => {
 		const result = validate({
 			summary: `<section id="summary" data-reader-summary>${summaryItems}</section>`,

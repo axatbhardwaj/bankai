@@ -102,15 +102,19 @@ this workflow.
    substantive claims. Preserve decision-critical prominence and reading
    order: options that are near the top of approved Markdown stay in the front
    layer even though the template also has `#evidence` and `#decisions`.
-4. **Site and fidelity approval — `explainer-review-terra` (high).** Review
-   in a fresh session. On its first turn, give the reviewer only the rendered
-   page with disclosures collapsed, no source Markdown or prior conversation.
-   Within 30 seconds and the first 400 visible words, it records the options,
-   recommendation, rationale, and single ask. A missing or inaccurate answer
-   is `REQUEST_CHANGES`; record the failure and repair before continuing. After
-   that cold record passes, the driver follows up in the same session with the
-   approved Markdown and source evidence for desktop, mobile, reduced-motion,
-   technical, and fidelity review. Fidelity includes prominence and order.
+4. **Site and fidelity approval — `explainer-review-terra` (high).** Start
+   every cold pass—including after a repair—in a fresh session that receives
+   only the rendered page with disclosures collapsed, never source Markdown,
+   prior conversation, or an earlier cold answer. For a decision page, within
+   30 seconds and the first 400 visible words it records the options,
+   recommendation, rationale, and single ask. For an ordinary or conceptual
+   page, it records the answer, meaning, status or uncertainty, and next action
+   from the first viewport. A missing or inaccurate answer is
+   `REQUEST_CHANGES`; record the failure, repair, and restart in another fresh
+   context. After the cold record passes, the driver follows up in that same
+   session with the approved Markdown and source evidence for desktop, mobile,
+   reduced-motion, technical, and fidelity review. Fidelity includes
+   prominence and order.
    Approval binds both the exact UTF-8 source-Markdown digest and the
    exact UTF-8 HTML digest. A required check or claim that cannot be verified
    is a reported blocker, not an approval. Presentation-only findings return
@@ -142,6 +146,10 @@ Preserve this answer-first DOM structure:
   `data-summary="next"`, each with one non-empty `[data-summary-answer]`.
   Decision artifacts instead mark `#summary` with `data-decision-front` and
   keep `data-options`, `data-recommendation`, and `data-decision-ask` there.
+  Keep all decision markers outside disclosures and visible by default. Static
+  validation detects disclosure ancestry, HTML `hidden`, `aria-hidden="true"`,
+  and inline `display:none` or `visibility:hidden`; the cold rendered review
+  remains responsible for class/external CSS, clipping, overlays, and geometry.
 - Include exactly one non-empty section for each depth layer: `#scope`,
   `#evidence`, `#decisions`, and `#plan`. Eyebrows, headings, and disclosure
   labels do not count as body content. Keep a layer compact or disclosed when

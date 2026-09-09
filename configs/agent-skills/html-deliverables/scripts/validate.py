@@ -86,6 +86,8 @@ class ContractParser(HTMLParser):
         self.decision_asks = []
         self.decision_front_depth = 0
         self.decision_front_text = []
+        self.decision_front_visibility = []
+        self.visibility_stack = []
         self.element_order = 0
         self.h1_before_sections = []
         self.thesis_before_sections = []
@@ -161,6 +163,20 @@ class ContractParser(HTMLParser):
         self.element_order += 1
         values = dict(attrs)
         classes = set(values.get("class", "").split())
+        style = values.get("style") or ""
+        hidden_here = (
+            "hidden" in values
+            or values.get("aria-hidden", "").lower() == "true"
+            or re.search(r"(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)", style, re.I)
+        )
+        visible = not hidden_here and all(
+            not hidden for _, hidden, _ in self.visibility_stack
+        )
+        outside_disclosure = not any(
+            disclosure for _, _, disclosure in self.visibility_stack
+        )
+        if tag not in VOID_ELEMENTS:
+            self.visibility_stack.append((tag, bool(hidden_here), tag == "details"))
         if self.decision_front_depth and tag not in VOID_ELEMENTS:
             self.decision_front_depth += 1
         elif tag == "section" and "data-decision-front" in values:
@@ -211,18 +227,30 @@ class ContractParser(HTMLParser):
                 self.reader_summary_ids.append(section_id)
             if "data-decision-front" in values:
                 self.decision_front_ids.append(section_id)
+                self.decision_front_visibility.append(
+                    (visible, outside_disclosure)
+                )
         in_summary = any(section_id == "summary" for section_id, _ in self.section_stack)
         if "data-options" in values:
-            self.decision_options.append((self.element_order, tag, in_summary))
+            self.decision_options.append(
+                (self.element_order, tag, in_summary, visible, outside_disclosure)
+            )
             self.inside_decision_options = tag == "table"
         if "data-option" in values:
             self.decision_option_items.append(
-                (tag, in_summary, self.inside_decision_options)
+                (
+                    tag, in_summary, self.inside_decision_options,
+                    visible, outside_disclosure,
+                )
             )
         if "data-recommendation" in values:
-            self.decision_recommendations.append((self.element_order, in_summary))
+            self.decision_recommendations.append(
+                (self.element_order, in_summary, visible, outside_disclosure)
+            )
         if "data-decision-ask" in values:
-            self.decision_asks.append((self.element_order, in_summary))
+            self.decision_asks.append(
+                (self.element_order, in_summary, visible, outside_disclosure)
+            )
         if "data-summary" in values:
             summary_kind = values["data-summary"]
             self._start_text_block(f"summary:{summary_kind}", tag)
@@ -286,8 +314,13 @@ class ContractParser(HTMLParser):
             self.figure = None
         if tag == "table" and self.inside_decision_options:
             self.inside_decision_options = False
-        if self.decision_front_depth:
+        if self.decision_front_depth and tag not in VOID_ELEMENTS:
             self.decision_front_depth -= 1
+        if tag not in VOID_ELEMENTS:
+            for index in range(len(self.visibility_stack) - 1, -1, -1):
+                if self.visibility_stack[index][0] == tag:
+                    del self.visibility_stack[index:]
+                    break
         if self.foot_depth and tag in {"p", "div", "footer"}:
             self.foot_depth -= 1
 
@@ -463,6 +496,8 @@ def validate(path):
     if kind == "decision":
         if parser.decision_front_ids != ["summary"]:
             errors.append("expected #summary to be the one decision front")
+        elif parser.decision_front_visibility != [(True, True)]:
+            errors.append("decision front must be visible by default")
         front_words = len(re.findall(r"\S+", " ".join(parser.decision_front_text)))
         if front_words > 400:
             errors.append("decision front exceeds 400 words")
@@ -472,9 +507,15 @@ def validate(path):
             errors.append("data-options must mark a table")
         elif not parser.decision_options[0][2]:
             errors.append("decision options must be inside the decision front")
+        elif not parser.decision_options[0][4]:
+            errors.append(
+                "decision options must be visible without opening disclosures"
+            )
+        elif not parser.decision_options[0][3]:
+            errors.append("decision options must be visible by default")
         option_items = [
             item for item in parser.decision_option_items
-            if item == ("tr", True, True)
+            if item == ("tr", True, True, True, True)
         ]
         if len(option_items) < 2:
             errors.append("decision options table needs at least two data-option rows")
@@ -482,10 +523,20 @@ def validate(path):
             errors.append("expected one decision recommendation")
         elif not parser.decision_recommendations[0][1]:
             errors.append("decision recommendation must be inside the decision front")
+        elif not parser.decision_recommendations[0][3]:
+            errors.append(
+                "decision recommendation must be visible without opening disclosures"
+            )
+        elif not parser.decision_recommendations[0][2]:
+            errors.append("decision recommendation must be visible by default")
         if len(parser.decision_asks) != 1:
             errors.append("expected one decision ask")
         elif not parser.decision_asks[0][1]:
             errors.append("decision ask must be inside the decision front")
+        elif not parser.decision_asks[0][3]:
+            errors.append("decision ask must be visible without opening disclosures")
+        elif not parser.decision_asks[0][2]:
+            errors.append("decision ask must be visible by default")
         if parser.decision_options and parser.decision_recommendations:
             if parser.decision_options[0][0] > parser.decision_recommendations[0][0]:
                 errors.append("decision options must precede the recommendation")
