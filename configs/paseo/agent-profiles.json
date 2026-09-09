@@ -8,7 +8,7 @@
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "high",
-			"notes": "Persistent planning and decision partner for Astra. Examine architecture, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
+			"notes": "Persistent planning and decision partner for Astra. Examine architecture, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers and the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
 		},
 		{
 			"id": "research-opus",
@@ -60,7 +60,7 @@
 			"model": "opencode-go/glm-5.3-flash",
 			"modeId": "build",
 			"thinkingOptionId": "high",
-			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: Sol and Opus prepare Markdown, then Opus and Terra create and review HTML. Return artifacts and evidence; publish only when authorized."
+			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Explanations use html-deliverables: explainer-content-sol drafts Markdown, explainer-content-opus reviews it, then explainer-opus builds and explainer-review-terra reviews HTML. Return artifacts and evidence; publish only when authorized."
 		},
 		{
 			"id": "pr-security-opus",
@@ -141,7 +141,7 @@
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "medium",
-			"notes": "Build and repair the HTML site using html-deliverables from the exact Opus-approved Markdown file. Preserve approved claims, caveats and sources; return substantive content changes to Sol and Opus. Validate and inspect desktop/mobile rendering and reduced motion. Return HTML path, SHA-256, Markdown digest and render evidence for Terra. Stay within the assigned artifact scope; no routing team or publication."
+			"notes": "Build and repair the HTML site using html-deliverables from the exact Opus-approved Markdown file. Preserve approved claims, caveats and sources; return substantive content changes to explainer-content-sol and explainer-content-opus. Validate and inspect desktop/mobile rendering and reduced motion. Return HTML path, SHA-256, Markdown digest and render evidence for Terra. Stay within the assigned artifact scope; no routing team or publication."
 		},
 		{
 			"id": "explainer-review-terra",

@@ -48,6 +48,6 @@ Use this workflow without Dvandva. Ordinary authorized work proceeds directly. P
 
 ## Evidence and recovery
 
-Paseo owns agent and session state. Keep only a concise handoff artifact: objective, acceptance, source pointers, agent/workspace IDs and roles, current revision, verification, consensus decisions with category, both verdicts and evidence pointers, unresolved findings, owner, and next action. Notifications are wake-ups; inspect artifacts and run acceptance checks before declaring completion.
+Paseo owns agent and session state. Keep only a concise handoff artifact: objective, acceptance, source pointers, agent/workspace IDs and roles, current revision, verification, consensus decisions with category, both verdicts, evidence pointers, and revision or evidence-set identity, unresolved findings, owner, and next action. Notifications are wake-ups; inspect artifacts and run acceptance checks before declaring completion.
 
 After interruption or an ambiguous launch, inspect recorded Paseo state and reuse the existing session when appropriate. Build no separate workflow state engine around this policy.

@@ -340,7 +340,13 @@ describe("Paseo orchestration policy", () => {
 		expect(profiles.get("explainer-review-terra")?.thinkingOptionId).toBe(
 			"high",
 		);
-		expect(profiles.get("docs-glm")?.notes).toContain("Opus and Terra");
+		expect(profiles.get("docs-glm")?.notes).toContain(
+			"explainer-content-opus reviews it",
+		);
+		expect(profiles.get("docs-glm")?.notes).toContain("explainer-opus builds");
+		expect(profiles.get("explainer-opus")?.notes).toContain(
+			"explainer-content-sol and explainer-content-opus",
+		);
 		expect(profiles.get("explainer-review-terra")?.notes).toContain(
 			"Opus presentation worker",
 		);
@@ -389,6 +395,7 @@ describe("Paseo orchestration policy", () => {
 		});
 		expect(fable?.notes).toContain("planning and decision partner");
 		expect(fable?.notes).toContain("AGREE, DISAGREE, or INSUFFICIENT EVIDENCE");
+		expect(fable?.notes).toContain("with evidence pointers");
 		expect(fable?.notes).toContain("Do not review the whole candidate");
 		expect(fable?.notes).toContain("Keep product files unchanged");
 
@@ -404,11 +411,18 @@ describe("Paseo orchestration policy", () => {
 		expect(routingSkill).toContain("already explicitly authorized");
 		expect(routingSkill).toContain("material deviation");
 		expect(routingSkill).toContain("two focused evidence rounds");
-		expect(routingSkill).toContain("unavailable");
-		expect(routingSkill).toContain("not substitutes");
+		expect(routingSkill).toContain(
+			"If Fable is unavailable, dependent decisions stay blocked",
+		);
+		expect(routingSkill).toContain(
+			"`paseo-advisor` and `paseo-committee` are not substitutes",
+		);
 		expect(routingSkill).toContain("no silent override");
 		expect(routingSkill).toContain("Opus approval");
 		expect(routingSkill).toContain("not approval of a candidate");
+		expect(routingSkill).toContain(
+			"consensus decisions with category, both verdicts, evidence pointers, and revision or evidence-set identity",
+		);
 
 		for (const requirement of [
 			"Astra's position before reading Fable's",
