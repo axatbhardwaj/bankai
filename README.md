@@ -202,6 +202,15 @@ removes each corresponding retired managed Muse profile (`docs-muse`,
 `pr-requirements-muse`, or `pr-monitor-muse`) only when its GLM replacement is
 present in the bundled policy; custom profile IDs remain untouched.
 
+Substantial research pairs `research-opus` at high effort with
+`research-sol-medium` at medium. Explanatory HTML uses a separate
+`explainer-opus` presentation profile at medium after high-effort Opus content
+approval. Upgrades retire the former `research-sonnet` and `explainer-sonnet`
+IDs only when their respective replacements are bundled. `fable-planner`
+remains high effort and joins Astra for evidence-backed consensus on new
+high-stakes decisions; ordinary work stays direct, and separate Opus candidate
+review plus human publication authority remain unchanged.
+
 ## Claude Remote Control
 
 The optional Claude Remote Control setup runs persistent Claude sessions from

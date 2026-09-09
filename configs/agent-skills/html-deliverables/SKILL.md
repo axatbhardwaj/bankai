@@ -57,7 +57,7 @@ this workflow.
    pages may say that there is no pending action and cite their conceptual
    basis instead of inventing commit IDs or run metadata. This profile authors
    Markdown only and does not create the site or publish it.
-2. **Content approval — `explainer-content-opus` (medium).** Independently
+2. **Content approval — `explainer-content-opus` (high).** Independently
    check the actual subject, claim coverage, citations, caveats, and human
    comprehensibility against the authoritative sources. Copy editing alone is
    insufficient. Return `APPROVE` or `REQUEST_CHANGES` with concrete findings.
@@ -65,19 +65,19 @@ this workflow.
    check or claim that cannot be verified is a reported blocker, not an
    approval. Any content change invalidates approval and returns the Markdown
    to Sol, then Opus.
-3. **Presentation — `explainer-sonnet` (high).** Only after the Markdown has
+3. **Presentation — `explainer-opus` (medium).** Only after the Markdown has
    Opus approval, convert those exact approved contents into a standalone HTML
-   page using `template.html` in this directory. Sonnet owns presentation,
-   template use, and validator-driven repairs; it does not silently change
-   substantive claims.
+   page using `template.html` in this directory. The separate Opus presentation
+   worker owns presentation, template use, and validator-driven repairs; it
+   does not silently change substantive claims.
 4. **Site and fidelity approval — `explainer-review-terra` (high).** Review
    desktop, mobile, and reduced-motion rendering plus fidelity to the approved
    source Markdown. Return `APPROVE` or `REQUEST_CHANGES` with concrete
    findings. Approval binds both the exact UTF-8 source-Markdown digest and the
    exact UTF-8 HTML digest. A required check or claim that cannot be verified
    is a reported blocker, not an approval. Presentation-only findings return
-   to Sonnet; any substantive finding returns to Sol and Opus before conversion
-   and Terra review repeat.
+   to the Opus presentation worker; any substantive finding returns to Sol and
+   the Opus content reviewer before conversion and Terra review repeat.
 5. **Delivery — driver.** Deliver the resulting link with a brief answer-first
    summary. Hosting requires user authorization, uses the existing publication
    tool, and publishes the exact Terra-approved HTML bytes. Keep private

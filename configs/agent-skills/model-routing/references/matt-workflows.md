@@ -2,7 +2,7 @@
 
 Apply within the skill the user has invoked. Read that installed skill as the source of its process; these rules assign its work rather than copying or replacing its method. The main conversation, intended to run on Astra, remains the driver under the routing policy's ownership rules.
 
-Use the shared policy's Sonnet/Terra exploration route for bounded codebase questions during planning or implementation. Explorer evidence supports the assigned researchers and implementer; it does not substitute for the Sonnet/Sol research gate or change Sol implementation and Opus review ownership.
+Use the shared policy's Sonnet/Terra exploration route for bounded codebase questions during planning or implementation. Explorer evidence supports the assigned researchers and implementer; it does not substitute for the Opus/Sol research gate or change Sol implementation and Opus review ownership.
 
 ## Invocation and ownership
 
@@ -14,13 +14,15 @@ Use `fable-planner` as the persistent planning partner. Astra and Fable reconcil
 
 Use researchers independently to establish the facts:
 
-- `research-sonnet`: requirements, authoritative documentation, prior decisions and alternatives.
+- `research-opus`: requirements, authoritative documentation, prior decisions and alternatives.
 - `research-sol-medium`: actual code paths, callers, dependencies, existing tests and implementation constraints.
 - `research-grok`: targeted current external questions when they arise. Give it a concrete question rather than launching it without a research need.
 
-**Before finalizing or publishing with `to-spec`, require current findings from both Sonnet and Sol.** Collect them in parallel if missing. Reuse findings from the planning session when their sources, code revision and scope still apply; refresh changed or unsupported claims instead of repeating the whole investigation. Each finding must distinguish verified evidence, inference and unresolved questions, with source pointers the driver can inspect.
+**Before finalizing or publishing with `to-spec`, require current findings from both Opus and Sol.** Collect them in parallel if missing. Reuse findings from the planning session when their sources, code revision and scope still apply; refresh changed or unsupported claims instead of repeating the whole investigation. Each finding must distinguish verified evidence, inference and unresolved questions, with source pointers the driver can inspect.
 
 Astra and Fable reconcile those findings before the spec is ready. Resolve material contradictions about requirements, code behavior, integration constraints or testing seams; surface missing evidence or an unresolved user decision rather than presenting an assumption as established fact. Preserve `to-spec`'s user confirmation of testing seams and tracker prerequisites. This gate adds research, not another generic interview or approval round.
+
+When that reconciliation records Astra and Fable agreement for a high-stakes decision captured by the accepted spec, it satisfies the consensus gate once. Do not repeat it during implementation unless a later proposal materially deviates from the accepted decision.
 
 For `to-tickets`, use the accepted spec and its evidence to check vertical slices and blocking edges. Research only newly exposed gaps or changed sources. Preserve the skill's user-approved ticket breakdown before publication. The planning stage does not start implementation without the corresponding user invocation.
 

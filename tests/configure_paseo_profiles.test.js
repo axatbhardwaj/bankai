@@ -56,6 +56,25 @@ const glmProfiles = [
 	},
 ];
 
+const opusReplacementProfiles = [
+	{
+		id: "research-opus",
+		name: "research-opus",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "high",
+	},
+	{
+		id: "explainer-opus",
+		name: "explainer-opus",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
+	},
+];
+
 afterEach(() => {
 	for (const root of roots.splice(0)) {
 		fs.rmSync(root, { recursive: true, force: true });
@@ -221,6 +240,228 @@ describe("Paseo orchestration policy", () => {
 			retired[0],
 			retired[1],
 		]);
+	});
+
+	it("retires legacy research and presentation profiles only with their replacements", () => {
+		const legacyResearch = {
+			id: "research-sonnet",
+			model: "keep-until-replacement",
+		};
+		const legacyPresentation = {
+			id: "explainer-sonnet",
+			model: "keep-until-replacement",
+		};
+		const custom = { id: "research-custom", model: "keep" };
+		const live = {
+			version: 9,
+			daemon: {
+				auth: { password: "keep" },
+				state: { currentAgentId: "keep" },
+				agentProfiles: [legacyResearch, legacyPresentation, custom],
+			},
+			agents: {
+				providers: { claude: { env: { API_TOKEN: "keep" } } },
+			},
+		};
+		const researchOnlyPolicy = {
+			...policy,
+			agentProfiles: [...policy.agentProfiles, opusReplacementProfiles[0]],
+		};
+
+		const researchOnly = mergePaseoPolicy(live, researchOnlyPolicy);
+
+		expect(researchOnly.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			opusReplacementProfiles[0],
+			legacyPresentation,
+			custom,
+		]);
+		expect(researchOnly.daemon.auth).toEqual(live.daemon.auth);
+		expect(researchOnly.daemon.state).toEqual(live.daemon.state);
+		expect(researchOnly.agents.providers.claude).toEqual(
+			live.agents.providers.claude,
+		);
+		const presentationOnly = mergePaseoPolicy(live, {
+			...policy,
+			agentProfiles: [...policy.agentProfiles, opusReplacementProfiles[1]],
+		});
+		expect(presentationOnly.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			opusReplacementProfiles[1],
+			legacyResearch,
+			custom,
+		]);
+
+		const completePolicy = {
+			...researchOnlyPolicy,
+			agentProfiles: [
+				...researchOnlyPolicy.agentProfiles,
+				opusReplacementProfiles[1],
+			],
+		};
+		const complete = mergePaseoPolicy(researchOnly, completePolicy);
+
+		expect(complete.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			...opusReplacementProfiles,
+			custom,
+		]);
+		expect(mergePaseoPolicy(complete, completePolicy)).toEqual(complete);
+	});
+
+	it("ships the approved Opus routes and model efforts", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const bundledPolicy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const profiles = new Map(
+			bundledPolicy.agentProfiles.map((profile) => [profile.id, profile]),
+		);
+
+		for (const expected of opusReplacementProfiles) {
+			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
+			expect(actual).toEqual(expected);
+		}
+		expect(profiles.has("research-sonnet")).toBe(false);
+		expect(profiles.has("explainer-sonnet")).toBe(false);
+		expect(profiles.get("research-sol-medium")?.thinkingOptionId).toBe(
+			"medium",
+		);
+		expect(profiles.get("explainer-content-sol")?.thinkingOptionId).toBe(
+			"medium",
+		);
+		expect(profiles.get("explore-sonnet")?.thinkingOptionId).toBe("xhigh");
+		expect(profiles.get("explainer-content-opus")?.thinkingOptionId).toBe(
+			"high",
+		);
+		expect(profiles.get("explainer-review-terra")?.thinkingOptionId).toBe(
+			"high",
+		);
+		expect(profiles.get("docs-glm")?.notes).toContain(
+			"explainer-content-opus reviews it",
+		);
+		expect(profiles.get("docs-glm")?.notes).toContain("explainer-opus builds");
+		expect(profiles.get("explainer-opus")?.notes).toContain(
+			"explainer-content-sol and explainer-content-opus",
+		);
+		expect(profiles.get("explainer-review-terra")?.notes).toContain(
+			"Opus presentation worker",
+		);
+		expect(profiles.get("explainer-content-sol")?.notes).toContain(
+			"site creation with Opus",
+		);
+
+		for (const profile of bundledPolicy.agentProfiles) {
+			if (
+				profile.model === "claude-opus-5" &&
+				profile.id !== "explainer-opus"
+			) {
+				expect(profile.thinkingOptionId, profile.id).toBe("high");
+			}
+		}
+	});
+
+	it("ships the Fable and Astra high-stakes consensus contract", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
+		const bundledPolicy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const fable = bundledPolicy.agentProfiles.find(
+			({ id }) => id === "fable-planner",
+		);
+		const routingSkill = fs.readFileSync(
+			path.join(skillRoot, "model-routing", "SKILL.md"),
+			"utf8",
+		);
+		const briefings = fs.readFileSync(
+			path.join(skillRoot, "model-routing", "references", "briefings.md"),
+			"utf8",
+		);
+		const mattWorkflows = fs.readFileSync(
+			path.join(skillRoot, "model-routing", "references", "matt-workflows.md"),
+			"utf8",
+		);
+
+		expect(fable).toMatchObject({
+			model: "claude-fable-5-1",
+			thinkingOptionId: "high",
+		});
+		expect(fable?.notes).toContain("planning and decision partner");
+		expect(fable?.notes).toContain("AGREE, DISAGREE, or INSUFFICIENT EVIDENCE");
+		expect(fable?.notes).toContain("with evidence pointers");
+		expect(fable?.notes).toContain("Do not review the whole candidate");
+		expect(fable?.notes).toContain("Keep product files unchanged");
+
+		for (const category of [
+			"security or trust boundaries",
+			"irreversible data or infrastructure changes",
+			"significant financial or loss risk",
+			"material architecture commitments",
+		]) {
+			expect(routingSkill).toContain(category);
+		}
+		expect(routingSkill).toContain("Astra and Fable both record plain AGREE");
+		expect(routingSkill).toContain("already explicitly authorized");
+		expect(routingSkill).toContain("material deviation");
+		expect(routingSkill).toContain("two focused evidence rounds");
+		expect(routingSkill).toContain(
+			"If Fable is unavailable, dependent decisions stay blocked",
+		);
+		expect(routingSkill).toContain(
+			"`paseo-advisor` and `paseo-committee` are not substitutes",
+		);
+		expect(routingSkill).toContain("no silent override");
+		expect(routingSkill).toContain("Opus approval");
+		expect(routingSkill).toContain("not approval of a candidate");
+		expect(routingSkill).toContain(
+			"consensus decisions with category, both verdicts, evidence pointers, and revision or evidence-set identity",
+		);
+
+		for (const requirement of [
+			"Astra's position before reading Fable's",
+			"independently verifies at least one material claim",
+			"strongest concrete counterargument",
+			"`AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
+			"question, both positions, evidence pointers, resolving fact, and recommended default",
+			"rejected classification",
+			"revision or evidence set",
+		]) {
+			expect(briefings).toContain(requirement);
+		}
+		expect(mattWorkflows).toContain("satisfies the consensus gate once");
+	});
+
+	it("keeps bundled research and explainer workflow routes consistent", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
+		const files = [
+			"model-routing/SKILL.md",
+			"model-routing/references/matt-workflows.md",
+			"model-routing/references/briefings.md",
+			"html-deliverables/SKILL.md",
+		];
+		const contents = files.map((relativePath) =>
+			fs.readFileSync(path.join(skillRoot, relativePath), "utf8"),
+		);
+
+		expect(contents[0]).toContain("`research-opus`");
+		expect(contents[1]).toContain("`research-opus`");
+		expect(contents[2]).toContain("separate Opus presentation worker");
+		expect(contents[3]).toContain("Presentation — `explainer-opus` (medium)");
+		expect(contents[3]).toContain(
+			"Content approval — `explainer-content-opus` (high)",
+		);
+		for (const content of contents) {
+			expect(content).not.toContain("research-sonnet");
+			expect(content).not.toContain("explainer-sonnet");
+		}
 	});
 
 	it("ships the GLM documentation and PR workflow routes", () => {
