@@ -29,6 +29,21 @@ const policy = {
 	},
 };
 
+const recurringGrokProfiles = [
+	{
+		id: "pr-monitor-glm",
+		name: "pr-monitor-glm",
+		provider: "grok",
+		model: "grok-4.6",
+	},
+	{
+		id: "watchdog-grok",
+		name: "watchdog-grok",
+		provider: "grok",
+		model: "grok-4.6",
+	},
+];
+
 const legacyWorkflowProfiles = [
 	{
 		id: "docs-glm",
@@ -46,14 +61,7 @@ const legacyWorkflowProfiles = [
 		modeId: "plan",
 		thinkingOptionId: "medium",
 	},
-	{
-		id: "pr-monitor-glm",
-		name: "pr-monitor-glm",
-		provider: "claude",
-		model: "claude-opus-5",
-		modeId: "bypassPermissions",
-		thinkingOptionId: "medium",
-	},
+	recurringGrokProfiles[0],
 ];
 
 const opusReplacementProfiles = [
@@ -312,7 +320,7 @@ describe("Paseo orchestration policy", () => {
 		expect(mergePaseoPolicy(complete, completePolicy)).toEqual(complete);
 	});
 
-	it("ships the approved Opus routes and model efforts", () => {
+	it("ships Opus routes and provider-native Grok recurring profiles", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -332,13 +340,18 @@ describe("Paseo orchestration policy", () => {
 			"docs-glm",
 			"pr-correctness-grok",
 			"pr-requirements-glm",
-			"pr-monitor-glm",
 		]) {
 			expect(profiles.get(id)).toMatchObject({
 				provider: "claude",
 				model: "claude-opus-5",
 				thinkingOptionId: "medium",
 			});
+		}
+		for (const expected of recurringGrokProfiles) {
+			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
+			expect(actual).toEqual(expected);
+			expect(actual).not.toHaveProperty("modeId");
+			expect(actual).not.toHaveProperty("thinkingOptionId");
 		}
 		expect(
 			bundledPolicy.agentProfiles.some(
@@ -383,7 +396,6 @@ describe("Paseo orchestration policy", () => {
 					"docs-glm",
 					"pr-correctness-grok",
 					"pr-requirements-glm",
-					"pr-monitor-glm",
 				].includes(profile.id)
 			) {
 				expect(profile.thinkingOptionId, profile.id).toBe("high");
@@ -491,7 +503,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("ships the Opus documentation and PR workflow routes", () => {
+	it("ships stable documentation and PR workflow profile IDs", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -515,10 +527,13 @@ describe("Paseo orchestration policy", () => {
 		]);
 
 		const skillExpectations = {
-			"model-routing/SKILL.md": ["docs-glm", "Opus monitors"],
+			"model-routing/SKILL.md": [
+				"docs-glm",
+				"recurring watchers and watchdogs",
+			],
 			"model-routing/references/briefings.md": ["docs-glm"],
 			"model-routing/references/matt-workflows.md": ["docs-glm"],
-			"paseo-pr-babysit/SKILL.md": ["pr-monitor-glm"],
+			"paseo-pr-babysit/SKILL.md": ["pr-monitor-glm", "watchdog-grok"],
 			"paseo-pr-review/SKILL.md": ["pr-requirements-glm"],
 		};
 		for (const [relativePath, expected] of Object.entries(skillExpectations)) {
@@ -528,6 +543,33 @@ describe("Paseo orchestration policy", () => {
 			);
 			for (const value of expected) expect(contents).toContain(value);
 		}
+	});
+
+	it("keeps recurring heartbeats session-owned and healthy ticks driver-quiet", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const skill = fs.readFileSync(
+			path.join(
+				projectRoot,
+				"configs",
+				"agent-skills",
+				"paseo-pr-babysit",
+				"SKILL.md",
+			),
+			"utf8",
+		);
+
+		for (const contract of [
+			"separate Grok monitor and watchdog sessions",
+			"Each session creates and owns its own heartbeat",
+			'`*/5 * * * *` with `expiresIn: "24h"`',
+			'`0 * * * *` with `expiresIn: "48h"`',
+			"checks only the monitor snapshot timestamp, session and heartbeat health",
+			"Routine healthy ticks update only the watchdog snapshot and do not message or wake the driver",
+			"The monitor never renews without that acknowledgement",
+		]) {
+			expect(skill).toContain(contract);
+		}
+		expect(skill).not.toContain("driver-owned hourly watchdog");
 	});
 
 	it("writes a minimal fresh config without invoking Paseo", async () => {

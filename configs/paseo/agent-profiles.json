@@ -110,11 +110,16 @@
 		{
 			"id": "pr-monitor-glm",
 			"name": "pr-monitor-glm",
-			"provider": "claude",
-			"model": "claude-opus-5",
-			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"provider": "grok",
+			"model": "grok-4.6",
 			"notes": "Monitor one authored PR through paseo-pr-babysit. Read GitHub state and maintain only the assigned monitor snapshot and own heartbeat. Report changed failures, feedback, blockers or readiness evidence to the driver. Keep product files unchanged. Never implement, launch workers, push, post replies, resolve threads or merge. Use five-minute heartbeat ticks; return a compact no-change result when unchanged."
+		},
+		{
+			"id": "watchdog-grok",
+			"name": "watchdog-grok",
+			"provider": "grok",
+			"model": "grok-4.6",
+			"notes": "Watch one PR monitor through paseo-pr-babysit. Check only its snapshot freshness, session and heartbeat health; maintain the assigned health snapshot and own hourly heartbeat. Send deduplicated failure or renewal-needed events to the driver. Keep product files unchanged. Never read GitHub, launch or repair sessions, dispatch work, publish, or renew without driver acknowledgement. Healthy ticks remain snapshot-only."
 		},
 		{
 			"id": "explore-sonnet",
@@ -175,7 +180,7 @@
 		"grok": {
 			"extends": "acp",
 			"label": "Grok",
-			"description": "xAI's Grok Build agentic coding CLI with plan mode and parallel subagents. Requires a SuperGrok or X Premium+ subscription.",
+			"description": "xAI's Grok Build agentic coding CLI with parallel subagents. Requires a SuperGrok or X Premium+ subscription.",
 			"command": ["grok", "agent", "stdio"]
 		},
 		"copilot": {
