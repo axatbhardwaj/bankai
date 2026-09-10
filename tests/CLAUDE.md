@@ -11,7 +11,11 @@
 | `configure_visual_explainer.test.js` | Visual-explainer theme defaults, persistence, and invalid-config behavior | Changing explainer theme configuration |
 | `cli_explainer_theme.test.js` | End-to-end visual-explainer theme CLI behavior | Changing `--explainer-theme` |
 | `cli_paseo_tasks.test.js` | End-to-end Paseo task lifecycle defaults, controls, preservation, and fail-closed behavior | Changing Paseo task lifecycle CLI/configuration |
+| `cli_server_hermes_relay_flag.test.js` | Debian-only Hermes relay CLI routing and failure propagation | Changing `--server-hermes-relay` |
+| `configure_hermes_relay.test.js` | Hermes relay install, preservation, activation, and failure behavior | Changing the Hermes relay helper |
 | `configure_paseo_profiles.test.js` | Paseo whitelist merge, lifecycle-safe reload, and backup | Changing managed Paseo policy |
+| `hermes_relay_host_boundary.test.js` | VPS enable-marker transport boundary | Changing relay use in shared agent workflows |
+| `hermes_relay_publication_transition.test.js` | Published source pin and vendored-removal boundary | Updating the standalone relay release pin |
 | `visual_explainer_vendoring.test.js` | Upstream payload revision, file-set, license, and byte digests | Updating the pinned visual-explainer payload |
 | `utils.test.js`    | Utility function tests        | Testing shell execution, logging          |
 

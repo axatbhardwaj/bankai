@@ -34,6 +34,13 @@ Use repository severity definitions when present; otherwise use P0 critical, P1 
 
 The driver waits for all five reports or records the blocked seats. Validate actionable findings against the pinned code, merge duplicate root causes while retaining angle attribution, and resolve contradictions through focused follow-ups to the existing reviewers. Evidence determines the result; model votes do not. Targeted validation is synthesis, not a sixth complete review. Incomplete or failed seats cannot produce a clean overall verdict. On interruption, inspect the recorded Paseo sessions and resume existing agents before creating replacements.
 
+Apply the shared [HUMAN_DECISION reference](../model-routing/references/human-decisions.md) when a proposed response would go beyond the accepted specification by changing a trust/security boundary, taking an irreversible action, or materially changing direction. Finish the technical review, keep the persistent owner, and hold `APPROVE` while pending. A relay receipt is not action authority; the driver revalidates it and the live revision.
+
+Before any Hermes relay CLI, pending-state inspection, or escalation transport,
+run `$HOME/.agents/skills/model-routing/references/hermes-relay-host-enabled`.
+If its marker is missing or disabled, make no Hermes or remote calls and keep the
+high-stakes decision in the normal local Paseo conversation.
+
 For an explicit transient launch failure, inspect the recorded session and retry once; authentication or unsupported-capability errors block the seat immediately. Long-running agents are not failures: use completion notifications, and inspect liveness on a reported error or missed agreed deadline. If a focused follow-up leaves a material disagreement unresolved, the driver records the uncertainty and marks the result INCOMPLETE; advisory escalation uses `paseo-committee` when needed.
 
 Deliver one report with PR identity and reviewed SHA, recommendation, severity-ordered findings, distinguishable Standards and Spec findings, five-angle coverage, validation and limitations. A recommendation is separate from CI/merge readiness. Refresh the PR head, base and checks before final delivery: if either revision changed, label the old review stale and rerun the five angles for the new candidate before claiming current coverage.

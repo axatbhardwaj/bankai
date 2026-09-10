@@ -19,6 +19,7 @@ Standalone setup scripts for specific tools.
 | `configure_gh_stack.js` | Idempotent `github/gh-stack` extension install | Adding or debugging stacked-PR tooling setup |
 | `configure_pr_watch.js` | pr-watch PR watcher sync/backup | Adding or debugging the PR watcher deploy |
 | `configure_paseo_server.js` | Native Paseo CLI, loopback config, and persistent user-service setup for Debian servers | Adding or debugging headless Paseo lifecycle and pairing |
+| `configure_hermes_relay.js` | Pinned Hermes bootstrap plus VPS-only relay deploy, private config, validation, activation, and host marker | Adding or debugging Hermes review-relay setup |
 | `configure_paseo_profiles.js` | Whitelist-only Paseo profile/provider policy sync, backup, and safe live reload | Adding or debugging managed orchestration policy |
 | `configure_paseo_tasks.js` | Validated future-task lifecycle preference with enabled naming and archive defaults | Changing Paseo task metadata or cleanup configuration |
 | `configure_t3_code_server.js` | Debian T3 Code service plus idempotent T3 Connect lifecycle | Adding or debugging T3 Connect authorization, provisioning, or service verification |
