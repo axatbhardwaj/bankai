@@ -108,13 +108,15 @@ plugin_target=/root/.hermes/plugins/paseo-review-relay
 
 install -d -m 700 "$backup_root" /root/.hermes/plugins /root/.local/bin
 if test -e "$plugin_target"; then cp -a -- "$plugin_target" "$backup_root/plugin"; fi
-if test -e /root/.local/bin/hermes-relay; then
+if test -e /root/.local/bin/hermes-relay || test -L /root/.local/bin/hermes-relay; then
   cp -a -- /root/.local/bin/hermes-relay "$backup_root/hermes-relay"
 fi
+rm -f -- /root/.local/bin/hermes-relay
 cp -a -- /root/.hermes/config.yaml "$backup_root/config.yaml"
 install -d -m 700 "$plugin_target"
 cp -a -- "$plugin_source/." "$plugin_target/"
-install -m 755 "$plugin_source/hermes-relay" /root/.local/bin/hermes-relay
+chmod 755 "$plugin_target/hermes-relay"
+ln -s -- "$plugin_target/hermes-relay" /root/.local/bin/hermes-relay
 install -d -m 700 /root/.hermes/plugin-data/paseo-review-relay
 if ! test -e /root/.hermes/plugin-data/paseo-review-relay/config.json; then
   install -m 600 "$plugin_source/config.example.json" \

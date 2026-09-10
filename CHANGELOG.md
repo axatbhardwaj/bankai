@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add a Debian-only Hermes relay setup mode and default post-Paseo-profile step,
+  with an immutable Hermes bootstrap pin, transitional vendored relay lock,
+  offline source override, private configuration preservation, and idle-only
+  activation.
+- Require a successful per-host enable marker before bundled PR workflows make
+  any Hermes relay or remote transport call; local/Arch workflows remain local.
+
 ## 11.7.7 - 2026-09-10
 
 - Give Fable explicit early planning triggers for ambiguous requirements, design

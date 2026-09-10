@@ -501,6 +501,54 @@ after editing the bundled policy. Browser tools require a connected Paseo
 desktop app because the headless daemon brokers browser tabs but does not host
 a browser itself.
 
+### VPS Hermes review relay
+
+`haoshoku --server-hermes-relay` configures the `paseo-review-relay` native
+Hermes plugin only on a Debian-family server. The full Debian setup runs this
+step after native Paseo and the managed Paseo profiles. Arch/Omarchy setup never
+calls it and never creates its enable marker.
+
+An existing Hermes installation is reused and never upgraded. If Hermes is
+missing, Haoshoku downloads the official installer and installs the validated
+commit from [`configs/hermes-relay/hermes-runtime.json`](configs/hermes-relay/hermes-runtime.json)
+with `--skip-setup --skip-browser --skip-computer-use --non-interactive`. That
+bootstrap deliberately leaves credentials and gateway setup to the operator.
+Complete those private steps without placing secrets in this repository:
+
+1. Run `hermes setup` and configure the Telegram bot token in `~/.hermes/.env`.
+2. Set one private Telegram owner/DM in Hermes. Haoshoku derives IDs only when
+   the existing private configuration is unambiguous; otherwise set
+   `telegramChatId` and `telegramUserId` in
+   `~/.hermes/plugin-data/paseo-review-relay/config.json`.
+3. Install login startup with
+   `hermes gateway install --no-start-now --start-on-login`, start or verify the
+   gateway manually, then rerun `haoshoku --server-hermes-relay`.
+
+Missing credentials, an unverifiable local Paseo identity, plugin doctor
+failure, or pending activation returns failure rather than reporting success.
+The helper preserves Hermes YAML, auth, unrelated plugins, database, and relay
+anchors; it backs up a changed plugin directory, deploys only allowlisted files,
+and creates `~/.local/bin/hermes-relay` as a symlink. A changed installation is
+restarted only after an interactive confirmation that the gateway is idle.
+Busy, unknown, and noninteractive activation states stay explicitly incomplete.
+Haoshoku never restarts Paseo or changes schedules.
+
+Relay source is controlled by [`configs/hermes-relay/lock.json`](configs/hermes-relay/lock.json).
+Until the published `v0.1.0` commit is recorded, its `commit: null` transition
+lock retains the vendored source. Once finalized, Haoshoku fetches the exact
+commit, verifies both `HEAD` and the tag, and rejects mismatches. An offline test
+checkout may be supplied with `HAOSHOKU_HERMES_RELAY_SOURCE=/absolute/path`, but
+only after the lock contains the final commit; the same commit, tag, and manifest
+checks still apply.
+
+Only a fully configured and activated server receives
+`~/.config/haoshoku/hermes-relay.json` with `version: 1` and `enabled: true`.
+Bundled PR workflows must run their `hermes-relay-host-enabled` check before any
+relay command, pending-state inspection, or escalation transport. A missing or
+disabled marker means normal local handling in the Paseo conversation with no
+Hermes or remote relay calls. Telegram remains transport only: high-stakes
+decisions and action authority stay with the human and are revalidated locally.
+
 Debian Server does not ask for `deviceType`: that value only selects desktop
 audio and Hyprland/Omarchy variants. For the same reason the Debian path does
 not deploy audio, browser/MIME integration, the desktop-oriented user-script
