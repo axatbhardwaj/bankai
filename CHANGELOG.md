@@ -1,5 +1,20 @@
 # Changelog
 
+## 11.8.0 - 2026-09-11
+
+- Add a Debian-only Hermes relay setup mode and default post-Paseo-profile step,
+  with an immutable Hermes bootstrap pin and immutable public relay source at
+  `paseo-hermes-relay` v0.2.0 commit
+  `73846214657a165379a1698b6bccff6c9c9e484f`, generic and PR transport modes,
+  verified offline-source override, private configuration preservation, and
+  receipt-backed activation with marker revocation on incomplete attempts.
+- Require a successful per-host enable marker before bundled PR workflows make
+  any Hermes relay or remote transport call; PR mode retains its live GitHub
+  guard, generic receipts are opt-in delivery only, and local/Arch workflows
+  remain local.
+- Remove the transitional vendored relay and its duplicate Haoshoku Python test
+  suite now that the standalone release and CI are authoritative.
+
 ## 11.7.7 - 2026-09-10
 
 - Give Fable explicit early planning triggers for ambiguous requirements, design

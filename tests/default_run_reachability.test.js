@@ -83,6 +83,10 @@ const DELIBERATE_OMISSIONS = {
 			"--server-paseo",
 			"Paseo's headless user service is configured only on Debian-family hosts.",
 		],
+		[
+			"--server-hermes-relay",
+			"Hermes relay transport is enabled only on an explicitly configured Debian server.",
+		],
 	]),
 	"debian-server": new Map([
 		["--audio", "WirePlumber routing depends on desktop device profiles."],
@@ -269,6 +273,9 @@ function runDebianDefaultPath() {
 			}));
 			mock.module(${JSON.stringify(helperPath("configure_paseo_profiles.js"))}, () => ({
 				syncPaseoProfiles: record("paseoProfiles", true),
+			}));
+			mock.module(${JSON.stringify(helperPath("configure_hermes_relay.js"))}, () => ({
+				configureHermesRelay: record("serverHermesRelay", true),
 			}));
 			mock.module(${JSON.stringify(helperPath("configure_t3_code_server.js"))}, () => ({
 				configureT3CodeServer: record("serverT3Code", true),

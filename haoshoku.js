@@ -15,6 +15,7 @@ import {
 	syncAudioConfig,
 } from "./src/helpers/configure_audio.js";
 import { configureBraveManagedPolicies } from "./src/helpers/configure_brave_managed_policies.js";
+import { configureHermesRelay } from "./src/helpers/configure_hermes_relay.js";
 import {
 	backupClaudeConfig,
 	syncClaudeConfig,
@@ -83,7 +84,7 @@ function parseEnabledState(value) {
 program
 	.name("haoshoku")
 	.description("Haoshoku: portable setup for Arch / Omarchy and Debian Server.")
-	.version("11.7.7")
+	.version("11.8.0")
 	.addHelpText("before", getBanner());
 
 program
@@ -115,6 +116,7 @@ program
 		"--server-paseo",
 		"Configure the native Paseo headless service on Debian",
 	)
+	.option("--server-hermes-relay", "Configure Hermes relay transport on Debian")
 	.option(
 		"--skills",
 		"Install Matt Pocock and Paseo skills for Claude Code and Codex",
@@ -298,6 +300,16 @@ async function runAction(options) {
 			return;
 		}
 		if (!(await configurePaseoServer())) process.exitCode = 1;
+		return;
+	}
+
+	if (options.serverHermesRelay) {
+		if (detectOS() !== "debian-server") {
+			log.error("--server-hermes-relay requires a Debian-family host.");
+			process.exitCode = 2;
+			return;
+		}
+		if (!(await configureHermesRelay())) process.exitCode = 1;
 		return;
 	}
 

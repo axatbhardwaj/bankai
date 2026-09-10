@@ -79,6 +79,13 @@ describe("haoshoku CLI help", () => {
 		expect(normalizedHelp).toContain("native Paseo headless service on Debian");
 	});
 
+	it("documents the Debian-only Hermes relay mode", () => {
+		const help = output(["--help"]).replace(/\s+/g, " ");
+
+		expect(help).toContain("--server-hermes-relay");
+		expect(help).toContain("Hermes relay transport on Debian");
+	});
+
 	it("documents T3 Connect instead of mandatory Tailscale server access", () => {
 		const readme = fs.readFileSync(README, "utf8");
 		expect(readme).toContain("npx --yes t3@latest connect link --headless");

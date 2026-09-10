@@ -1,0 +1,5 @@
+{
+	"version": 1,
+	"installer": "https://hermes-agent.nousresearch.com/install.sh",
+	"commit": "67764dc0863349a384c16425e73ee8571f3a94b7"
+}

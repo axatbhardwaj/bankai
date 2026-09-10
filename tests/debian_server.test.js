@@ -34,6 +34,7 @@ function makeFakePrompt(value = true) {
 function runDefaultSetupWithSafeDoubles({
 	paseoResult = true,
 	profileResult = true,
+	relayResult = true,
 	t3Answer = false,
 	t3Result = true,
 } = {}) {
@@ -93,6 +94,7 @@ function runDefaultSetupWithSafeDoubles({
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_skills.js"))}, () => ({ configureSkills: record("skills", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_agent_skills.js"))}, () => ({ syncAgentSkills: record("agent-skills", true) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_profiles.js"))}, () => ({ syncPaseoProfiles: record("paseo-profiles", ${JSON.stringify(profileResult)}) }));
+		mock.module(${JSON.stringify(modulePath("src/helpers/configure_hermes_relay.js"))}, () => ({ configureHermesRelay: record("hermes-relay", ${JSON.stringify(relayResult)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_t3_code_server.js"))}, () => ({ configureT3CodeServer: record("t3-code-server", ${JSON.stringify(t3Result)}) }));
 		mock.module(${JSON.stringify(modulePath("src/helpers/configure_paseo_server.js"))}, () => ({ configurePaseoServer: record("paseo-server", ${JSON.stringify(paseoResult)}) }));
 		const { runDebianServerSetup } = await import(${JSON.stringify(debianModule)} + "?default-path-test");
@@ -245,6 +247,7 @@ describe("Debian default path", () => {
 			"agent-skills",
 			"paseo-server",
 			"paseo-profiles",
+			"hermes-relay",
 		]);
 		expect(result).toBe(true);
 	});
@@ -300,6 +303,25 @@ describe("Debian default path", () => {
 			type: "error",
 			message:
 				"Debian Server setup finished, but the Paseo orchestration policy was not synced.",
+		});
+	});
+
+	it("runs Hermes relay after Paseo profiles and propagates an incomplete setup", () => {
+		const { events, result } = runDefaultSetupWithSafeDoubles({
+			relayResult: false,
+		});
+		const helpers = events
+			.filter(({ type }) => type === "helper")
+			.map(({ name }) => name);
+
+		expect(result).toBe(false);
+		expect(helpers.indexOf("paseo-profiles")).toBeLessThan(
+			helpers.indexOf("hermes-relay"),
+		);
+		expect(events.at(-1)).toEqual({
+			type: "error",
+			message:
+				"Debian Server setup finished, but the Hermes relay is incomplete.",
 		});
 	});
 });
