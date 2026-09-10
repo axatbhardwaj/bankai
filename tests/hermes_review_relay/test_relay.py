@@ -211,13 +211,15 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
             chat_id="owner-chat", user_id="owner-user", chat_type="dm"
         )
         bot = SimpleNamespace(is_bot=True)
-        cases = {
+        unrelated = {
             "wrong platform": wrong_platform,
             "missing platform": missing_platform,
-            "wrong sender": wrong_sender,
             "wrong chat": wrong_chat,
-            "group chat": group,
             "unknown anchor": self.event(message_id="unknown", reply_to_message_id="missing"),
+        }
+        mapped_but_ineligible = {
+            "wrong sender": wrong_sender,
+            "group chat": group,
             "missing raw message": self.event(message_id="missing-raw", raw_message=None),
             "forwarded": self.event(message_id="forwarded", raw_message=SimpleNamespace(forward_origin=object())),
             "edited": self.event(message_id="edited", raw_message=SimpleNamespace(edit_date=object())),
@@ -225,9 +227,15 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
             "attachment": self.event(message_id="photo", raw_message=SimpleNamespace(photo=[object()])),
         }
 
-        for name, event in cases.items():
+        for name, event in unrelated.items():
             with self.subTest(name=name):
                 self.assertIsNone(self.relay.pre_gateway_dispatch(event=event))
+        for name, event in mapped_but_ineligible.items():
+            with self.subTest(name=name):
+                self.assertEqual(
+                    self.relay.pre_gateway_dispatch(event=event),
+                    {"action": "skip", "reason": "paseo-review-relay"},
+                )
         self.assertEqual(self.tasks, [])
         self.assertEqual(self.paseo.prompts, [])
 

@@ -36,26 +36,42 @@ class ReviewRelay:
         self.spawn_task = spawn_task
 
     def pre_gateway_dispatch(self, *, event, **kwargs):
-        source = event.source
+        source = getattr(event, "source", None)
+        if source is None:
+            return None
         source_platform = getattr(source, "platform", None)
         platform = getattr(source_platform, "value", source_platform)
+        chat_id = getattr(source, "chat_id", None)
+        anchor_message_id = getattr(event, "reply_to_message_id", None)
         if (
             platform != "telegram"
-            or source.chat_type != "dm"
-            or str(source.chat_id) != self.config.telegram_chat_id
-            or str(source.user_id) != self.config.telegram_user_id
-            or not isinstance(event.text, str)
-            or not event.reply_to_message_id
-            or self._is_unsafe_telegram_message(event.raw_message)
+            or chat_id is None
+            or not anchor_message_id
+            or self.store.get_decision_for_anchor(
+                "telegram", chat_id, anchor_message_id
+            )
+            is None
         ):
             return None
+        if (
+            getattr(source, "chat_type", None) != "dm"
+            or str(chat_id) != self.config.telegram_chat_id
+            or str(getattr(source, "user_id", None))
+            != self.config.telegram_user_id
+            or not isinstance(event.text, str)
+            or not getattr(event, "message_id", None)
+            or self._is_unsafe_telegram_message(
+                getattr(event, "raw_message", None)
+            )
+        ):
+            return SKIP
 
         kind = "decision" if event.text.casefold() in DECISION_WORDS else "question"
         decision, admitted = self.store.admit_receipt_for_anchor(
             platform="telegram",
             chat_id=source.chat_id,
             message_id=event.message_id,
-            anchor_message_id=event.reply_to_message_id,
+            anchor_message_id=anchor_message_id,
             sender_id=source.user_id,
             kind=kind,
             body=event.text,
