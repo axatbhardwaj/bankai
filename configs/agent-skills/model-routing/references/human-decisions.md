@@ -26,6 +26,12 @@ Scheduled owners must invoke the relay CLI themselves; the bot does not infer an
 escalation or publish an answer automatically. On the VPS, read the installed
 operator guide at `/root/.hermes/plugins/paseo-review-relay/README.md`, then use:
 
+Before any relay CLI command, pending-state inspection, or escalation transport,
+run `$HOME/.agents/skills/model-routing/references/hermes-relay-host-enabled`.
+Only exit status 0 permits Hermes transport. If the marker is missing or disabled,
+use the normal local workflow and keep the high-stakes decision in the Paseo conversation;
+do not invoke Hermes, inspect relay state, or make remote calls.
+
 ```bash
 hermes-relay pending
 hermes-relay open --request-file /private/path/decision.json
