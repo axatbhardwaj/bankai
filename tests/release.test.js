@@ -49,7 +49,7 @@ describe("computeNextVersion", () => {
 });
 
 describe("repository release version", () => {
-	it("keeps package, CLI, and changelog aligned at 11.8.0", () => {
+	it("keeps the CLI and changelog aligned with the package version", () => {
 		const projectRoot = path.join(import.meta.dir, "..");
 		const packageJson = JSON.parse(
 			fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"),
@@ -59,10 +59,14 @@ describe("repository release version", () => {
 			path.join(projectRoot, "CHANGELOG.md"),
 			"utf8",
 		);
+		const version = packageJson.version;
+		const escapedVersion = version.replaceAll(".", "\\.");
 
-		expect(packageJson.version).toBe("11.8.0");
-		expect(cli).toContain('.version("11.8.0")');
-		expect(changelog).toMatch(/^## 11\.8\.0 - 2026-09-11$/m);
+		expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+		expect(cli).toContain(`.version("${version}")`);
+		expect(changelog).toMatch(
+			new RegExp(`^## ${escapedVersion} - \\d{4}-\\d{2}-\\d{2}$`, "m"),
+		);
 	});
 });
 
