@@ -1,6 +1,11 @@
 # Changelog
 
-## 11.7.7 - 2026-09-09
+## 11.7.7 - 2026-09-10
+
+- Give Fable explicit early planning triggers for ambiguous requirements, design
+  tradeoffs, conflicting research and repeated failed fixes, with bounded
+  planning outputs and session reuse. Preserve proportional routine work and
+  the existing high-stakes consensus and independent review gates.
 
 - Cap submitted PR review bodies at 7500 characters alongside the existing
   399-line limit, directing reviewers to tighten prose rather than drop

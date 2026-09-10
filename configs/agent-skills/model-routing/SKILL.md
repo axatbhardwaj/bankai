@@ -1,6 +1,6 @@
 ---
 name: model-routing
-description: Route work through Astra-led Paseo profiles. Use for Matt Pocock planning and implementation skills, or when specialists improve exploration, research, implementation, review, explanations, documentation or PR babysitting. Keep ordinary low-impact work proportional.
+description: Use for engineering planning with ambiguous requirements, design tradeoffs, conflicting findings or repeated failed fixes; Matt Pocock planning and implementation skills; and specialist exploration, research, implementation, review, explanations, documentation or PR babysitting. Keep ordinary low-impact work proportional.
 ---
 
 # Model routing
@@ -21,6 +21,14 @@ Workers perform bounded independent workflows and return evidence to the driver.
 
 An explicit `paseo-handoff` may transfer driver ownership. An explicitly invoked `implement-spec` is run by the driver, owns its graph, and selects routing profiles without a competing scheduler.
 
+## Planning with Fable
+
+Before settling an approach, use Fable through `fable-planner` when a task has ambiguous requirements, multiple credible approaches, changes to module boundaries or public behavior that need design decisions, conflicting research findings, or repeated failed fixes. Delegate while the approach is still open so Fable can shape the plan. The selected workflow's role assignments and human decision checkpoints still apply.
+
+Give Fable the objective, constraints and available evidence, and ownership of a bounded planning output: recommended approach, alternatives and tradeoffs, assumptions and evidence gaps, acceptance criteria, and implementation steps or the next diagnostic experiment. Fable inspects relevant sources and returns the proposal; Astra assesses it and owns the final decision. Continue independent evidence gathering while Fable works.
+
+Reuse the same Fable session when new evidence materially changes the plan. Simple lookups, mechanical edits and routine execution of an accepted plan stay direct unless the selected workflow assigns a worker. Ordinary planning advice does not require formal consensus; apply the gate below only to high-stakes decisions. Fable keeps product files unchanged, implementation stays with its assigned seat, and Opus retains independent candidate review.
+
 ## High-stakes decision consensus
 
 Use `fable-planner` with Astra when evaluating a plausible new decision about security or trust boundaries (for example, changing which model receives `bypassPermissions`), irreversible data or infrastructure changes (a migration without a restore path), significant financial or loss risk (overwriting secrets or custom profiles), or material architecture commitments (adding a second orchestrator or changing review gates). The driver records why the proposal is consensus-class; if Fable flags one and the driver rejects that classification, record the rejected classification and reason. Ordinary low-impact work, routine fix/review iterations, ticket-level choices inside an accepted spec, and reversible configuration changes with a backup stay proportional and do not use this gate.
@@ -35,9 +43,9 @@ When the user invokes `grill-with-docs`, `to-spec`, `to-tickets`, `implement` or
 
 ## Default routes
 
-- Use `fable-planner` as the persistent planning and high-stakes decision partner.
+- Use `fable-planner` for the planning triggers and high-stakes decisions above.
 - For bounded codebase exploration, use `explore-sonnet` to map modules, repository conventions and documented intent, or `explore-terra` to trace execution paths, callers, dependencies and relevant tests. Choose the seat matching the question; use both in parallel for distinct questions. Explorers return source locations, observations and uncertainties without product edits. Reuse existing research evidence or a suitable active researcher instead of duplicating the same scan.
-- For substantial research, have `research-opus` independently investigate requirements, documents, prior decisions, and alternatives while `research-sol-medium` traces code, dependencies, tests, and implementation constraints. Astra reconciles their evidence. Use `research-grok` only for targeted current external research.
+- For substantial research, have `research-opus` independently investigate requirements, documents, prior decisions, and alternatives while `research-sol-medium` traces code, dependencies, tests, and implementation constraints. Apply the planning triggers above when reconciling their findings; Astra owns the final synthesis. Use `research-grok` only for targeted current external research.
 - Give writable implementation, tests, and repairs to `implement-sol-high`. Repository work uses one dedicated task worktree, repository policies, and the gh stack.
 - Route recurring watchers and watchdogs through standalone Grok profiles. Their own sessions hold the timers and keep routine healthy ticks snapshot-only.
 - For authored-PR babysitting to merge-ready, use [paseo-pr-babysit](../paseo-pr-babysit/SKILL.md): Grok monitors and watchdogs, Sol repairs, and Opus reviews before the driver publishes.
