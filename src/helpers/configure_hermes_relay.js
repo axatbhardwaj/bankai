@@ -216,13 +216,12 @@ function readSourceLock(projectRoot, fsImpl, logger) {
 		lock.repository !==
 			"https://github.com/axatbhardwaj/paseo-hermes-relay.git" ||
 		!/^v\d+\.\d+\.\d+$/.test(lock.tag) ||
-		!(lock.commit === null || /^[0-9a-f]{40}$/.test(lock.commit)) ||
-		typeof lock.vendoredFallback !== "string"
+		!/^([0-9a-f]{40})$/.test(lock.commit)
 	) {
 		logger.error(`Invalid Hermes relay source lock ${lockPath}.`);
 		return null;
 	}
-	return { ...lock, lockPath };
+	return lock;
 }
 
 function readHermesRuntimeLock(projectRoot, fsImpl, logger) {
@@ -342,28 +341,6 @@ async function resolvePluginSource({
 }) {
 	const lock = readSourceLock(projectRoot, fsImpl, logger);
 	if (!lock) return null;
-	if (lock.commit === null) {
-		if (sourceDirectory) {
-			logger.error(
-				`The source-directory override requires a finalized commit in ${lock.lockPath}.`,
-			);
-			return null;
-		}
-		const source = path.resolve(
-			path.dirname(lock.lockPath),
-			lock.vendoredFallback,
-		);
-		const projectPrefix = `${path.resolve(projectRoot)}${path.sep}`;
-		if (!source.startsWith(projectPrefix)) {
-			logger.error(
-				"The vendored Hermes relay fallback must stay inside this repository.",
-			);
-			return null;
-		}
-		return validManifest(source, fsImpl, logger)
-			? { directory: source, cleanup: null }
-			: null;
-	}
 
 	const git = findExecutable("git", ["/usr/bin/git"], whichImpl, fsImpl);
 	if (!git) {

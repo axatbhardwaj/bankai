@@ -19,6 +19,7 @@ const PLUGIN_FILES = [
 	"README.md",
 	"plugin.yaml",
 ];
+const RELAY_COMMIT = "1f2761cbc75ef24e8e2287f49ba56dd819923388";
 
 afterEach(() => {
 	for (const root of roots.splice(0)) {
@@ -32,12 +33,7 @@ function fixture() {
 	const home = path.join(root, "home");
 	const hermesHome = path.join(home, ".hermes");
 	const projectRoot = path.join(root, "project");
-	const source = path.join(
-		projectRoot,
-		"configs",
-		"hermes-plugins",
-		"paseo-review-relay",
-	);
+	const source = path.join(projectRoot, "standalone-source");
 	fs.mkdirSync(source, { recursive: true });
 	for (const file of PLUGIN_FILES) {
 		let content = `${file}\n`;
@@ -65,8 +61,7 @@ function fixture() {
 			version: 1,
 			repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
 			tag: "v0.1.0",
-			commit: null,
-			vendoredFallback: "../hermes-plugins/paseo-review-relay",
+			commit: RELAY_COMMIT,
 		})}\n`,
 	);
 	fs.writeFileSync(
@@ -100,6 +95,9 @@ function fixture() {
 				stderr: "",
 			};
 		}
+		if (argv[0] === "/usr/bin/git" && argv.includes("rev-parse")) {
+			return { exitCode: 0, stdout: `${RELAY_COMMIT}\n`, stderr: "" };
+		}
 		throw new Error(`unexpected command: ${argv.join(" ")}`);
 	};
 	const messages = [];
@@ -121,9 +119,13 @@ function fixture() {
 		telegramCredentialReadyImpl: async () => true,
 		runProcessImpl,
 		source,
+		sourceDirectory: source,
 		whichImpl: (command) =>
-			({ hermes: "/usr/local/bin/hermes", paseo: "/usr/bin/paseo" })[command] ??
-			null,
+			({
+				git: "/usr/bin/git",
+				hermes: "/usr/local/bin/hermes",
+				paseo: "/usr/bin/paseo",
+			})[command] ?? null,
 	};
 }
 
@@ -248,7 +250,7 @@ describe("configureHermesRelay", () => {
 		expect(fs.existsSync(path.join(setup.hermesHome, "plugins"))).toBe(false);
 	});
 
-	it("deploys the vendored relay but stays incomplete without private Telegram identity", async () => {
+	it("deploys a verified relay source but stays incomplete without private Telegram identity", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(
 			setup.hermesHome,
@@ -643,9 +645,9 @@ describe("configureHermesRelay", () => {
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
 				tag: "v0.1.0",
 				commit: expectedCommit,
-				vendoredFallback: "../hermes-plugins/paseo-review-relay",
 			})}\n`,
 		);
+		setup.sourceDirectory = null;
 		const baseWhich = setup.whichImpl;
 		setup.whichImpl = (command) =>
 			command === "git" ? "/usr/bin/git" : baseWhich(command);
@@ -703,7 +705,6 @@ describe("configureHermesRelay", () => {
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
 				tag: "v0.1.0",
 				commit: expectedCommit,
-				vendoredFallback: "../hermes-plugins/paseo-review-relay",
 			})}\n`,
 		);
 		setup.sourceDirectory = setup.source;
@@ -750,9 +751,9 @@ describe("configureHermesRelay", () => {
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
 				tag: "v0.1.0",
 				commit: expectedCommit,
-				vendoredFallback: "../hermes-plugins/paseo-review-relay",
 			})}\n`,
 		);
+		setup.sourceDirectory = null;
 		setup.whichImpl = (command) =>
 			({
 				git: "/usr/bin/git",
