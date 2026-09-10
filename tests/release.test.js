@@ -35,8 +35,12 @@ describe("computeNextVersion", () => {
 	});
 
 	it("throws on a custom bump with a malformed explicit version", () => {
-		expect(() => computeNextVersion("5.5.3", "custom", "9.1")).toThrow(/Invalid/);
-		expect(() => computeNextVersion("5.5.3", "custom", "5.6.0-rc1")).toThrow(/Invalid/);
+		expect(() => computeNextVersion("5.5.3", "custom", "9.1")).toThrow(
+			/Invalid/,
+		);
+		expect(() => computeNextVersion("5.5.3", "custom", "5.6.0-rc1")).toThrow(
+			/Invalid/,
+		);
 	});
 
 	it("throws on an unknown bump type", () => {
@@ -44,9 +48,28 @@ describe("computeNextVersion", () => {
 	});
 });
 
+describe("repository release version", () => {
+	it("keeps package, CLI, and changelog aligned at 11.8.0", () => {
+		const projectRoot = path.join(import.meta.dir, "..");
+		const packageJson = JSON.parse(
+			fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"),
+		);
+		const cli = fs.readFileSync(path.join(projectRoot, "haoshoku.js"), "utf8");
+		const changelog = fs.readFileSync(
+			path.join(projectRoot, "CHANGELOG.md"),
+			"utf8",
+		);
+
+		expect(packageJson.version).toBe("11.8.0");
+		expect(cli).toContain('.version("11.8.0")');
+		expect(changelog).toMatch(/^## 11\.8\.0 - 2026-09-11$/m);
+	});
+});
+
 describe("applyVersionBump", () => {
 	it("replaces exactly one .version(...) site", () => {
-		const content = 'program\n  .name("haoshoku")\n  .version("5.5.3")\n  .parse();\n';
+		const content =
+			'program\n  .name("haoshoku")\n  .version("5.5.3")\n  .parse();\n';
 		const updated = applyVersionBump(content, "5.6.0");
 		expect(updated).toContain('.version("5.6.0")');
 		expect(updated).not.toContain('.version("5.5.3")');
@@ -71,9 +94,7 @@ describe("applyChangelogRelease", () => {
 		const unreleased = /^# Changelog\r?\n\r?\n## Unreleased\r?\n/;
 		const released =
 			/^# Changelog\r?\n\r?\n## \d+\.\d+\.\d+ - \d{4}-\d{2}-\d{2}\r?\n/;
-		expect(unreleased.test(changelog) || released.test(changelog)).toBe(
-			true,
-		);
+		expect(unreleased.test(changelog) || released.test(changelog)).toBe(true);
 		if (unreleased.test(changelog)) {
 			expect(() =>
 				applyChangelogRelease(changelog, "9.0.1", "2099-01-01"),
@@ -91,9 +112,9 @@ describe("applyChangelogRelease", () => {
 		expect(fixture).toMatch(
 			/^# Changelog\r?\n\r?\n## \d+\.\d+\.\d+ - \d{4}-\d{2}-\d{2}\r?\n/,
 		);
-		expect(() =>
-			applyChangelogRelease(fixture, "9.0.1", "2099-01-01"),
-		).toThrow(/Unreleased heading not found/);
+		expect(() => applyChangelogRelease(fixture, "9.0.1", "2099-01-01")).toThrow(
+			/Unreleased heading not found/,
+		);
 	});
 	it("renames the Unreleased heading and leaves all other text untouched", () => {
 		const content =
@@ -105,8 +126,8 @@ describe("applyChangelogRelease", () => {
 
 	it("throws when the Unreleased heading is not found", () => {
 		const content = "# Changelog\n\n## 7.2.2 - 2026-08-05\n";
-		expect(() =>
-			applyChangelogRelease(content, "7.3.0", "2026-08-06"),
-		).toThrow(/Unreleased heading not found/);
+		expect(() => applyChangelogRelease(content, "7.3.0", "2026-08-06")).toThrow(
+			/Unreleased heading not found/,
+		);
 	});
 });
