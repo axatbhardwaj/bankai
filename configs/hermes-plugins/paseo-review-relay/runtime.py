@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,8 @@ from .storage import Storage
 
 
 PLUGIN_NAME = "paseo-review-relay"
+PLACEHOLDER_PREFIX = "YOUR_"
+logger = logging.getLogger(__name__)
 
 
 class GatewayTelegram:
@@ -52,8 +55,12 @@ def load_config(data_dir):
         raise PermissionError(f"{config_path} must not be accessible by group or others")
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     keys = ("telegramChatId", "telegramUserId", "serverId")
-    if any(not isinstance(payload.get(key), str) or not payload[key] for key in keys):
+    if not isinstance(payload, dict) or any(
+        not isinstance(payload.get(key), str) or not payload[key] for key in keys
+    ):
         raise ValueError(f"{config_path} must contain non-empty {', '.join(keys)} strings")
+    if any(payload[key].startswith(PLACEHOLDER_PREFIX) for key in keys):
+        raise ValueError(f"{config_path} still contains placeholder values")
     return RelayConfig(
         telegram_chat_id=payload["telegramChatId"],
         telegram_user_id=payload["telegramUserId"],
@@ -66,6 +73,12 @@ def create_runtime(ctx):
     try:
         config = load_config(data_dir)
     except FileNotFoundError:
+        return PluginRuntime(relay=UnconfiguredRelay(), store=None)
+    except (OSError, ValueError) as error:
+        logger.error(
+            "paseo-review-relay configuration is invalid; relay is inert (%s)",
+            type(error).__name__,
+        )
         return PluginRuntime(relay=UnconfiguredRelay(), store=None)
     store = Storage(data_dir / "relay.sqlite3")
     runner = AsyncCommandRunner()

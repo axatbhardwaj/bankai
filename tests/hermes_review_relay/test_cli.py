@@ -157,6 +157,21 @@ class CliTests(unittest.TestCase):
             self.assertEqual(store.get_decision("doctor-pending")["status"], "open")
             store.close()
 
+    def test_doctor_rejects_the_shipped_placeholder_config(self):
+        module = load_plugin()
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp) / "plugin-data"
+            data_dir.mkdir()
+            config = data_dir / "config.json"
+            config.write_text(
+                (PLUGIN_ROOT / "config.example.json").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            config.chmod(0o600)
+
+            with self.assertRaisesRegex(ValueError, "placeholder"):
+                module.doctor_snapshot(data_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
