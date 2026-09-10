@@ -150,7 +150,10 @@ class CliTests(unittest.TestCase):
             self.assertEqual(looked_up, ["hermes", "paseo", "gh"])
             self.assertEqual(snapshot["database"], "ok")
             self.assertEqual(snapshot["config"], "private")
-            self.assertEqual(snapshot["vps_validation_command"], "hermes plugins doctor")
+            self.assertEqual(
+                snapshot["vps_validation_command"],
+                "hermes plugins doctor /root/.hermes/plugins/paseo-review-relay --ci",
+            )
             self.assertEqual(
                 store.get_outbound_attempt("pending-attempt")["state"], "pending"
             )

@@ -60,7 +60,9 @@ def doctor_snapshot(data_dir, *, command_finder=shutil.which):
         },
         "config": "private",
         "database": integrity,
-        "vps_validation_command": "hermes plugins doctor",
+        "vps_validation_command": (
+            "hermes plugins doctor /root/.hermes/plugins/paseo-review-relay --ci"
+        ),
     }
 
 
