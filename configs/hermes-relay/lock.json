@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "repository": "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
+  "tag": "v0.1.0",
+  "commit": null,
+  "vendoredFallback": "../hermes-plugins/paseo-review-relay"
+}

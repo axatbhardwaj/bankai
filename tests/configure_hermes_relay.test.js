@@ -69,6 +69,14 @@ function fixture() {
 			vendoredFallback: "../hermes-plugins/paseo-review-relay",
 		})}\n`,
 	);
+	fs.writeFileSync(
+		path.join(lockDirectory, "hermes-runtime.json"),
+		`${JSON.stringify({
+			version: 1,
+			installer: "https://hermes-agent.nousresearch.com/install.sh",
+			commit: "67764dc0863349a384c16425e73ee8571f3a94b7",
+		})}\n`,
+	);
 	fs.mkdirSync(hermesHome, { recursive: true });
 	fs.writeFileSync(
 		path.join(hermesHome, "config.yaml"),
@@ -111,13 +119,134 @@ function fixture() {
 		projectRoot,
 		readTelegramIdentityImpl: async () => null,
 		runProcessImpl,
+		source,
 		whichImpl: (command) =>
 			({ hermes: "/usr/local/bin/hermes", paseo: "/usr/bin/paseo" })[command] ??
 			null,
 	};
 }
 
+function addSuccessfulHermesCommands(setup, { initiallyEnabled = false } = {}) {
+	let enabled = initiallyEnabled;
+	const baseRunner = setup.runProcessImpl;
+	setup.runProcessImpl = async (argv, options) => {
+		const command = argv.slice(1).join(" ");
+		if (command === "plugins list --enabled --user --json") {
+			setup.calls.push(argv);
+			return {
+				exitCode: 0,
+				stdout: enabled
+					? `${JSON.stringify([
+							{
+								name: "paseo-review-relay",
+								status: "enabled",
+								version: "0.1.0",
+								description: "relay",
+								source: "user",
+								removed: null,
+							},
+						])}\n`
+					: "[]\n",
+				stderr: "",
+			};
+		}
+		if (
+			command === "plugins enable paseo-review-relay --no-allow-tool-override"
+		) {
+			setup.calls.push(argv);
+			enabled = true;
+			return { exitCode: 0, stdout: "enabled\n", stderr: "" };
+		}
+		if (argv[1] === "plugins" && argv[2] === "doctor") {
+			setup.calls.push(argv);
+			return { exitCode: 0, stdout: "doctor passed\n", stderr: "" };
+		}
+		if (argv[0].endsWith("hermes-relay") && argv[1] === "doctor") {
+			setup.calls.push(argv);
+			return { exitCode: 0, stdout: "relay ready\n", stderr: "" };
+		}
+		if (command === "gateway restart") {
+			setup.calls.push(argv);
+			return { exitCode: 0, stdout: "restarted\n", stderr: "" };
+		}
+		return baseRunner(argv, options);
+	};
+}
+
 describe("configureHermesRelay", () => {
+	it("bootstraps missing Hermes at the validated commit without running setup", async () => {
+		const setup = fixture();
+		setup.hermesCandidates = [];
+		let hermesLookups = 0;
+		setup.whichImpl = (command) => {
+			if (command === "hermes") {
+				hermesLookups += 1;
+				return hermesLookups === 1 ? null : "/usr/local/bin/hermes";
+			}
+			return (
+				{
+					bash: "/usr/bin/bash",
+					curl: "/usr/bin/curl",
+					paseo: "/usr/bin/paseo",
+				}[command] ?? null
+			);
+		};
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			setup.calls.push(argv);
+			if (argv[0] === "/usr/bin/curl") {
+				fs.writeFileSync(argv.at(-1), "#!/usr/bin/env bash\n");
+				return { exitCode: 0, stdout: "", stderr: "" };
+			}
+			if (argv[0] === "/usr/bin/bash") {
+				return { exitCode: 0, stdout: "installed\n", stderr: "" };
+			}
+			setup.calls.pop();
+			return baseRunner(argv, options);
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(setup.calls).toContainEqual([
+			"/usr/bin/curl",
+			"-fsSL",
+			"https://hermes-agent.nousresearch.com/install.sh",
+			"-o",
+			expect.stringContaining("hermes-install-"),
+		]);
+		const installer = setup.calls.find((argv) => argv[0] === "/usr/bin/bash");
+		expect(installer?.slice(2)).toEqual([
+			"--commit",
+			"67764dc0863349a384c16425e73ee8571f3a94b7",
+			"--skip-setup",
+			"--skip-browser",
+			"--skip-computer-use",
+			"--non-interactive",
+		]);
+		expect(installer).not.toContain("--dir");
+		expect(setup.messages.join("\n")).toContain("telegramChatId");
+	});
+
+	it("stops incomplete when the pinned Hermes bootstrap fails", async () => {
+		const setup = fixture();
+		setup.hermesCandidates = [];
+		setup.whichImpl = (command) =>
+			({ bash: "/usr/bin/bash", curl: "/usr/bin/curl" })[command] ?? null;
+		setup.runProcessImpl = async (argv) => {
+			setup.calls.push(argv);
+			if (argv[0] === "/usr/bin/curl") {
+				return { exitCode: 22, stdout: "", stderr: "fetch failed" };
+			}
+			throw new Error(`unexpected command: ${argv.join(" ")}`);
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(setup.calls).toHaveLength(1);
+		expect(setup.messages.join("\n")).toContain("bootstrap failed");
+		expect(fs.existsSync(path.join(setup.hermesHome, "plugins"))).toBe(false);
+	});
+
 	it("deploys the vendored relay but stays incomplete without private Telegram identity", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(
@@ -159,5 +288,412 @@ describe("configureHermesRelay", () => {
 				path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
 			),
 		).toBe(false);
+	});
+
+	it("enables, validates, activates, and marks a fully configured relay host", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+		);
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			if (argv.slice(1).join(" ") === "plugins list --enabled --user --json") {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "[]\n", stderr: "" };
+			}
+			if (
+				argv.slice(1).join(" ") ===
+				"plugins enable paseo-review-relay --no-allow-tool-override"
+			) {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "enabled\n", stderr: "" };
+			}
+			if (
+				argv[1] === "plugins" &&
+				argv[2] === "doctor" &&
+				argv.at(-1) === "--ci"
+			) {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "doctor passed\n", stderr: "" };
+			}
+			if (argv[0].endsWith("hermes-relay") && argv[1] === "doctor") {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "relay ready\n", stderr: "" };
+			}
+			if (argv.slice(1).join(" ") === "gateway restart") {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "restarted\n", stderr: "" };
+			}
+			return baseRunner(argv, options);
+		};
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+
+		expect(setup.calls).toContainEqual([
+			"/usr/local/bin/hermes",
+			"plugins",
+			"enable",
+			"paseo-review-relay",
+			"--no-allow-tool-override",
+		]);
+		expect(setup.calls).toContainEqual([
+			"/usr/local/bin/hermes",
+			"gateway",
+			"restart",
+		]);
+		expect(
+			JSON.parse(
+				fs.readFileSync(
+					path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
+					"utf8",
+				),
+			),
+		).toEqual({ version: 1, enabled: true });
+	});
+
+	it("reruns without rewriting private state or restarting an unchanged enabled relay", async () => {
+		const setup = fixture();
+		const pluginDirectory = path.join(
+			setup.hermesHome,
+			"plugins",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(pluginDirectory, { recursive: true, mode: 0o700 });
+		for (const file of PLUGIN_FILES) {
+			fs.copyFileSync(
+				path.join(setup.source, file),
+				path.join(pluginDirectory, file),
+			);
+			fs.chmodSync(
+				path.join(pluginDirectory, file),
+				file === "hermes-relay" ? 0o755 : 0o600,
+			);
+		}
+		const binDirectory = path.join(setup.home, ".local", "bin");
+		fs.mkdirSync(binDirectory, { recursive: true });
+		fs.symlinkSync(
+			path.join(pluginDirectory, "hermes-relay"),
+			path.join(binDirectory, "hermes-relay"),
+		);
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
+		const configPath = path.join(dataDirectory, "config.json");
+		const originalConfig =
+			'{"telegramChatId":"123456","telegramUserId":"123456","serverId":"server-vps","keep":{"private":true}}\n';
+		fs.writeFileSync(configPath, originalConfig, { mode: 0o600 });
+		const database = path.join(dataDirectory, "relay.sqlite3");
+		fs.writeFileSync(database, "existing authority state");
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		let activityChecks = 0;
+		setup.gatewayActivityImpl = async () => {
+			activityChecks += 1;
+			return "idle";
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+
+		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
+		expect(fs.readFileSync(database, "utf8")).toBe("existing authority state");
+		expect(activityChecks).toBe(0);
+		expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
+		expect(
+			fs.existsSync(path.join(setup.hermesHome, "backups", "haoshoku")),
+		).toBe(false);
+	});
+
+	it("backs up changed plugin bytes once without touching private config or database", async () => {
+		const setup = fixture();
+		const pluginDirectory = path.join(
+			setup.hermesHome,
+			"plugins",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(pluginDirectory, { recursive: true, mode: 0o700 });
+		for (const file of PLUGIN_FILES) {
+			fs.copyFileSync(
+				path.join(setup.source, file),
+				path.join(pluginDirectory, file),
+			);
+		}
+		fs.writeFileSync(
+			path.join(pluginDirectory, "relay.py"),
+			"old relay bytes\n",
+		);
+		fs.writeFileSync(path.join(pluginDirectory, "operator-note"), "preserve\n");
+		fs.chmodSync(path.join(pluginDirectory, "hermes-relay"), 0o755);
+		const binDirectory = path.join(setup.home, ".local", "bin");
+		fs.mkdirSync(binDirectory, { recursive: true });
+		fs.symlinkSync(
+			path.join(pluginDirectory, "hermes-relay"),
+			path.join(binDirectory, "hermes-relay"),
+		);
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
+		const configPath = path.join(dataDirectory, "config.json");
+		const originalConfig = `${JSON.stringify(
+			{
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+				keep: { private: true },
+			},
+			null,
+			2,
+		)}\n`;
+		fs.writeFileSync(configPath, originalConfig, { mode: 0o600 });
+		const database = path.join(dataDirectory, "relay.sqlite3");
+		fs.writeFileSync(database, "existing authority state");
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+		setup.nowImpl = () => new Date("2026-09-11T01:02:03Z");
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+
+		const backup = path.join(
+			setup.hermesHome,
+			"backups",
+			"haoshoku",
+			"paseo-review-relay-20260911T010203Z",
+		);
+		expect(fs.readFileSync(path.join(backup, "relay.py"), "utf8")).toBe(
+			"old relay bytes\n",
+		);
+		expect(fs.readFileSync(path.join(backup, "operator-note"), "utf8")).toBe(
+			"preserve\n",
+		);
+		expect(
+			fs.readFileSync(path.join(pluginDirectory, "relay.py"), "utf8"),
+		).toBe("relay.py\n");
+		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
+		expect(fs.readFileSync(database, "utf8")).toBe("existing authority state");
+	});
+
+	for (const [activity, diagnostic] of [
+		["busy", "active Hermes work"],
+		["unknown", "could not confirm"],
+	]) {
+		it(`defers activation without prompting when gateway activity is ${activity}`, async () => {
+			const setup = fixture();
+			const dataDirectory = path.join(
+				setup.hermesHome,
+				"plugin-data",
+				"paseo-review-relay",
+			);
+			fs.mkdirSync(dataDirectory, { recursive: true });
+			fs.writeFileSync(
+				path.join(dataDirectory, "config.json"),
+				`${JSON.stringify({
+					telegramChatId: "123456",
+					telegramUserId: "123456",
+					serverId: "server-vps",
+				})}\n`,
+				{ mode: 0o600 },
+			);
+			addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+			setup.gatewayActivityImpl = async () => activity;
+			setup.isTTY = true;
+			let promptCalls = 0;
+			setup.promptImpl = async () => {
+				promptCalls += 1;
+				return true;
+			};
+
+			expect(await configureHermesRelay(setup)).toBe(false);
+
+			expect(promptCalls).toBe(0);
+			expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
+			expect(setup.messages.join("\n")).toContain(diagnostic);
+			expect(
+				fs.existsSync(
+					path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
+				),
+			).toBe(false);
+		});
+	}
+
+	it("derives identity only through the existing Hermes private DM probe", async () => {
+		const setup = fixture();
+		delete setup.readTelegramIdentityImpl;
+		const python = path.join(
+			setup.hermesHome,
+			"hermes-agent",
+			"venv",
+			"bin",
+			"python",
+		);
+		fs.mkdirSync(path.dirname(python), { recursive: true });
+		fs.writeFileSync(python, "#!/bin/sh\n", { mode: 0o755 });
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			if (argv[0] === python && argv[3] === "telegram-identity") {
+				setup.calls.push(argv);
+				return {
+					exitCode: 0,
+					stdout: '{"chatId":"123456","userId":"123456"}\n',
+					stderr: "",
+				};
+			}
+			if (argv[0] === python && argv[3] === "gateway-activity") {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: '{"activity":"idle"}\n', stderr: "" };
+			}
+			return baseRunner(argv, options);
+		};
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+
+		const config = JSON.parse(
+			fs.readFileSync(
+				path.join(
+					setup.hermesHome,
+					"plugin-data",
+					"paseo-review-relay",
+					"config.json",
+				),
+				"utf8",
+			),
+		);
+		expect(config).toEqual({
+			telegramChatId: "123456",
+			telegramUserId: "123456",
+			serverId: "server-vps",
+		});
+		expect(
+			setup.calls.filter((argv) => argv[0] === python).map((argv) => argv[3]),
+		).toEqual(["telegram-identity", "gateway-activity"]);
+	});
+
+	it("rejects a fetched relay whose checked-out commit does not match the lock", async () => {
+		const setup = fixture();
+		const expectedCommit = "a".repeat(40);
+		fs.writeFileSync(
+			path.join(setup.projectRoot, "configs", "hermes-relay", "lock.json"),
+			`${JSON.stringify({
+				version: 1,
+				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
+				tag: "v0.1.0",
+				commit: expectedCommit,
+				vendoredFallback: "../hermes-plugins/paseo-review-relay",
+			})}\n`,
+		);
+		const baseWhich = setup.whichImpl;
+		setup.whichImpl = (command) =>
+			command === "git" ? "/usr/bin/git" : baseWhich(command);
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			if (argv[0] === "/usr/bin/git") {
+				setup.calls.push(argv);
+				if (argv[1] === "clone") {
+					const destination = argv.at(-1);
+					for (const file of PLUGIN_FILES) {
+						fs.copyFileSync(
+							path.join(setup.source, file),
+							path.join(destination, file),
+						);
+					}
+					return { exitCode: 0, stdout: "", stderr: "" };
+				}
+				if (argv.includes("checkout")) {
+					return { exitCode: 0, stdout: "", stderr: "" };
+				}
+				if (argv.includes("rev-parse")) {
+					return { exitCode: 0, stdout: `${"b".repeat(40)}\n`, stderr: "" };
+				}
+			}
+			return baseRunner(argv, options);
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(
+			setup.calls.some(
+				(argv) =>
+					argv[0] === "/usr/bin/git" &&
+					argv[1] === "clone" &&
+					argv.includes(
+						"https://github.com/axatbhardwaj/paseo-hermes-relay.git",
+					),
+			),
+		).toBe(true);
+		expect(setup.messages.join("\n")).toContain("commit mismatch");
+		expect(
+			fs.existsSync(
+				path.join(setup.hermesHome, "plugins", "paseo-review-relay"),
+			),
+		).toBe(false);
+	});
+
+	it("verifies a pinned source-directory override without fetching", async () => {
+		const setup = fixture();
+		const expectedCommit = "a".repeat(40);
+		fs.writeFileSync(
+			path.join(setup.projectRoot, "configs", "hermes-relay", "lock.json"),
+			`${JSON.stringify({
+				version: 1,
+				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
+				tag: "v0.1.0",
+				commit: expectedCommit,
+				vendoredFallback: "../hermes-plugins/paseo-review-relay",
+			})}\n`,
+		);
+		setup.sourceDirectory = setup.source;
+		setup.whichImpl = (command) =>
+			({
+				git: "/usr/bin/git",
+				hermes: "/usr/local/bin/hermes",
+				paseo: "/usr/bin/paseo",
+			})[command] ?? null;
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			if (argv[0] === "/usr/bin/git" && argv.includes("rev-parse")) {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: `${expectedCommit}\n`, stderr: "" };
+			}
+			return baseRunner(argv, options);
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(setup.calls.some((argv) => argv.includes("clone"))).toBe(false);
+		expect(
+			setup.calls.filter((argv) => argv.includes("rev-parse")),
+		).toHaveLength(2);
+		expect(
+			fs.existsSync(
+				path.join(
+					setup.hermesHome,
+					"plugins",
+					"paseo-review-relay",
+					"plugin.yaml",
+				),
+			),
+		).toBe(true);
 	});
 });

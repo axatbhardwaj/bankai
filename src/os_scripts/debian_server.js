@@ -18,6 +18,7 @@ import { configureCodex } from "../helpers/configure_codex.js";
 import { configureSkills } from "../helpers/configure_skills.js";
 import { installGhStack } from "../helpers/configure_gh_stack.js";
 import { configureGit } from "../helpers/configure_git.js";
+import { configureHermesRelay } from "../helpers/configure_hermes_relay.js";
 import { configurePrWatch } from "../helpers/configure_pr_watch.js";
 import { configurePaseoServer } from "../helpers/configure_paseo_server.js";
 import { syncPaseoProfiles } from "../helpers/configure_paseo_profiles.js";
@@ -362,6 +363,9 @@ export async function runDebianServerSetup() {
 	const paseoProfilesConfigured = paseoConfigured
 		? await syncPaseoProfiles()
 		: false;
+	const hermesRelayConfigured = paseoProfilesConfigured
+		? await configureHermesRelay()
+		: false;
 	let t3CodeConfigured = true;
 	if (await promptUser("Also configure the T3 Code service?", false)) {
 		t3CodeConfigured = await configureT3CodeServer();
@@ -375,6 +379,12 @@ export async function runDebianServerSetup() {
 	if (!paseoProfilesConfigured) {
 		log.error(
 			"Debian Server setup finished, but the Paseo orchestration policy was not synced.",
+		);
+		return false;
+	}
+	if (!hermesRelayConfigured) {
+		log.error(
+			"Debian Server setup finished, but the Hermes relay is incomplete.",
 		);
 		return false;
 	}
