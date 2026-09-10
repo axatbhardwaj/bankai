@@ -629,7 +629,27 @@ function writeEnableMarker(home, fsImpl) {
 	fsImpl.chmodSync(marker, 0o600);
 }
 
-export async function configureHermesRelay({
+function hasEnableMarker(home, fsImpl) {
+	try {
+		const marker = JSON.parse(
+			fsImpl.readFileSync(
+				path.join(home, ".config", "haoshoku", "hermes-relay.json"),
+				"utf8",
+			),
+		);
+		return marker?.version === 1 && marker?.enabled === true;
+	} catch {
+		return false;
+	}
+}
+
+function removeEnableMarker(home, fsImpl) {
+	fsImpl.rmSync(path.join(home, ".config", "haoshoku", "hermes-relay.json"), {
+		force: true,
+	});
+}
+
+async function configureHermesRelayImpl({
 	home = homedir(),
 	projectRoot = path.resolve(import.meta.dir, "..", ".."),
 	fsImpl = fs,
@@ -861,20 +881,22 @@ export async function configureHermesRelay({
 
 	const activationChanged =
 		pluginChanged || linkChanged || configChanged || enableChanged;
-	if (activationChanged) {
-		const activity = await readGatewayActivity({ hermesHome, environment });
-		if (activity === "busy") {
-			logger.warning(
-				"Hermes relay is configured, but activation is deferred to protect active Hermes work. Retry after the gateway is idle.",
-			);
-			return false;
-		}
-		if (activity !== "idle") {
-			logger.warning(
-				"Hermes relay is configured, but activation is deferred because Haoshoku could not confirm that the gateway is idle. Check gateway status and retry.",
-			);
-			return false;
-		}
+	const activationRequired =
+		activationChanged || !hasEnableMarker(home, fsImpl);
+	const activity = await readGatewayActivity({ hermesHome, environment });
+	if (activity === "busy") {
+		logger.warning(
+			"Hermes relay is configured, but activation is deferred to protect active Hermes work. Retry after the gateway is idle.",
+		);
+		return false;
+	}
+	if (activity !== "idle") {
+		logger.warning(
+			"Hermes relay is configured, but activation is deferred because Haoshoku could not confirm that the gateway is idle. Check gateway status and retry.",
+		);
+		return false;
+	}
+	if (activationRequired) {
 		if (!isTTY) {
 			logger.warning(
 				"Hermes relay is configured but activation is pending. From an interactive idle VPS shell, run: haoshoku --server-hermes-relay",
@@ -906,9 +928,21 @@ export async function configureHermesRelay({
 
 	writeEnableMarker(home, fsImpl);
 	logger.success(
-		activationChanged
+		activationRequired
 			? "Hermes relay is configured and active on this host."
 			: "Hermes relay is already configured and active on this host.",
 	);
 	return true;
+}
+
+export async function configureHermesRelay(options = {}) {
+	const home = options.home ?? homedir();
+	const fsImpl = options.fsImpl ?? fs;
+	let complete = false;
+	try {
+		complete = await configureHermesRelayImpl({ ...options, home, fsImpl });
+		return complete;
+	} finally {
+		if (!complete) removeEnableMarker(home, fsImpl);
+	}
 }

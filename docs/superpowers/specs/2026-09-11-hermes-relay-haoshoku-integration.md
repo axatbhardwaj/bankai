@@ -52,11 +52,17 @@ Status: finalized locally against the published standalone v0.1.0 release.
 
 - Enablement uses Hermes 0.21.1 native `plugins enable` without tool-override
   permission, followed by native plugin doctor and relay doctor.
-- Unchanged successful reruns preserve config/database/marker bytes and do not
-  restart the gateway.
+- The enabled marker is also the persistent activation receipt. A missing or
+  invalid marker keeps activation pending across process reruns even when the
+  second run has no file, config, link, or enablement changes.
+- Every successful run freshly confirms that the gateway is running and idle.
+  Unchanged successful reruns with a valid marker preserve
+  config/database/marker bytes and do not restart the gateway.
 - Changed installs activate only when the gateway control socket confirms idle.
   Busy or unknown activity, noninteractive execution, a declined prompt, or a
-  failed restart returns false and leaves the marker absent.
+  failed restart returns false and removes any preexisting marker. This also
+  prevents a stopped or unreachable unchanged gateway from retaining active
+  transport status.
 - No path restarts Paseo, interrupts active Hermes work, changes schedules, sends
   messages, or performs a live relay review.
 

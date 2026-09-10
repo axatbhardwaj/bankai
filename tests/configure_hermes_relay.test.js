@@ -457,11 +457,84 @@ describe("configureHermesRelay", () => {
 		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
 		expect(fs.readFileSync(database, "utf8")).toBe("existing authority state");
 		expect(fs.statSync(marker).mtimeMs).toBe(markerMtime);
-		expect(activityChecks).toBe(0);
+		expect(activityChecks).toBe(1);
 		expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
 		expect(
 			fs.existsSync(path.join(setup.hermesHome, "backups", "haoshoku")),
 		).toBe(false);
+	});
+
+	it("removes the host marker when an unchanged relay is no longer ready", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+			{ mode: 0o600 },
+		);
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+		expect(fs.existsSync(marker)).toBe(true);
+
+		setup.gatewayActivityImpl = async () => "unknown";
+		expect(await configureHermesRelay(setup)).toBe(false);
+		expect(fs.existsSync(marker)).toBe(false);
+	});
+
+	it("removes a preexisting host marker when an update cannot activate", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+			{ mode: 0o600 },
+		);
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+		expect(fs.existsSync(marker)).toBe(true);
+
+		fs.writeFileSync(path.join(setup.source, "relay.py"), "updated relay.py\n");
+		setup.gatewayActivityImpl = async () => "busy";
+		expect(await configureHermesRelay(setup)).toBe(false);
+		expect(fs.existsSync(marker)).toBe(false);
 	});
 
 	it("backs up changed plugin bytes once without touching private config or database", async () => {
@@ -577,6 +650,53 @@ describe("configureHermesRelay", () => {
 					path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
 				),
 			).toBe(false);
+		});
+	}
+
+	for (const [reason, { activity, isTTY, acceptsRestart }] of [
+		["busy gateway", { activity: "busy", isTTY: true, acceptsRestart: true }],
+		[
+			"noninteractive shell",
+			{ activity: "idle", isTTY: false, acceptsRestart: true },
+		],
+		[
+			"declined restart",
+			{ activity: "idle", isTTY: true, acceptsRestart: false },
+		],
+	]) {
+		it(`keeps activation pending across reruns after a ${reason}`, async () => {
+			const setup = fixture();
+			const dataDirectory = path.join(
+				setup.hermesHome,
+				"plugin-data",
+				"paseo-review-relay",
+			);
+			fs.mkdirSync(dataDirectory, { recursive: true });
+			fs.writeFileSync(
+				path.join(dataDirectory, "config.json"),
+				`${JSON.stringify({
+					telegramChatId: "123456",
+					telegramUserId: "123456",
+					serverId: "server-vps",
+				})}\n`,
+				{ mode: 0o600 },
+			);
+			addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+			setup.gatewayActivityImpl = async () => activity;
+			setup.isTTY = isTTY;
+			setup.promptImpl = async () => acceptsRestart;
+			const marker = path.join(
+				setup.home,
+				".config",
+				"haoshoku",
+				"hermes-relay.json",
+			);
+
+			expect(await configureHermesRelay(setup)).toBe(false);
+			expect(await configureHermesRelay(setup)).toBe(false);
+
+			expect(fs.existsSync(marker)).toBe(false);
+			expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
 		});
 	}
 
