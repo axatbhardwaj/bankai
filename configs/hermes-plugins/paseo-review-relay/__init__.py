@@ -6,6 +6,7 @@ from .adapters import (
     GithubAdapter,
     PaseoAdapter,
 )
+from .outbound import DecisionRequest, OutboundService
 from .relay import RelayConfig, ReviewRelay
 from .storage import Storage
 
@@ -15,7 +16,9 @@ __all__ = [
     "AsyncCommandRunner",
     "CommandFailure",
     "CommandResult",
+    "DecisionRequest",
     "GithubAdapter",
+    "OutboundService",
     "PaseoAdapter",
     "RelayConfig",
     "ReviewRelay",

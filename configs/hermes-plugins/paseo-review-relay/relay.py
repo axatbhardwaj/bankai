@@ -87,6 +87,16 @@ class ReviewRelay:
                 reply_to=event.message_id,
             )
             return
+        if decision["demo"] and kind == "decision":
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "refused"
+            )
+            await self.telegram.send(
+                event.source.chat_id,
+                "This is a demo relay and cannot accept decisions. Send a free-form question to test routing.",
+                reply_to=event.message_id,
+            )
+            return
         owner = await self.paseo.inspect_owner(decision["owner_agent_id"])
         if (
             not owner

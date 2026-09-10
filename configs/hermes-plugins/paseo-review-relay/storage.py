@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS decisions (
     head_sha TEXT NOT NULL,
     base_sha TEXT NOT NULL,
     proposal_digest TEXT NOT NULL,
+    demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1)),
     status TEXT NOT NULL DEFAULT 'open'
         CHECK (status IN ('open', 'superseded', 'closed', 'blocked', 'uncertain'))
 );
@@ -33,6 +34,16 @@ CREATE TABLE IF NOT EXISTS inbound_receipts (
     forward_status TEXT NOT NULL DEFAULT 'queued'
         CHECK (forward_status IN ('queued', 'forwarded', 'refused', 'failed', 'uncertain')),
     PRIMARY KEY (platform, chat_id, message_id)
+);
+CREATE TABLE IF NOT EXISTS outbound_attempts (
+    attempt_id TEXT PRIMARY KEY,
+    decision_id TEXT NOT NULL REFERENCES decisions(decision_id),
+    kind TEXT NOT NULL CHECK (kind IN ('alert', 'answer')),
+    body TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT 'pending'
+        CHECK (state IN ('pending', 'sent', 'failed', 'uncertain')),
+    message_id TEXT,
+    retry_of TEXT REFERENCES outbound_attempts(attempt_id)
 );
 """
 
@@ -60,14 +71,15 @@ class Storage:
         head_sha,
         base_sha,
         proposal_digest,
+        demo=False,
     ):
         with self.connection:
             self.connection.execute(
                 """
                 INSERT INTO decisions (
                     decision_id, owner_agent_id, server_id, repository, pr_number,
-                    head_sha, base_sha, proposal_digest
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    head_sha, base_sha, proposal_digest, demo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     decision_id,
@@ -78,6 +90,51 @@ class Storage:
                     head_sha,
                     base_sha,
                     proposal_digest,
+                    int(demo),
+                ),
+            )
+
+    def supersede_decision(
+        self,
+        old_decision_id,
+        *,
+        decision_id,
+        owner_agent_id,
+        server_id,
+        repository,
+        pr_number,
+        head_sha,
+        base_sha,
+        proposal_digest,
+        demo=False,
+    ):
+        with self.connection:
+            cursor = self.connection.execute(
+                """
+                UPDATE decisions SET status = 'superseded'
+                WHERE decision_id = ? AND status = 'open'
+                """,
+                (old_decision_id,),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("only an open decision may be superseded")
+            self.connection.execute(
+                """
+                INSERT INTO decisions (
+                    decision_id, owner_agent_id, server_id, repository, pr_number,
+                    head_sha, base_sha, proposal_digest, demo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    decision_id,
+                    owner_agent_id,
+                    server_id,
+                    repository,
+                    pr_number,
+                    head_sha,
+                    base_sha,
+                    proposal_digest,
+                    int(demo),
                 ),
             )
 
@@ -87,6 +144,72 @@ class Storage:
                 "INSERT INTO anchors VALUES (?, ?, ?, ?)",
                 (platform, str(chat_id), str(message_id), decision_id),
             )
+
+    def create_outbound_attempt(self, attempt_id, decision_id, kind, body, retry_of=None):
+        with self.connection:
+            self.connection.execute(
+                """
+                INSERT INTO outbound_attempts (
+                    attempt_id, decision_id, kind, body, retry_of
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (attempt_id, decision_id, kind, body, retry_of),
+            )
+
+    def mark_outbound_sent(self, attempt_id, platform, chat_id, message_id):
+        with self.connection:
+            row = self.connection.execute(
+                "SELECT decision_id FROM outbound_attempts WHERE attempt_id = ?",
+                (attempt_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(attempt_id)
+            cursor = self.connection.execute(
+                """
+                UPDATE outbound_attempts SET state = 'sent', message_id = ?
+                WHERE attempt_id = ? AND state = 'pending'
+                """,
+                (str(message_id), attempt_id),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("outbound attempt is not pending")
+            self.connection.execute(
+                "INSERT INTO anchors VALUES (?, ?, ?, ?)",
+                (platform, str(chat_id), str(message_id), row["decision_id"]),
+            )
+
+    def mark_outbound_state(self, attempt_id, state):
+        if state not in {"failed", "uncertain"}:
+            raise ValueError("outbound failure state must be failed or uncertain")
+        with self.connection:
+            cursor = self.connection.execute(
+                """
+                UPDATE outbound_attempts SET state = ?
+                WHERE attempt_id = ? AND state = 'pending'
+                """,
+                (state, attempt_id),
+            )
+        if cursor.rowcount != 1:
+            raise ValueError("outbound attempt is not pending")
+
+    def list_outbound_attempts(self, *, state=None):
+        if state is None:
+            rows = self.connection.execute(
+                "SELECT * FROM outbound_attempts ORDER BY rowid"
+            ).fetchall()
+        else:
+            rows = self.connection.execute(
+                "SELECT * FROM outbound_attempts WHERE state = ? ORDER BY rowid",
+                (state,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_outbound_attempt(self, attempt_id):
+        row = self.connection.execute(
+            "SELECT * FROM outbound_attempts WHERE attempt_id = ?",
+            (attempt_id,),
+        ).fetchone()
+        return None if row is None else dict(row)
 
     def set_decision_status(self, decision_id, status):
         with self.connection:

@@ -310,6 +310,31 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         await self.drain()
         self.assertEqual(len(self.paseo.attempts), 1)
 
+    async def test_demo_decision_token_is_refused_before_github_validation(self):
+        self.store.open_decision(
+            decision_id="demo",
+            owner_agent_id="agent-owner",
+            server_id="server-vps",
+            repository="__demo__",
+            pr_number=0,
+            head_sha="0" * 40,
+            base_sha="0" * 40,
+            proposal_digest="e" * 64,
+            demo=True,
+        )
+        self.store.attach_anchor("demo", "telegram", "owner-chat", "demo-alert")
+
+        result = self.relay.pre_gateway_dispatch(
+            event=self.event(text="approve", reply_to_message_id="demo-alert")
+        )
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.github.calls, [])
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.get_decision("demo")["status"], "open")
+        self.assertIn("demo", self.telegram.messages[0][1].lower())
+
 
 if __name__ == "__main__":
     unittest.main()
