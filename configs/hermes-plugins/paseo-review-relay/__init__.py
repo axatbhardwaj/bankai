@@ -6,6 +6,7 @@ from .adapters import (
     GithubAdapter,
     HermesAdapter,
     PaseoAdapter,
+    ServerIdentityMismatch,
 )
 from .cli import cli_main, doctor_snapshot
 from .outbound import DecisionRequest, OutboundService
@@ -26,6 +27,7 @@ __all__ = [
     "PaseoAdapter",
     "RelayConfig",
     "ReviewRelay",
+    "ServerIdentityMismatch",
     "Storage",
     "cli_main",
     "doctor_snapshot",

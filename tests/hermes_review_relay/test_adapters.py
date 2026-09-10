@@ -30,11 +30,24 @@ class PromptReadingRunner:
         self.prompt_path = None
 
     async def run(self, argv):
+        self.calls.append(tuple(argv))
+        if argv == ["paseo", "status", "--json"]:
+            return self.result.__class__(
+                0,
+                json.dumps(
+                    {
+                        "serverId": "server-vps",
+                        "localDaemon": "running",
+                        "connectedDaemon": "reachable",
+                        "listen": "127.0.0.1:6767",
+                    }
+                ),
+                "",
+            )
         prompt_path = Path(argv[argv.index("--prompt-file") + 1])
         self.prompt_path = prompt_path
         self.prompt_body = prompt_path.read_text(encoding="utf-8")
         self.prompt_mode = prompt_path.stat().st_mode & 0o777
-        self.calls.append(tuple(argv))
         return self.result
 
 
@@ -65,6 +78,16 @@ class RecordingRunner:
         return self.result
 
 
+class SequencedRunner:
+    def __init__(self, results):
+        self.results = iter(results)
+        self.calls = []
+
+    async def run(self, argv):
+        self.calls.append(tuple(argv))
+        return next(self.results)
+
+
 class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
     async def test_paseo_prompt_file_contains_text_that_never_enters_argv(self):
         module = load_plugin()
@@ -73,12 +96,12 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         adapter = module.PaseoAdapter(runner)
         hostile_text = "approve; $(touch /tmp/not-created)\n`id` && echo pwned"
 
-        await adapter.send_prompt("agent-123", hostile_text)
+        await adapter.send_prompt("agent-123", hostile_text, "server-vps")
 
         self.assertEqual(runner.prompt_body, hostile_text)
         self.assertEqual(runner.prompt_mode, 0o600)
         self.assertEqual(
-            runner.calls[0],
+            runner.calls[1],
             (
                 "paseo",
                 "send",
@@ -89,23 +112,39 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
             ),
         )
         self.assertFalse(runner.prompt_path.exists())
-        self.assertNotIn(hostile_text, runner.calls[0])
+        self.assertNotIn(hostile_text, runner.calls[1])
 
     async def test_paseo_inspect_normalizes_owner_and_server_identity(self):
         module = load_plugin()
-        payload = {
-            "ID": "agent-123",
-            "ServerID": "server-vps",
+        status = {
+            "serverId": "server-vps",
+            "localDaemon": "running",
+            "connectedDaemon": "reachable",
+            "listen": "127.0.0.1:6767",
+        }
+        owner_payload = {
+            "Id": "agent-123",
             "Archived": False,
             "Status": "idle",
         }
-        runner = RecordingRunner(module.CommandResult(0, json.dumps(payload), ""))
+        runner = SequencedRunner(
+            [
+                module.CommandResult(0, json.dumps(status), ""),
+                module.CommandResult(0, json.dumps(owner_payload), ""),
+            ]
+        )
         adapter = module.PaseoAdapter(runner)
         self.assertTrue(hasattr(adapter, "inspect_owner"), "Paseo owner inspection is missing")
 
         owner = await adapter.inspect_owner("agent-123")
 
-        self.assertEqual(runner.calls, [("paseo", "inspect", "--json", "agent-123")])
+        self.assertEqual(
+            runner.calls,
+            [
+                ("paseo", "status", "--json"),
+                ("paseo", "inspect", "--json", "agent-123"),
+            ],
+        )
         self.assertEqual(
             owner,
             {
@@ -115,6 +154,55 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
                 "status": "idle",
             },
         )
+
+    async def test_paseo_send_revalidates_the_local_server_before_delivery(self):
+        module = load_plugin()
+        status = {
+            "serverId": "other-server",
+            "localDaemon": "running",
+            "connectedDaemon": "reachable",
+            "listen": "127.0.0.1:6767",
+        }
+        runner = RecordingRunner(module.CommandResult(0, json.dumps(status), ""))
+        adapter = module.PaseoAdapter(runner)
+
+        with self.assertRaisesRegex(module.CommandFailure, "server identity"):
+            await adapter.send_prompt("agent-123", "owner text", "server-vps")
+
+        self.assertEqual(runner.calls, [("paseo", "status", "--json")])
+
+    async def test_paseo_inspect_rejects_missing_server_identity(self):
+        module = load_plugin()
+        status = {
+            "localDaemon": "running",
+            "connectedDaemon": "reachable",
+            "listen": "127.0.0.1:6767",
+        }
+        runner = RecordingRunner(module.CommandResult(0, json.dumps(status), ""))
+
+        with self.assertRaisesRegex(module.CommandFailure, "status"):
+            await module.PaseoAdapter(runner).inspect_owner("agent-123")
+
+        self.assertEqual(runner.calls, [("paseo", "status", "--json")])
+
+    async def test_paseo_inspect_rejects_missing_owner_identity(self):
+        module = load_plugin()
+        status = {
+            "serverId": "server-vps",
+            "localDaemon": "running",
+            "connectedDaemon": "reachable",
+            "listen": "127.0.0.1:6767",
+        }
+        owner = {"Archived": False, "Status": "idle"}
+        runner = SequencedRunner(
+            [
+                module.CommandResult(0, json.dumps(status), ""),
+                module.CommandResult(0, json.dumps(owner), ""),
+            ]
+        )
+
+        with self.assertRaisesRegex(module.CommandFailure, "invalid JSON"):
+            await module.PaseoAdapter(runner).inspect_owner("agent-123")
 
     async def test_github_adapter_reads_exact_live_head_and_base(self):
         module = load_plugin()

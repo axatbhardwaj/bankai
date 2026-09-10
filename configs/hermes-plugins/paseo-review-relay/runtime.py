@@ -28,10 +28,16 @@ class BoundGatewayTelegram:
         raise RuntimeError("Telegram gateway adapter is unavailable")
 
 
+class UnconfiguredRelay:
+    @staticmethod
+    def pre_gateway_dispatch(**kwargs):
+        return None
+
+
 @dataclass
 class PluginRuntime:
-    relay: ReviewRelay
-    store: Storage
+    relay: ReviewRelay | UnconfiguredRelay
+    store: Storage | None
 
 
 def plugin_data_dir():
@@ -57,8 +63,10 @@ def load_config(data_dir):
 
 def create_runtime(ctx):
     data_dir = plugin_data_dir()
-    data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-    config = load_config(data_dir)
+    try:
+        config = load_config(data_dir)
+    except FileNotFoundError:
+        return PluginRuntime(relay=UnconfiguredRelay(), store=None)
     store = Storage(data_dir / "relay.sqlite3")
     runner = AsyncCommandRunner()
     relay = ReviewRelay(

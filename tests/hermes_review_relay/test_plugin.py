@@ -53,7 +53,7 @@ class FailingPaseo:
     async def inspect_owner(self, agent_id):
         return {"id": agent_id, "serverId": "server-vps", "archived": False}
 
-    async def send_prompt(self, agent_id, prompt):
+    async def send_prompt(self, agent_id, prompt, server_id):
         raise self.module.CommandFailure("paseo send exited 1")
 
 
@@ -97,15 +97,19 @@ class PluginRegistrationTests(unittest.TestCase):
             with patch.dict(os.environ, {"HERMES_HOME": str(hermes_home)}, clear=False):
                 runtime = module.register(context)
                 source = SimpleNamespace(
-                    chat_id="owner-chat", user_id="owner-user", chat_type="dm"
+                    platform="telegram",
+                    chat_id="owner-chat",
+                    user_id="owner-user",
+                    chat_type="dm",
                 )
                 event = SimpleNamespace(
-                    platform="telegram",
                     source=source,
                     text="What evidence is missing?",
                     message_id="telegram-reply",
                     reply_to_message_id="telegram-alert",
-                    raw_message=None,
+                    raw_message=SimpleNamespace(
+                        from_user=SimpleNamespace(is_bot=False)
+                    ),
                 )
                 telegram = FakeGatewayTelegram()
                 result = context.hooks["pre_gateway_dispatch"](
@@ -135,6 +139,34 @@ class PluginRegistrationTests(unittest.TestCase):
             )
             self.assertIn("failed", telegram.messages[0][1].lower())
             runtime.store.close()
+
+    def test_register_without_private_config_installs_an_inert_hook(self):
+        module = load_plugin()
+        with tempfile.TemporaryDirectory() as tmp:
+            hermes_home = Path(tmp) / ".hermes"
+            hermes_home.mkdir()
+            context = FakeContext()
+
+            with patch.dict(os.environ, {"HERMES_HOME": str(hermes_home)}, clear=False):
+                runtime = module.register(context)
+                event = SimpleNamespace(
+                    source=SimpleNamespace(
+                        platform="telegram",
+                        chat_id="owner-chat",
+                        user_id="owner-user",
+                        chat_type="dm",
+                    ),
+                    text="approve",
+                    message_id="reply",
+                    reply_to_message_id="alert",
+                    raw_message=None,
+                )
+                result = context.hooks["pre_gateway_dispatch"](event=event)
+
+            self.assertEqual(list(context.hooks), ["pre_gateway_dispatch"])
+            self.assertIsNone(runtime.store)
+            self.assertIsNone(result)
+            self.assertEqual(context.tasks, [])
 
 
 if __name__ == "__main__":

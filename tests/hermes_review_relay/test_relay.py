@@ -32,7 +32,12 @@ class FakePaseo:
         self.attempts = []
         self.send_error = None
         self.inspect_error = None
-        self.owner = {"id": "agent-owner", "serverId": "server-vps", "archived": False}
+        self.send_server_ids = []
+        self.owner = {
+            "id": "agent-owner",
+            "serverId": "server-vps",
+            "archived": False,
+        }
 
     async def inspect_owner(self, agent_id):
         if self.inspect_error:
@@ -41,8 +46,9 @@ class FakePaseo:
             return None
         return {"id": agent_id, **self.owner}
 
-    async def send_prompt(self, agent_id, prompt):
+    async def send_prompt(self, agent_id, prompt, server_id):
         self.attempts.append((agent_id, prompt))
+        self.send_server_ids.append(server_id)
         if self.send_error:
             raise self.send_error
         self.prompts.append((agent_id, prompt))
@@ -118,17 +124,19 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
 
     def event(self, text="Can we keep the old behavior?", message_id="reply-9", **changes):
         source = SimpleNamespace(
+            platform="telegram",
             chat_id="owner-chat",
             user_id="owner-user",
             chat_type="dm",
         )
         values = dict(
-            platform="telegram",
             source=source,
             text=text,
             message_id=message_id,
             reply_to_message_id="alert-7",
-            raw_message=None,
+            raw_message=SimpleNamespace(
+                from_user=SimpleNamespace(is_bot=False)
+            ),
         )
         values.update(changes)
         return SimpleNamespace(**values)
@@ -161,6 +169,7 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
         self.assertEqual(self.github.calls, [])
+        self.assertEqual(self.paseo.send_server_ids, ["server-vps"])
         self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "forwarded")
 
     async def test_duplicate_inbound_message_is_not_forwarded_twice(self):
@@ -175,18 +184,41 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_untrusted_or_unsafe_events_never_schedule_owner_work(self):
         wrong_sender = self.event(message_id="wrong-sender")
-        wrong_sender.source = SimpleNamespace(chat_id="owner-chat", user_id="intruder", chat_type="dm")
+        wrong_sender.source = SimpleNamespace(
+            platform="telegram",
+            chat_id="owner-chat",
+            user_id="intruder",
+            chat_type="dm",
+        )
         wrong_chat = self.event(message_id="wrong-chat")
-        wrong_chat.source = SimpleNamespace(chat_id="elsewhere", user_id="owner-user", chat_type="dm")
+        wrong_chat.source = SimpleNamespace(
+            platform="telegram",
+            chat_id="elsewhere",
+            user_id="owner-user",
+            chat_type="dm",
+        )
         group = self.event(message_id="group")
-        group.source = SimpleNamespace(chat_id="owner-chat", user_id="owner-user", chat_type="group")
+        group.source = SimpleNamespace(
+            platform="telegram",
+            chat_id="owner-chat",
+            user_id="owner-user",
+            chat_type="group",
+        )
+        wrong_platform = self.event(message_id="platform")
+        wrong_platform.source.platform = "slack"
+        missing_platform = self.event(message_id="missing-platform")
+        missing_platform.source = SimpleNamespace(
+            chat_id="owner-chat", user_id="owner-user", chat_type="dm"
+        )
         bot = SimpleNamespace(is_bot=True)
         cases = {
-            "wrong platform": self.event(message_id="platform", platform="slack"),
+            "wrong platform": wrong_platform,
+            "missing platform": missing_platform,
             "wrong sender": wrong_sender,
             "wrong chat": wrong_chat,
             "group chat": group,
             "unknown anchor": self.event(message_id="unknown", reply_to_message_id="missing"),
+            "missing raw message": self.event(message_id="missing-raw", raw_message=None),
             "forwarded": self.event(message_id="forwarded", raw_message=SimpleNamespace(forward_origin=object())),
             "edited": self.event(message_id="edited", raw_message=SimpleNamespace(edit_date=object())),
             "bot": self.event(message_id="bot", raw_message=SimpleNamespace(from_user=bot)),
@@ -367,6 +399,22 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.store.get_decision("decision-1")["status"], "open")
         self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "failed")
         self.assertIn("inspect", self.telegram.messages[0][1].lower())
+
+    async def test_server_change_before_send_blocks_the_transport_decision(self):
+        self.paseo.send_error = self.module.ServerIdentityMismatch(
+            "Paseo server identity changed before send"
+        )
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertEqual(
+            self.store.receipt_status("telegram", "owner-chat", "reply-9"),
+            "refused",
+        )
+        self.assertIn("server identity", self.telegram.messages[0][1].lower())
 
     async def test_inspected_owner_id_mismatch_blocks_routing(self):
         self.paseo.owner["id"] = "different-agent"

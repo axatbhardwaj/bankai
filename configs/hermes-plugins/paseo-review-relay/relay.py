@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .adapters import AmbiguousDelivery, CommandFailure
+from .adapters import AmbiguousDelivery, CommandFailure, ServerIdentityMismatch
 
 
 DECISION_WORDS = {"approve", "reject", "hold"}
@@ -36,8 +36,9 @@ class ReviewRelay:
         self.spawn_task = spawn_task
 
     def pre_gateway_dispatch(self, *, event, **kwargs):
-        platform = getattr(event.platform, "value", event.platform)
         source = event.source
+        source_platform = getattr(source, "platform", None)
+        platform = getattr(source_platform, "value", source_platform)
         if (
             platform != "telegram"
             or source.chat_type != "dm"
@@ -71,7 +72,7 @@ class ReviewRelay:
     @staticmethod
     def _is_unsafe_telegram_message(message):
         if message is None:
-            return False
+            return True
         author = getattr(message, "from_user", None)
         return bool(
             getattr(message, "forward_origin", None)
@@ -192,7 +193,20 @@ class ReviewRelay:
             f"text:\n{event.text}"
         )
         try:
-            await self.paseo.send_prompt(decision["owner_agent_id"], prompt)
+            await self.paseo.send_prompt(
+                decision["owner_agent_id"], prompt, decision["server_id"]
+            )
+        except ServerIdentityMismatch:
+            self.store.set_decision_status(decision["decision_id"], "blocked")
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "refused"
+            )
+            await telegram.send(
+                event.source.chat_id,
+                "The local Paseo server identity changed; your reply was not routed.",
+                reply_to=event.message_id,
+            )
+            return
         except AmbiguousDelivery:
             self.store.set_decision_status(decision["decision_id"], "uncertain")
             self.store.mark_receipt(

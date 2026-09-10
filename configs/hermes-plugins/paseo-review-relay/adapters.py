@@ -21,6 +21,10 @@ class AmbiguousDelivery(RuntimeError):
     pass
 
 
+class ServerIdentityMismatch(CommandFailure):
+    pass
+
+
 class AsyncCommandRunner:
     def __init__(self, timeout=30):
         self.timeout = timeout
@@ -53,24 +57,57 @@ class PaseoAdapter:
     def __init__(self, runner):
         self.runner = runner
 
+    async def _read_server_id(self):
+        result = await self.runner.run(["paseo", "status", "--json"])
+        if result.returncode != 0:
+            raise CommandFailure("paseo status failed")
+        try:
+            payload = json.loads(result.stdout)
+            server_id = payload["serverId"]
+            if (
+                not isinstance(server_id, str)
+                or not server_id
+                or payload["localDaemon"] != "running"
+                or payload["connectedDaemon"] != "reachable"
+            ):
+                raise ValueError
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise CommandFailure("paseo status returned invalid JSON") from error
+        return server_id
+
     async def inspect_owner(self, agent_id):
+        server_id = await self._read_server_id()
         result = await self.runner.run(["paseo", "inspect", "--json", agent_id])
         if result.returncode != 0:
             raise CommandFailure("paseo inspect failed")
         try:
             payload = json.loads(result.stdout)
+            owner_id = payload["Id"]
+            archived = payload["Archived"]
+            status = payload["Status"]
+            if (
+                not isinstance(owner_id, str)
+                or not owner_id
+                or not isinstance(archived, bool)
+                or not isinstance(status, str)
+                or not status
+            ):
+                raise ValueError
             return {
-                "id": payload.get("ID", payload.get("id")),
-                "serverId": payload.get(
-                    "ServerID", payload.get("serverId", payload.get("server_id"))
-                ),
-                "archived": payload.get("Archived", payload.get("archived", False)),
-                "status": payload.get("Status", payload.get("status")),
+                "id": owner_id,
+                "serverId": server_id,
+                "archived": archived,
+                "status": status,
             }
-        except (AttributeError, json.JSONDecodeError) as error:
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             raise CommandFailure("paseo inspect returned invalid JSON") from error
 
-    async def send_prompt(self, agent_id, prompt):
+    async def send_prompt(self, agent_id, prompt, expected_server_id):
+        server_id = await self._read_server_id()
+        if server_id != expected_server_id:
+            raise ServerIdentityMismatch(
+                "Paseo server identity changed before send"
+            )
         descriptor, raw_path = tempfile.mkstemp(prefix="hermes-review-", suffix=".txt")
         prompt_path = Path(raw_path)
         try:
