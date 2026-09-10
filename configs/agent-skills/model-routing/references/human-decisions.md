@@ -35,6 +35,10 @@ hermes-relay answer DECISION_ID --file /private/path/answer.txt
 The driver installs the executable at `/root/.local/bin/hermes-relay`. Keep request
 and answer files private, and use the guide's `supersede`, `close`, and explicit
 failed-attempt `retry` commands for those less common transport transitions.
+Blocked and uncertain decisions cannot answer, supersede, or retry. Inspect and
+reconcile the external evidence, then close the old record and use `open` with a
+fresh decision ID if transport should continue; never replay ambiguity or reroute
+the request to another owner.
 
 While waiting, protect the exact persistent owner from the existing stale-thread
 soft-archive schedule. Inspect its current labels, preserve every unrelated label,

@@ -14,8 +14,8 @@ it never approves, merges, chooses another owner, or expands prior authority.
 - Exact whole-message `approve`, `reject` and `hold` are decision receipts. A
   current GitHub head/base check only gates forwarding; the relay keeps the
   decision `open`, and the driver must revalidate before acting.
-- Every other text reply is a question. Forwarded, edited, bot and attachment
-  messages cannot enter the relay.
+- Every other eligible text reply is a question. Forwarded, edited, bot,
+  attachment and missing raw Telegram messages cannot enter the relay.
 - Interrupted or ambiguous sends become `uncertain` and are never replayed.
   Only definite `failed` outbound attempts can be retried explicitly.
 - Demo alerts hide real PR identity and reject all three decision words.
@@ -74,6 +74,12 @@ hermes-relay retry FAILED_ATTEMPT_ID
 and `uncertain` attempts. A successful send means the platform returned a message
 ID; it does not prove the user read it.
 
+`answer`, `supersede`, and `retry` require an `open` decision. For a `blocked` or
+`uncertain` decision, first inspect `pending` and reconcile the actual Telegram,
+Paseo, and GitHub evidence. Never replay an uncertain attempt or choose a new
+owner. If transport should continue, close the old decision and create a fresh
+request with a new decision ID, verified persistent owner, and current revisions.
+
 ## Driver-owned install and validation
 
 Do not install from an unreviewed or moving checkout. Pin the candidate commit,
@@ -121,8 +127,14 @@ Run from the pinned candidate:
 ```bash
 python3 -m unittest discover -s tests/hermes_review_relay -v
 hermes-relay doctor
-hermes plugins doctor
+hermes plugins doctor /root/.hermes/plugins/paseo-review-relay --ci
 ```
+
+The packaged doctor intentionally validates registration in a temporary empty
+Hermes home. With no private config, the plugin registers one inert hook that
+cannot admit or route messages. `hermes-relay doctor` separately checks the live
+private config and database. A gateway process must register the plugin with the
+valid private config before the relay is active.
 
 Then run the synthetic registered-hook test in an isolated temporary Hermes home,
 verify ordinary bot messages still dispatch normally, and send one clearly labeled
