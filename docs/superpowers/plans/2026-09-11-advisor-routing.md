@@ -40,7 +40,7 @@
 - Produces: bundled profile ID `technical-advisor` and prose contracts for
   Fable planning, Astra technical advice, and Astra/Fable consensus.
 
-- [ ] **Step 1: Add failing profile and preservation tests**
+- [x] **Step 1: Add failing profile and preservation tests**
 
 Assert the new profile's exact runtime fields:
 
@@ -60,7 +60,7 @@ Add a live-policy merge scenario containing `planning-advisor`,
 Assert those exact objects, provider credentials, and unrelated state survive,
 and assert a second merge equals the first.
 
-- [ ] **Step 2: Add failing scenario-level routing tests**
+- [x] **Step 2: Add failing scenario-level routing tests**
 
 Read the three model-routing Markdown files and validate short, stable behavior
 anchors for these scenarios:
@@ -77,7 +77,7 @@ Required advisor unavailable -> dependent decision blocked
 Also assert the profile set has no saved driver role and Fable's notes call it
 the driver's planning partner.
 
-- [ ] **Step 3: Run the focused test and confirm the new assertions fail**
+- [x] **Step 3: Run the focused test and confirm the new assertions fail**
 
 Run:
 
@@ -88,7 +88,7 @@ bun test tests/configure_paseo_profiles.test.js
 Expected: failures for missing `technical-advisor` and missing new routing
 contract language, while pre-existing tests remain green.
 
-- [ ] **Step 4: Add the exact technical-advisor profile**
+- [x] **Step 4: Add the exact technical-advisor profile**
 
 Insert one profile in `configs/paseo/agent-profiles.json`:
 
@@ -107,7 +107,7 @@ Give it concise notes limiting output to scoped recommendations, risks,
 alternatives, and acceptance checks, with no candidate review or implementation.
 Change Fable's notes from Astra's partner to the driver's planning partner.
 
-- [ ] **Step 5: Implement routing and briefing contracts**
+- [x] **Step 5: Implement routing and briefing contracts**
 
 In `SKILL.md`, make driver ownership model-neutral, strengthen the Fable trigger
 to substantial planning, add the consequential technical-design checkpoint and
@@ -122,14 +122,14 @@ consensus evidence requirements. In `references/matt-workflows.md`, make the
 driver the owner while applying Fable planning and Astra technical/consensus
 checkpoints at their specific triggers.
 
-- [ ] **Step 6: Update portable policy and README summaries**
+- [x] **Step 6: Update portable policy and README summaries**
 
 Replace the claim that Astra always drives in both portable policy files with
 the selected-model driver rule and short Fable/Astra checkpoint summary. Update
 the Agent and orchestration policy section in `README.md` to describe the new
 profile and distinguish planning, technical advice, consensus, and review.
 
-- [ ] **Step 7: Run focused tests and commit the behavioral change**
+- [x] **Step 7: Run focused tests and commit the behavioral change**
 
 Run:
 
@@ -140,7 +140,7 @@ bun test tests/configure_paseo_profiles.test.js tests/configure_agent_skills.tes
 Expected: all focused tests pass. Commit the cohesive profile, test, and routing
 contract change with a semantic message.
 
-- [ ] **Step 8: Format changed files and run final verification**
+- [x] **Step 8: Format changed files and run final verification**
 
 Format only changed supported files, then run:
 
