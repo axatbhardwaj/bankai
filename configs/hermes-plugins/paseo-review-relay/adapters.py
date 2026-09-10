@@ -29,12 +29,13 @@ class AsyncCommandRunner:
     def __init__(self, timeout=30):
         self.timeout = timeout
 
-    async def run(self, argv):
+    async def run(self, argv, *, env=None):
         try:
             process = await asyncio.create_subprocess_exec(
                 *argv,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=env,
             )
         except OSError as error:
             raise CommandFailure(f"could not start {argv[0]}") from error
@@ -54,11 +55,15 @@ class AsyncCommandRunner:
 
 
 class PaseoAdapter:
-    def __init__(self, runner):
+    def __init__(self, runner, *, environment=None):
         self.runner = runner
+        self.environment = dict(os.environ if environment is None else environment)
+        self.environment.pop("PASEO_HOST", None)
 
     async def _read_server_id(self):
-        result = await self.runner.run(["paseo", "status", "--json"])
+        result = await self.runner.run(
+            ["paseo", "status", "--json"], env=self.environment
+        )
         if result.returncode != 0:
             raise CommandFailure("paseo status failed")
         try:
@@ -77,7 +82,9 @@ class PaseoAdapter:
 
     async def inspect_owner(self, agent_id):
         server_id = await self._read_server_id()
-        result = await self.runner.run(["paseo", "inspect", "--json", agent_id])
+        result = await self.runner.run(
+            ["paseo", "inspect", "--json", agent_id], env=self.environment
+        )
         if result.returncode != 0:
             raise CommandFailure("paseo inspect failed")
         try:
@@ -122,7 +129,8 @@ class PaseoAdapter:
                     "--prompt-file",
                     str(prompt_path),
                     "--no-wait",
-                ]
+                ],
+                env=self.environment,
             )
             if result.returncode != 0:
                 raise CommandFailure("paseo send failed")

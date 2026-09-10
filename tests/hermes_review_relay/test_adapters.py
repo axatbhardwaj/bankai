@@ -28,9 +28,11 @@ class PromptReadingRunner:
         self.prompt_body = None
         self.prompt_mode = None
         self.prompt_path = None
+        self.environments = []
 
-    async def run(self, argv):
+    async def run(self, argv, *, env=None):
         self.calls.append(tuple(argv))
+        self.environments.append(env)
         if argv == ["paseo", "status", "--json"]:
             return self.result.__class__(
                 0,
@@ -59,7 +61,7 @@ class MessageReadingRunner:
         self.message_mode = None
         self.message_path = None
 
-    async def run(self, argv):
+    async def run(self, argv, *, env=None):
         message_path = Path(argv[argv.index("--file") + 1])
         self.message_path = message_path
         self.message_body = message_path.read_text(encoding="utf-8")
@@ -72,9 +74,11 @@ class RecordingRunner:
     def __init__(self, result):
         self.result = result
         self.calls = []
+        self.environments = []
 
-    async def run(self, argv):
+    async def run(self, argv, *, env=None):
         self.calls.append(tuple(argv))
+        self.environments.append(env)
         return self.result
 
 
@@ -82,9 +86,11 @@ class SequencedRunner:
     def __init__(self, results):
         self.results = iter(results)
         self.calls = []
+        self.environments = []
 
-    async def run(self, argv):
+    async def run(self, argv, *, env=None):
         self.calls.append(tuple(argv))
+        self.environments.append(env)
         return next(self.results)
 
 
@@ -93,7 +99,14 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         module = load_plugin()
         self.assertTrue(hasattr(module, "PaseoAdapter"), "Paseo subprocess adapter is missing")
         runner = PromptReadingRunner(module.CommandResult(0, "{}", ""))
-        adapter = module.PaseoAdapter(runner)
+        adapter = module.PaseoAdapter(
+            runner,
+            environment={
+                "PATH": "/usr/bin",
+                "PASEO_HOME": "/private/local-paseo-home",
+                "PASEO_HOST": "ssh://remote-daemon",
+            },
+        )
         hostile_text = "approve; $(touch /tmp/not-created)\n`id` && echo pwned"
 
         await adapter.send_prompt("agent-123", hostile_text, "server-vps")
@@ -113,6 +126,44 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertFalse(runner.prompt_path.exists())
         self.assertNotIn(hostile_text, runner.calls[1])
+        expected_environment = {
+            "PATH": "/usr/bin",
+            "PASEO_HOME": "/private/local-paseo-home",
+        }
+        self.assertEqual(
+            runner.environments, [expected_environment, expected_environment]
+        )
+
+    async def test_paseo_calls_remove_only_the_remote_host_override(self):
+        module = load_plugin()
+        status = {
+            "serverId": "server-vps",
+            "localDaemon": "running",
+            "connectedDaemon": "reachable",
+            "listen": "127.0.0.1:6767",
+        }
+        owner = {"Id": "agent-123", "Archived": False, "Status": "idle"}
+        runner = SequencedRunner(
+            [
+                module.CommandResult(0, json.dumps(status), ""),
+                module.CommandResult(0, json.dumps(owner), ""),
+            ]
+        )
+        inherited = {
+            "PATH": "/usr/bin",
+            "PASEO_HOME": "/private/local-paseo-home",
+            "PASEO_HOST": "ssh://remote-daemon",
+        }
+        adapter = module.PaseoAdapter(runner, environment=inherited)
+
+        await adapter.inspect_owner("agent-123")
+
+        expected = {
+            "PATH": "/usr/bin",
+            "PASEO_HOME": "/private/local-paseo-home",
+        }
+        self.assertEqual(runner.environments, [expected, expected])
+        self.assertEqual(inherited["PASEO_HOST"], "ssh://remote-daemon")
 
     async def test_paseo_inspect_normalizes_owner_and_server_identity(self):
         module = load_plugin()
@@ -245,6 +296,25 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(result, module.CommandResult(0, "relay-ok\n", ""))
+
+    async def test_async_runner_uses_the_explicit_environment(self):
+        module = load_plugin()
+        result = await module.AsyncCommandRunner(timeout=2).run(
+            [
+                sys.executable,
+                "-c",
+                "import os; print(os.getenv('PASEO_HOST', 'missing')); "
+                "print(os.getenv('PASEO_HOME', 'missing'))",
+            ],
+            env={"PATH": "/usr/bin", "PASEO_HOME": "/private/local-paseo-home"},
+        )
+
+        self.assertEqual(
+            result,
+            module.CommandResult(
+                0, "missing\n/private/local-paseo-home\n", ""
+            ),
+        )
 
     async def test_hermes_sender_anchors_only_json_confirmed_message_id(self):
         module = load_plugin()
