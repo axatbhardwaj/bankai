@@ -11,8 +11,9 @@ it never approves, merges, chooses another owner, or expands prior authority.
   gives async work to `ctx.spawn_task`.
 - Owner text is written to a mode-0600 UTF-8 prompt file. All `paseo`, `gh` and
   `hermes` calls use argument arrays without a shell.
-- Paseo commands preserve the local home environment but remove `PASEO_HOST`, so
-  status, owner inspection and delivery cannot be redirected to another daemon.
+- Paseo commands preserve the local home and authentication environment but remove
+  the installed target overrides `PASEO_HOST` and `PASEO_LISTEN`, so status, owner
+  inspection and delivery cannot be redirected to another daemon.
 - Exact whole-message `approve`, `reject` and `hold` are decision receipts. A
   current GitHub head/base check only gates forwarding; the relay keeps the
   decision `open`, and the driver must revalidate before acting.

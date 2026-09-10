@@ -58,7 +58,8 @@ class PaseoAdapter:
     def __init__(self, runner, *, environment=None):
         self.runner = runner
         self.environment = dict(os.environ if environment is None else environment)
-        self.environment.pop("PASEO_HOST", None)
+        for target_override in ("PASEO_HOST", "PASEO_LISTEN"):
+            self.environment.pop(target_override, None)
 
     async def _read_server_id(self):
         result = await self.runner.run(

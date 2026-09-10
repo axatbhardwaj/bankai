@@ -105,6 +105,7 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
                 "PATH": "/usr/bin",
                 "PASEO_HOME": "/private/local-paseo-home",
                 "PASEO_HOST": "ssh://remote-daemon",
+                "PASEO_LISTEN": "/tmp/remote-daemon.sock",
             },
         )
         hostile_text = "approve; $(touch /tmp/not-created)\n`id` && echo pwned"
@@ -134,7 +135,7 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
             runner.environments, [expected_environment, expected_environment]
         )
 
-    async def test_paseo_calls_remove_only_the_remote_host_override(self):
+    async def test_paseo_calls_remove_both_installed_target_overrides(self):
         module = load_plugin()
         status = {
             "serverId": "server-vps",
@@ -152,7 +153,9 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         inherited = {
             "PATH": "/usr/bin",
             "PASEO_HOME": "/private/local-paseo-home",
+            "PASEO_PASSWORD": "local-daemon-password",
             "PASEO_HOST": "ssh://remote-daemon",
+            "PASEO_LISTEN": "/tmp/remote-daemon.sock",
         }
         adapter = module.PaseoAdapter(runner, environment=inherited)
 
@@ -161,9 +164,11 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         expected = {
             "PATH": "/usr/bin",
             "PASEO_HOME": "/private/local-paseo-home",
+            "PASEO_PASSWORD": "local-daemon-password",
         }
         self.assertEqual(runner.environments, [expected, expected])
         self.assertEqual(inherited["PASEO_HOST"], "ssh://remote-daemon")
+        self.assertEqual(inherited["PASEO_LISTEN"], "/tmp/remote-daemon.sock")
 
     async def test_paseo_inspect_normalizes_owner_and_server_identity(self):
         module = load_plugin()
@@ -304,6 +309,7 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
                 sys.executable,
                 "-c",
                 "import os; print(os.getenv('PASEO_HOST', 'missing')); "
+                "print(os.getenv('PASEO_LISTEN', 'missing')); "
                 "print(os.getenv('PASEO_HOME', 'missing'))",
             ],
             env={"PATH": "/usr/bin", "PASEO_HOME": "/private/local-paseo-home"},
@@ -312,7 +318,7 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             result,
             module.CommandResult(
-                0, "missing\n/private/local-paseo-home\n", ""
+                0, "missing\nmissing\n/private/local-paseo-home\n", ""
             ),
         )
 
