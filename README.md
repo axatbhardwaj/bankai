@@ -263,9 +263,14 @@ source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
 mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
-`fable-planner` remains high effort and joins Astra for evidence-backed
-consensus on new high-stakes decisions; ordinary work stays direct, and human
-publication authority remains unchanged.
+The main conversation's selected model is the driver; no bundled driver profile
+or default-model switch is required. `fable-planner` is its high-effort partner
+for substantial planning. `technical-advisor` uses Astra (`gpt-6-astra`, high)
+for consequential technical design. An Astra driver may record that assessment
+itself unless an independent seat is explicitly required. New high-stakes
+decisions still require Astra's position first and Fable's independent plain
+agreement on the same evidence. Ordinary work stays direct, Opus remains the
+independent candidate reviewer, and human publication authority is unchanged.
 
 ## Claude Remote Control
 

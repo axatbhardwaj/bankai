@@ -1,5 +1,15 @@
 # Changelog
 
+## 11.8.1 - 2026-09-11
+
+- Make the main conversation's selected model the workflow driver, use Fable
+  before substantial planning, and add a high-effort Astra technical advisor
+  before consequential design without changing the independent Opus review or
+  human publication gates.
+- Preserve the existing Astra-then-Fable consensus requirement for new
+  high-stakes decisions, including explicit verdicts against the same evidence,
+  while keeping routine work proportional and advisor sessions reusable.
+
 ## 11.8.0 - 2026-09-11
 
 - Add a Debian-only Hermes relay setup mode and default post-Paseo-profile step,

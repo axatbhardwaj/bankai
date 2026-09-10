@@ -179,6 +179,67 @@ describe("Paseo orchestration policy", () => {
 		});
 	});
 
+	it("preserves live role-ID and custom profiles when applying the bundled policy", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const bundledPolicy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const liveProfiles = [
+			{
+				id: "planning-advisor",
+				name: "Live Planning Advisor",
+				provider: "claude",
+				model: "live-fable",
+				credentials: { token: "keep-planning-secret" },
+			},
+			{
+				id: "implement-code",
+				name: "Live Implementation",
+				provider: "codex",
+				model: "live-sol",
+				env: { IMPLEMENT_TOKEN: "keep-implementation-secret" },
+			},
+			{
+				id: "review-code",
+				name: "Live Review",
+				provider: "claude",
+				model: "live-opus",
+				notes: "keep live review differences",
+			},
+			{
+				id: "custom-role",
+				name: "Custom Role",
+				provider: "private",
+				model: "custom-model",
+				secret: "keep-custom-secret",
+			},
+		];
+		const live = {
+			version: 7,
+			daemon: {
+				auth: { password: "keep-auth-secret" },
+				agentProfiles: liveProfiles,
+			},
+			agents: {
+				providers: {
+					codex: { env: { CODEX_TOKEN: "keep-provider-secret" } },
+				},
+			},
+		};
+
+		const merged = mergePaseoPolicy(live, bundledPolicy);
+
+		expect(merged.daemon.agentProfiles.slice(-liveProfiles.length)).toEqual(
+			liveProfiles,
+		);
+		expect(merged.daemon.auth).toEqual(live.daemon.auth);
+		expect(merged.agents.providers.codex).toEqual(live.agents.providers.codex);
+		expect(mergePaseoPolicy(merged, bundledPolicy)).toEqual(merged);
+	});
+
 	it("replaces retired managed profiles without disturbing unrelated live state", () => {
 		const upgradedPolicy = {
 			...policy,
@@ -409,7 +470,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("ships the Fable and Astra high-stakes consensus contract", () => {
+	it("ships driver-neutral Fable and Astra advisor routing", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
 		const bundledPolicy = JSON.parse(
@@ -421,6 +482,11 @@ describe("Paseo orchestration policy", () => {
 		const fable = bundledPolicy.agentProfiles.find(
 			({ id }) => id === "fable-planner",
 		);
+		const technicalAdvisor = bundledPolicy.agentProfiles.find(
+			({ id }) => id === "technical-advisor",
+		);
+		const { notes: technicalAdvisorNotes, ...technicalAdvisorRuntime } =
+			technicalAdvisor ?? {};
 		const routingSkill = fs.readFileSync(
 			path.join(skillRoot, "model-routing", "SKILL.md"),
 			"utf8",
@@ -433,16 +499,70 @@ describe("Paseo orchestration policy", () => {
 			path.join(skillRoot, "model-routing", "references", "matt-workflows.md"),
 			"utf8",
 		);
+		const portablePolicies = ["codex/AGENTS.md", "claude/CLAUDE.md"].map(
+			(relativePath) =>
+				fs.readFileSync(
+					path.join(projectRoot, "configs", relativePath),
+					"utf8",
+				),
+		);
 
 		expect(fable).toMatchObject({
 			model: "claude-fable-5-1",
 			thinkingOptionId: "high",
 		});
-		expect(fable?.notes).toContain("planning and decision partner");
+		expect(fable?.notes).toContain("planning partner for the driver");
 		expect(fable?.notes).toContain("AGREE, DISAGREE, or INSUFFICIENT EVIDENCE");
 		expect(fable?.notes).toContain("with evidence pointers");
 		expect(fable?.notes).toContain("Do not review the whole candidate");
 		expect(fable?.notes).toContain("Keep product files unchanged");
+		expect(technicalAdvisorRuntime).toEqual({
+			id: "technical-advisor",
+			name: "Technical Advisor",
+			provider: "codex",
+			model: "gpt-6-astra",
+			modeId: "full-access",
+			thinkingOptionId: "high",
+		});
+		expect(technicalAdvisorNotes).toContain("scoped recommendation");
+		expect(technicalAdvisorNotes).toContain("risks, alternatives");
+		expect(technicalAdvisorNotes).toContain("acceptance checks");
+		expect(technicalAdvisorNotes).toContain("Do not review or implement");
+		expect(
+			bundledPolicy.agentProfiles.filter(({ id, name }) =>
+				/driver/i.test(`${id} ${name}`),
+			),
+		).toEqual([]);
+		expect(routingSkill).toContain(
+			"The main conversation is the driver, using its selected model",
+		);
+
+		// Policy: substantial planning and consequential design have distinct triggers.
+		expect(routingSkill).toMatch(
+			/Before substantial planning[\s\S]+`fable-planner`/,
+		);
+		expect(routingSkill).toMatch(
+			/Before consequential technical design[\s\S]+`technical-advisor`/,
+		);
+		expect(routingSkill).toContain(
+			"When both triggers apply, use both checkpoints",
+		);
+		expect(routingSkill).toContain("not an unconditional mirrored dispatch");
+		// Contract: an Astra driver may self-record unless independence is explicit.
+		expect(routingSkill).toContain(
+			"An Astra driver may record its own Astra assessment",
+		);
+		expect(routingSkill).toContain("explicit independent Astra seat");
+		// Policy: a superficial checklist does not make routine work substantial.
+		expect(routingSkill).toContain("Routine known work stays direct");
+		expect(routingSkill).toContain("superficial checklist");
+		expect(routingSkill).toContain("Do not invoke both advisors automatically");
+		expect(routingSkill).toContain(
+			"If required Fable planning is unavailable, stop only the dependent planning decision",
+		);
+		expect(routingSkill).toContain(
+			"If required Astra advice is unavailable, stop only the dependent technical decision",
+		);
 
 		for (const category of [
 			"security or trust boundaries",
@@ -453,11 +573,13 @@ describe("Paseo orchestration policy", () => {
 			expect(routingSkill).toContain(category);
 		}
 		expect(routingSkill).toContain("Astra and Fable both record plain AGREE");
+		expect(routingSkill).toContain("Obtain Astra's position first");
 		expect(routingSkill).toContain("already explicitly authorized");
 		expect(routingSkill).toContain("material deviation");
+		expect(routingSkill).toContain("do not reopen an accepted decision");
 		expect(routingSkill).toContain("two focused evidence rounds");
 		expect(routingSkill).toContain(
-			"If Fable is unavailable, dependent decisions stay blocked",
+			"If either required advisor is unavailable, stop only the dependent decision",
 		);
 		expect(routingSkill).toContain(
 			"`paseo-advisor` and `paseo-committee` are not substitutes",
@@ -471,6 +593,9 @@ describe("Paseo orchestration policy", () => {
 
 		for (const requirement of [
 			"Astra's position before reading Fable's",
+			"selected model",
+			"technical-advisor",
+			"recommendation, risks, alternatives, and acceptance checks",
 			"independently verifies at least one material claim",
 			"strongest concrete counterargument",
 			"`AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
@@ -481,6 +606,50 @@ describe("Paseo orchestration policy", () => {
 			expect(briefings).toContain(requirement);
 		}
 		expect(mattWorkflows).toContain("satisfies the consensus gate once");
+		expect(mattWorkflows).toContain("selected model remains the driver");
+		expect(mattWorkflows).not.toContain("intended to run on Astra");
+		for (const portablePolicy of portablePolicies) {
+			expect(portablePolicy).toMatch(
+				/main conversation's selected\s+model is the driver/,
+			);
+		}
+	});
+
+	it("requires an explicit Astra verdict for assigned high-stakes decisions", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const policy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const technicalAdvisor = policy.agentProfiles.find(
+			({ id }) => id === "technical-advisor",
+		);
+		const briefings = fs.readFileSync(
+			path.join(
+				projectRoot,
+				"configs",
+				"agent-skills",
+				"model-routing",
+				"references",
+				"briefings.md",
+			),
+			"utf8",
+		);
+
+		expect(technicalAdvisor?.notes).toContain(
+			"For an assigned high-stakes decision",
+		);
+		expect(technicalAdvisor?.notes).toContain(
+			"plain AGREE, DISAGREE, or INSUFFICIENT EVIDENCE",
+		);
+		expect(briefings).toContain("Astra independently verifies");
+		expect(briefings).toContain(
+			"returns exactly `AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
+		);
+		expect(briefings).toContain("recorded Astra-driver assessment");
+		expect(technicalAdvisor?.notes).toContain("Ordinary advice is not a veto");
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {

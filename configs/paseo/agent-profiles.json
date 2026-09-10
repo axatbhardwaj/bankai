@@ -8,7 +8,16 @@
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "high",
-			"notes": "Persistent planning and decision partner for Astra. Examine architecture, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers and the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
+			"notes": "Persistent planning partner for the driver. Examine requirements, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers and the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
+		},
+		{
+			"id": "technical-advisor",
+			"name": "Technical Advisor",
+			"provider": "codex",
+			"model": "gpt-6-astra",
+			"modeId": "full-access",
+			"thinkingOptionId": "high",
+			"notes": "Advise the driver before consequential technical design involving module boundaries, data or API contracts, failure or concurrency handling, or security-relevant configuration. Return a scoped recommendation, risks, alternatives, and acceptance checks with evidence pointers. Ordinary advice is not a veto. For an assigned high-stakes decision, independently verify the supplied proposal and return plain AGREE, DISAGREE, or INSUFFICIENT EVIDENCE against its evidence or revision, with evidence pointers, gaps, and the strongest concrete counterargument. Keep product files unchanged. Do not review or implement the candidate, and do not launch a routing team."
 		},
 		{
 			"id": "research-opus",
