@@ -45,6 +45,14 @@ CREATE TABLE IF NOT EXISTS outbound_attempts (
     message_id TEXT,
     retry_of TEXT REFERENCES outbound_attempts(attempt_id)
 );
+CREATE TRIGGER IF NOT EXISTS decisions_identity_is_immutable
+BEFORE UPDATE OF
+    decision_id, owner_agent_id, server_id, repository, pr_number,
+    head_sha, base_sha, proposal_digest, demo
+ON decisions
+BEGIN
+    SELECT RAISE(ABORT, 'decision identity is immutable');
+END;
 """
 
 
@@ -56,6 +64,26 @@ class Storage:
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.connection.executescript(SCHEMA)
+        self._recover_interrupted_operations()
+
+    def _recover_interrupted_operations(self):
+        with self.connection:
+            self.connection.execute(
+                """
+                UPDATE decisions SET status = 'uncertain'
+                WHERE status = 'open' AND decision_id IN (
+                    SELECT decision_id FROM inbound_receipts WHERE forward_status = 'queued'
+                    UNION
+                    SELECT decision_id FROM outbound_attempts WHERE state = 'pending'
+                )
+                """
+            )
+            self.connection.execute(
+                "UPDATE inbound_receipts SET forward_status = 'uncertain' WHERE forward_status = 'queued'"
+            )
+            self.connection.execute(
+                "UPDATE outbound_attempts SET state = 'uncertain' WHERE state = 'pending'"
+            )
 
     def close(self):
         self.connection.close()
@@ -210,6 +238,34 @@ class Storage:
             (attempt_id,),
         ).fetchone()
         return None if row is None else dict(row)
+
+    def pending_snapshot(self):
+        decisions = self.connection.execute(
+            """
+            SELECT * FROM decisions
+            WHERE status IN ('open', 'blocked', 'uncertain')
+            ORDER BY rowid
+            """
+        ).fetchall()
+        inbound = self.connection.execute(
+            """
+            SELECT * FROM inbound_receipts
+            WHERE forward_status IN ('queued', 'failed', 'uncertain')
+            ORDER BY rowid
+            """
+        ).fetchall()
+        outbound = self.connection.execute(
+            """
+            SELECT * FROM outbound_attempts
+            WHERE state IN ('pending', 'failed', 'uncertain')
+            ORDER BY rowid
+            """
+        ).fetchall()
+        return {
+            "decisions": [dict(row) for row in decisions],
+            "inbound_receipts": [dict(row) for row in inbound],
+            "outbound_attempts": [dict(row) for row in outbound],
+        }
 
     def set_decision_status(self, decision_id, status):
         with self.connection:
