@@ -177,6 +177,20 @@ function addSuccessfulHermesCommands(setup, { initiallyEnabled = false } = {}) {
 }
 
 describe("configureHermesRelay", () => {
+	it("returns incomplete when the Hermes process cannot spawn", async () => {
+		const setup = fixture();
+		delete setup.runProcessImpl;
+		setup.whichImpl = (command) =>
+			command === "hermes"
+				? path.join(setup.home, "missing-hermes-executable")
+				: null;
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+		expect(setup.messages.join("\n")).toContain(
+			"existing Hermes CLI is not usable",
+		);
+	});
+
 	it("bootstraps missing Hermes at the validated commit without running setup", async () => {
 		const setup = fixture();
 		setup.hermesCandidates = [];

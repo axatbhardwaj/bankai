@@ -92,19 +92,27 @@ print(json.dumps(result, separators=(",", ":")))
 `;
 
 async function defaultRunProcess(argv, options = {}) {
-	const process = Bun.spawn(argv, {
-		cwd: options.cwd,
-		env: options.env,
-		stderr: options.stdio === "inherit" ? "inherit" : "pipe",
-		stdin: options.stdio === "inherit" ? "inherit" : "ignore",
-		stdout: options.stdio === "inherit" ? "inherit" : "pipe",
-	});
-	const [exitCode, stdout, stderr] = await Promise.all([
-		process.exited,
-		process.stdout ? new Response(process.stdout).text() : "",
-		process.stderr ? new Response(process.stderr).text() : "",
-	]);
-	return { exitCode, stdout, stderr };
+	try {
+		const child = Bun.spawn(argv, {
+			cwd: options.cwd,
+			env: options.env,
+			stderr: options.stdio === "inherit" ? "inherit" : "pipe",
+			stdin: options.stdio === "inherit" ? "inherit" : "ignore",
+			stdout: options.stdio === "inherit" ? "inherit" : "pipe",
+		});
+		const [exitCode, stdout, stderr] = await Promise.all([
+			child.exited,
+			child.stdout ? new Response(child.stdout).text() : "",
+			child.stderr ? new Response(child.stderr).text() : "",
+		]);
+		return { exitCode, stdout, stderr };
+	} catch (error) {
+		return {
+			exitCode: 127,
+			stdout: "",
+			stderr: error?.message ?? String(error),
+		};
+	}
 }
 
 function executableAt(candidate, fsImpl) {
