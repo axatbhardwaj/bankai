@@ -88,6 +88,22 @@ class Storage:
                 (platform, str(chat_id), str(message_id), decision_id),
             )
 
+    def set_decision_status(self, decision_id, status):
+        with self.connection:
+            cursor = self.connection.execute(
+                "UPDATE decisions SET status = ? WHERE decision_id = ?",
+                (status, decision_id),
+            )
+        if cursor.rowcount != 1:
+            raise KeyError(decision_id)
+
+    def get_decision(self, decision_id):
+        row = self.connection.execute(
+            "SELECT * FROM decisions WHERE decision_id = ?",
+            (decision_id,),
+        ).fetchone()
+        return None if row is None else dict(row)
+
     def admit_receipt_for_anchor(
         self,
         *,

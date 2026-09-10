@@ -29,17 +29,35 @@ def load_plugin():
 class FakePaseo:
     def __init__(self):
         self.prompts = []
+        self.owner = {"id": "agent-owner", "serverId": "server-vps", "archived": False}
 
     async def inspect_owner(self, agent_id):
-        return {"id": agent_id, "serverId": "server-vps", "archived": False}
+        if self.owner is None:
+            return None
+        return {**self.owner, "id": agent_id}
 
     async def send_prompt(self, agent_id, prompt):
         self.prompts.append((agent_id, prompt))
 
 
 class FakeGithub:
+    def __init__(self):
+        self.calls = []
+        self.error = None
+        self.on_read = None
+        self.result = {
+            "state": "OPEN",
+            "head_sha": "a" * 40,
+            "base_sha": "b" * 40,
+        }
+
     async def read_pull_request(self, repository, pr_number):
-        raise AssertionError("questions must not read GitHub")
+        self.calls.append((repository, pr_number))
+        if self.error:
+            raise self.error
+        if self.on_read:
+            self.on_read()
+        return self.result
 
 
 class FakeTelegram:
@@ -90,13 +108,13 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         self.store.close()
         self.tmp.cleanup()
 
-    def event(self, text="Can we keep the old behavior?", message_id="reply-9"):
+    def event(self, text="Can we keep the old behavior?", message_id="reply-9", **changes):
         source = SimpleNamespace(
             chat_id="owner-chat",
             user_id="owner-user",
             chat_type="dm",
         )
-        return SimpleNamespace(
+        values = dict(
             platform="telegram",
             source=source,
             text=text,
@@ -104,6 +122,8 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
             reply_to_message_id="alert-7",
             raw_message=None,
         )
+        values.update(changes)
+        return SimpleNamespace(**values)
 
     async def drain(self):
         tasks, self.tasks = self.tasks, []
@@ -132,6 +152,7 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
                 )
             ],
         )
+        self.assertEqual(self.github.calls, [])
         self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "forwarded")
 
     async def test_duplicate_inbound_message_is_not_forwarded_twice(self):
@@ -143,6 +164,123 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first, {"action": "skip", "reason": "paseo-review-relay"})
         self.assertEqual(second, {"action": "skip", "reason": "paseo-review-relay"})
         self.assertEqual(len(self.paseo.prompts), 1)
+
+    async def test_untrusted_or_unsafe_events_never_schedule_owner_work(self):
+        wrong_sender = self.event(message_id="wrong-sender")
+        wrong_sender.source = SimpleNamespace(chat_id="owner-chat", user_id="intruder", chat_type="dm")
+        wrong_chat = self.event(message_id="wrong-chat")
+        wrong_chat.source = SimpleNamespace(chat_id="elsewhere", user_id="owner-user", chat_type="dm")
+        group = self.event(message_id="group")
+        group.source = SimpleNamespace(chat_id="owner-chat", user_id="owner-user", chat_type="group")
+        bot = SimpleNamespace(is_bot=True)
+        cases = {
+            "wrong platform": self.event(message_id="platform", platform="slack"),
+            "wrong sender": wrong_sender,
+            "wrong chat": wrong_chat,
+            "group chat": group,
+            "unknown anchor": self.event(message_id="unknown", reply_to_message_id="missing"),
+            "forwarded": self.event(message_id="forwarded", raw_message=SimpleNamespace(forward_origin=object())),
+            "edited": self.event(message_id="edited", raw_message=SimpleNamespace(edit_date=object())),
+            "bot": self.event(message_id="bot", raw_message=SimpleNamespace(from_user=bot)),
+            "attachment": self.event(message_id="photo", raw_message=SimpleNamespace(photo=[object()])),
+        }
+
+        for name, event in cases.items():
+            with self.subTest(name=name):
+                self.assertIsNone(self.relay.pre_gateway_dispatch(event=event))
+        self.assertEqual(self.tasks, [])
+        self.assertEqual(self.paseo.prompts, [])
+
+    async def test_closed_decision_is_refused_with_an_expiry_ack(self):
+        self.assertTrue(
+            hasattr(self.store, "set_decision_status"),
+            "storage must expose transport status transitions",
+        )
+        self.store.set_decision_status("decision-1", "closed")
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertIn("expired", self.telegram.messages[0][1].lower())
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "refused")
+
+    async def test_archived_owner_blocks_the_transport_decision(self):
+        self.assertTrue(hasattr(self.store, "get_decision"), "storage must expose decision state")
+        self.paseo.owner["archived"] = True
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertIn("owner", self.telegram.messages[0][1].lower())
+
+    async def test_decision_with_live_head_drift_is_refused(self):
+        self.github.result["head_sha"] = "d" * 40
+
+        result = self.relay.pre_gateway_dispatch(event=self.event(text="APPROVE"))
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.github.calls, [("acme/widgets", 42)])
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertIn("revision", self.telegram.messages[0][1].lower())
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "refused")
+
+    async def test_exact_decision_is_forwarded_without_changing_transport_state(self):
+        result = self.relay.pre_gateway_dispatch(event=self.event(text="reject"))
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.github.calls, [("acme/widgets", 42)])
+        self.assertEqual(len(self.paseo.prompts), 1)
+        self.assertIn("kind=decision", self.paseo.prompts[0][1])
+        self.assertIn("driver_must_revalidate=true", self.paseo.prompts[0][1])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "open")
+
+    async def test_missing_owner_is_blocked_without_a_background_exception(self):
+        self.paseo.owner = None
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        try:
+            await self.drain()
+        except Exception as error:
+            self.fail(f"missing owner escaped the relay task: {error}")
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertIn("owner", self.telegram.messages[0][1].lower())
+
+    async def test_github_read_failure_is_visible_and_recoverable(self):
+        self.github.error = RuntimeError("temporary gh failure")
+
+        result = self.relay.pre_gateway_dispatch(event=self.event(text="hold"))
+        try:
+            await self.drain()
+        except Exception as error:
+            self.fail(f"GitHub read failure escaped the relay task: {error}")
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "open")
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "failed")
+        self.assertIn("could not validate", self.telegram.messages[0][1].lower())
+
+    async def test_decision_is_rechecked_after_async_external_reads(self):
+        self.github.on_read = lambda: self.store.set_decision_status("decision-1", "closed")
+
+        result = self.relay.pre_gateway_dispatch(event=self.event(text="approve"))
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "refused")
+        self.assertIn("expired", self.telegram.messages[0][1].lower())
 
 
 if __name__ == "__main__":
