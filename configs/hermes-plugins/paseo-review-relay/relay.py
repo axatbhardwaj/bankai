@@ -35,7 +35,7 @@ class ReviewRelay:
         self.telegram = telegram
         self.spawn_task = spawn_task
 
-    def pre_gateway_dispatch(self, *, event, **_kwargs):
+    def pre_gateway_dispatch(self, *, event, **kwargs):
         platform = getattr(event.platform, "value", event.platform)
         source = event.source
         if (
@@ -62,7 +62,10 @@ class ReviewRelay:
         if decision is None:
             return None
         if admitted:
-            self.spawn_task(self._forward(event, decision, kind))
+            telegram = self.telegram
+            if hasattr(telegram, "bind"):
+                telegram = telegram.bind(kwargs.get("gateway"))
+            self.spawn_task(self._forward(event, decision, kind, telegram))
         return SKIP
 
     @staticmethod
@@ -78,10 +81,10 @@ class ReviewRelay:
             or any(getattr(message, field, None) for field in ATTACHMENT_FIELDS)
         )
 
-    async def _forward(self, event, decision, kind):
+    async def _forward(self, event, decision, kind, telegram):
         if decision["status"] != "open":
             self.store.mark_receipt("telegram", event.source.chat_id, event.message_id, "refused")
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "This review request has expired; your reply was not routed.",
                 reply_to=event.message_id,
@@ -91,7 +94,7 @@ class ReviewRelay:
             self.store.mark_receipt(
                 "telegram", event.source.chat_id, event.message_id, "refused"
             )
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "This is a demo relay and cannot accept decisions. Send a free-form question to test routing.",
                 reply_to=event.message_id,
@@ -105,7 +108,7 @@ class ReviewRelay:
         ):
             self.store.set_decision_status(decision["decision_id"], "blocked")
             self.store.mark_receipt("telegram", event.source.chat_id, event.message_id, "refused")
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "This review owner is unavailable; your reply was not routed.",
                 reply_to=event.message_id,
@@ -120,7 +123,7 @@ class ReviewRelay:
                 self.store.mark_receipt(
                     "telegram", event.source.chat_id, event.message_id, "failed"
                 )
-                await self.telegram.send(
+                await telegram.send(
                     event.source.chat_id,
                     "Could not validate the live PR revision; no decision was routed. Reply again later to retry.",
                     reply_to=event.message_id,
@@ -135,7 +138,7 @@ class ReviewRelay:
                 self.store.mark_receipt(
                     "telegram", event.source.chat_id, event.message_id, "refused"
                 )
-                await self.telegram.send(
+                await telegram.send(
                     event.source.chat_id,
                     "The live PR revision no longer matches this review request; no decision was routed.",
                     reply_to=event.message_id,
@@ -146,7 +149,7 @@ class ReviewRelay:
             self.store.mark_receipt(
                 "telegram", event.source.chat_id, event.message_id, "refused"
             )
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "This review request expired during validation; your reply was not routed.",
                 reply_to=event.message_id,
@@ -172,7 +175,7 @@ class ReviewRelay:
             self.store.mark_receipt(
                 "telegram", event.source.chat_id, event.message_id, "uncertain"
             )
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "Forwarding outcome is uncertain and will not be replayed automatically. Treat it as not received until inspected.",
                 reply_to=event.message_id,
@@ -182,14 +185,14 @@ class ReviewRelay:
             self.store.mark_receipt(
                 "telegram", event.source.chat_id, event.message_id, "failed"
             )
-            await self.telegram.send(
+            await telegram.send(
                 event.source.chat_id,
                 "Forwarding failed; the owner did not receive this relay attempt. Reply again to retry.",
                 reply_to=event.message_id,
             )
             return
         self.store.mark_receipt("telegram", event.source.chat_id, event.message_id, "forwarded")
-        await self.telegram.send(
+        await telegram.send(
             event.source.chat_id,
             "Forwarded to the persistent PR owner. This is delivery, not approval or action.",
             reply_to=event.message_id,
