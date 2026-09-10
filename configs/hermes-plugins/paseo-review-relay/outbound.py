@@ -35,6 +35,7 @@ class OutboundService:
         self.telegram_target = telegram_target
 
     async def open(self, request):
+        self._validate_request(request)
         request = self._sanitized_request(request)
         digest = request.proposal_digest()
         self.store.open_decision(
@@ -74,6 +75,9 @@ class OutboundService:
         failed = self.store.get_outbound_attempt(failed_attempt_id)
         if failed is None or failed["state"] != "failed":
             raise ValueError("only a definite failed attempt may be retried")
+        decision = self.store.get_decision(failed["decision_id"])
+        if decision is None or decision["status"] != "open":
+            raise ValueError("retry requires an open decision")
         attempt_id = str(uuid.uuid4())
         self.store.create_outbound_attempt(
             attempt_id,
@@ -130,6 +134,7 @@ class OutboundService:
         return {"attempt_id": attempt_id, "message_id": str(message_id)}
 
     async def supersede(self, old_decision_id, request):
+        self._validate_request(request)
         request = self._sanitized_request(request)
         digest = request.proposal_digest()
         self.store.supersede_decision(
@@ -200,3 +205,27 @@ class OutboundService:
             head_sha="0" * 40,
             base_sha="0" * 40,
         )
+
+    @staticmethod
+    def _validate_request(request):
+        required = (
+            request.decision_id,
+            request.owner_agent_id,
+            request.server_id,
+            request.proposal,
+            request.consequence,
+            request.recommendation,
+            request.question,
+        )
+        if any(not isinstance(value, str) or not value for value in required):
+            raise ValueError("decision fields must be non-empty strings")
+        if request.demo:
+            return
+        hexadecimal = set("0123456789abcdefABCDEF")
+        revisions = (request.head_sha, request.base_sha)
+        if any(len(revision) != 40 or not set(revision) <= hexadecimal for revision in revisions):
+            raise ValueError("head and base revision must be 40 hexadecimal characters")
+        if not isinstance(request.pr_number, int) or request.pr_number < 1:
+            raise ValueError("pull request number must be positive")
+        if not isinstance(request.repository, str) or request.repository.count("/") != 1:
+            raise ValueError("repository must be owner/name")

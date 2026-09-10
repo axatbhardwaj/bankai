@@ -90,6 +90,17 @@ class ReviewRelay:
                 reply_to=event.message_id,
             )
             return
+        if decision["server_id"] != self.config.server_id:
+            self.store.set_decision_status(decision["decision_id"], "blocked")
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "refused"
+            )
+            await telegram.send(
+                event.source.chat_id,
+                "This review request belongs to a different Paseo server; your reply was not routed.",
+                reply_to=event.message_id,
+            )
+            return
         if decision["demo"] and kind == "decision":
             self.store.mark_receipt(
                 "telegram", event.source.chat_id, event.message_id, "refused"
@@ -100,9 +111,21 @@ class ReviewRelay:
                 reply_to=event.message_id,
             )
             return
-        owner = await self.paseo.inspect_owner(decision["owner_agent_id"])
+        try:
+            owner = await self.paseo.inspect_owner(decision["owner_agent_id"])
+        except (CommandFailure, AmbiguousDelivery):
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "failed"
+            )
+            await telegram.send(
+                event.source.chat_id,
+                "Could not inspect the persistent PR owner; your reply was not routed. Reply again later to retry.",
+                reply_to=event.message_id,
+            )
+            return
         if (
             not owner
+            or owner.get("id") != decision["owner_agent_id"]
             or owner.get("archived")
             or owner.get("serverId") != decision["server_id"]
         ):

@@ -107,6 +107,56 @@ class CliTests(unittest.TestCase):
             self.assertEqual(module.cli_main(["pending"], **kwargs), 0)
             self.assertEqual(json.loads(output.getvalue())["decisions"], [])
 
+    def test_doctor_snapshot_is_local_only_and_returns_vps_validation_command(self):
+        module = load_plugin()
+        self.assertTrue(hasattr(module, "doctor_snapshot"), "local doctor helper is missing")
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp) / "plugin-data"
+            data_dir.mkdir()
+            config = data_dir / "config.json"
+            config.write_text(
+                json.dumps(
+                    {
+                        "telegramChatId": "owner-chat",
+                        "telegramUserId": "owner-user",
+                        "serverId": "server-vps",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config.chmod(0o600)
+            store = module.Storage(data_dir / "relay.sqlite3")
+            store.open_decision(
+                decision_id="doctor-pending",
+                owner_agent_id="agent-owner",
+                server_id="server-vps",
+                repository="acme/widgets",
+                pr_number=42,
+                head_sha="a" * 40,
+                base_sha="b" * 40,
+                proposal_digest="c" * 64,
+            )
+            store.create_outbound_attempt(
+                "pending-attempt", "doctor-pending", "alert", "Pending alert"
+            )
+            looked_up = []
+
+            def find_command(name):
+                looked_up.append(name)
+                return f"/usr/bin/{name}"
+
+            snapshot = module.doctor_snapshot(data_dir, command_finder=find_command)
+
+            self.assertEqual(looked_up, ["hermes", "paseo", "gh"])
+            self.assertEqual(snapshot["database"], "ok")
+            self.assertEqual(snapshot["config"], "private")
+            self.assertEqual(snapshot["vps_validation_command"], "hermes plugins doctor")
+            self.assertEqual(
+                store.get_outbound_attempt("pending-attempt")["state"], "pending"
+            )
+            self.assertEqual(store.get_decision("doctor-pending")["status"], "open")
+            store.close()
+
 
 if __name__ == "__main__":
     unittest.main()

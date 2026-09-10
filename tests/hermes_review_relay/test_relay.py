@@ -31,12 +31,15 @@ class FakePaseo:
         self.prompts = []
         self.attempts = []
         self.send_error = None
+        self.inspect_error = None
         self.owner = {"id": "agent-owner", "serverId": "server-vps", "archived": False}
 
     async def inspect_owner(self, agent_id):
+        if self.inspect_error:
+            raise self.inspect_error
         if self.owner is None:
             return None
-        return {**self.owner, "id": agent_id}
+        return {"id": agent_id, **self.owner}
 
     async def send_prompt(self, agent_id, prompt):
         self.attempts.append((agent_id, prompt))
@@ -334,6 +337,47 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.paseo.prompts, [])
         self.assertEqual(self.store.get_decision("demo")["status"], "open")
         self.assertIn("demo", self.telegram.messages[0][1].lower())
+
+    async def test_stored_server_mismatch_blocks_routing(self):
+        self.relay.config = self.module.RelayConfig(
+            telegram_chat_id="owner-chat",
+            telegram_user_id="owner-user",
+            server_id="different-server",
+        )
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.attempts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertIn("server", self.telegram.messages[0][1].lower())
+
+    async def test_owner_inspection_failure_is_visible_and_recoverable(self):
+        self.paseo.inspect_error = self.module.CommandFailure("paseo inspect exited 1")
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        try:
+            await self.drain()
+        except Exception as error:
+            self.fail(f"owner inspection failure escaped the relay task: {error}")
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.attempts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "open")
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "failed")
+        self.assertIn("inspect", self.telegram.messages[0][1].lower())
+
+    async def test_inspected_owner_id_mismatch_blocks_routing(self):
+        self.paseo.owner["id"] = "different-agent"
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.attempts, [])
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "blocked")
+        self.assertIn("owner", self.telegram.messages[0][1].lower())
 
 
 if __name__ == "__main__":

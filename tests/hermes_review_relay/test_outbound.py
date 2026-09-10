@@ -175,6 +175,38 @@ class OutboundDecisionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(sent), 1)
         self.assertEqual(sent[0]["retry_of"], failed["attempt_id"])
 
+    async def test_definite_failure_cannot_be_retried_after_decision_closes(self):
+        sender = FailingHermes(self.module.CommandFailure("exit 1"))
+        service = self.module.OutboundService(
+            store=self.store,
+            sender=sender,
+            telegram_target="telegram:owner-chat",
+        )
+        request = self.module.DecisionRequest(
+            decision_id="decision-closed",
+            owner_agent_id="agent-owner",
+            server_id="server-vps",
+            repository="acme/widgets",
+            pr_number=42,
+            head_sha="a" * 40,
+            base_sha="b" * 40,
+            proposal="Change policy",
+            consequence="Session changes",
+            recommendation="hold",
+            question="Proceed?",
+        )
+        with self.assertRaises(self.module.CommandFailure):
+            await service.open(request)
+        failed = self.store.list_outbound_attempts(state="failed")[0]
+        self.store.set_decision_status("decision-closed", "closed")
+        confirming = ConfirmingHermes(self.store)
+        service.sender = confirming
+
+        with self.assertRaisesRegex(ValueError, "open decision"):
+            await service.retry_failed(failed["attempt_id"])
+
+        self.assertEqual(confirming.calls, [])
+
     async def test_published_answer_becomes_an_anchor_for_the_same_decision(self):
         first_sender = ConfirmingHermes(self.store)
         service = self.module.OutboundService(
@@ -296,6 +328,33 @@ class OutboundDecisionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(decision["repository"], "__demo__")
         self.assertEqual(decision["pr_number"], 0)
         self.assertEqual(decision["demo"], 1)
+
+    async def test_real_request_rejects_malformed_revision_before_send(self):
+        sender = ConfirmingHermes(self.store)
+        service = self.module.OutboundService(
+            store=self.store,
+            sender=sender,
+            telegram_target="telegram:owner-chat",
+        )
+        request = self.module.DecisionRequest(
+            decision_id="bad-revision",
+            owner_agent_id="agent-owner",
+            server_id="server-vps",
+            repository="acme/widgets",
+            pr_number=42,
+            head_sha="main",
+            base_sha="b" * 40,
+            proposal="Change policy",
+            consequence="Session changes",
+            recommendation="hold",
+            question="Proceed?",
+        )
+
+        with self.assertRaisesRegex(ValueError, "revision"):
+            await service.open(request)
+
+        self.assertEqual(sender.calls, [])
+        self.assertIsNone(self.store.get_decision("bad-revision"))
 
 
 if __name__ == "__main__":

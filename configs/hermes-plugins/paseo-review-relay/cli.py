@@ -1,6 +1,8 @@
 import argparse
 import asyncio
 import json
+import shutil
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -29,6 +31,7 @@ def build_parser():
     close.add_argument("decision_id")
 
     commands.add_parser("pending", help="Inspect unresolved transport state")
+    commands.add_parser("doctor", help="Run local checks without external calls")
 
     retry = commands.add_parser("retry", help="Retry a definite failed send")
     retry.add_argument("attempt_id")
@@ -40,7 +43,32 @@ def read_request(path):
     return DecisionRequest(**payload)
 
 
+def doctor_snapshot(data_dir, *, command_finder=shutil.which):
+    data_dir = Path(data_dir)
+    load_config(data_dir)
+    database = data_dir / "relay.sqlite3"
+    integrity = "missing"
+    if database.exists():
+        connection = sqlite3.connect(f"{database.resolve().as_uri()}?mode=ro", uri=True)
+        try:
+            integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
+        finally:
+            connection.close()
+    return {
+        "commands": {
+            name: command_finder(name) for name in ("hermes", "paseo", "gh")
+        },
+        "config": "private",
+        "database": integrity,
+        "vps_validation_command": "hermes plugins doctor",
+    }
+
+
 async def dispatch(args, *, data_dir, sender, telegram_target, output):
+    if args.command == "doctor":
+        snapshot = doctor_snapshot(data_dir)
+        print(json.dumps(snapshot, indent=2, sort_keys=True), file=output)
+        return 0
     store = Storage(data_dir / "relay.sqlite3")
     try:
         if args.command == "pending":
@@ -89,7 +117,7 @@ def cli_main(
     args = build_parser().parse_args(argv)
     data_dir = Path(data_dir) if data_dir is not None else plugin_data_dir()
     output = output or sys.stdout
-    if args.command not in {"pending", "close"} and (
+    if args.command not in {"pending", "close", "doctor"} and (
         sender is None or telegram_target is None
     ):
         config = load_config(data_dir)

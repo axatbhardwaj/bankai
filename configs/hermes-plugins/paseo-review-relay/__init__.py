@@ -7,7 +7,7 @@ from .adapters import (
     HermesAdapter,
     PaseoAdapter,
 )
-from .cli import cli_main
+from .cli import cli_main, doctor_snapshot
 from .outbound import DecisionRequest, OutboundService
 from .relay import RelayConfig, ReviewRelay
 from .runtime import create_runtime
@@ -28,6 +28,7 @@ __all__ = [
     "ReviewRelay",
     "Storage",
     "cli_main",
+    "doctor_snapshot",
 ]
 
 
