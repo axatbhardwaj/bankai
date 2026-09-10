@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import threading
+from functools import wraps
 from pathlib import Path
 
 
@@ -93,13 +95,23 @@ def _owner_is_alive(owner_token):
         return True
 
 
+def _serialized(method):
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._connection_lock:
+            return method(self, *args, **kwargs)
+
+    return locked
+
+
 class Storage:
     def __init__(self, path):
         self.owner_token = _current_owner_token()
+        self._connection_lock = threading.RLock()
         self.path = Path(path)
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.path.parent.chmod(0o700)
-        self.connection = sqlite3.connect(self.path)
+        self.connection = sqlite3.connect(self.path, check_same_thread=False)
         self.path.chmod(0o600)
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
@@ -175,9 +187,11 @@ class Storage:
                     (decision_id,),
                 )
 
+    @_serialized
     def close(self):
         self.connection.close()
 
+    @_serialized
     def open_decision(
         self,
         *,
@@ -212,6 +226,7 @@ class Storage:
                 ),
             )
 
+    @_serialized
     def supersede_decision(
         self,
         old_decision_id,
@@ -258,6 +273,7 @@ class Storage:
                 ),
             )
 
+    @_serialized
     def attach_anchor(self, decision_id, platform, chat_id, message_id):
         with self.connection:
             self.connection.execute(
@@ -268,6 +284,7 @@ class Storage:
                 (platform, str(chat_id), str(message_id), decision_id),
             )
 
+    @_serialized
     def create_outbound_attempt(self, attempt_id, decision_id, kind, body, retry_of=None):
         with self.connection:
             self.connection.execute(
@@ -279,6 +296,7 @@ class Storage:
                 (attempt_id, decision_id, kind, body, retry_of, self.owner_token),
             )
 
+    @_serialized
     def mark_outbound_sent(self, attempt_id, platform, chat_id, message_id):
         with self.connection:
             row = self.connection.execute(
@@ -307,6 +325,7 @@ class Storage:
                 (platform, str(chat_id), str(message_id), row["decision_id"]),
             )
 
+    @_serialized
     def mark_outbound_state(self, attempt_id, state):
         if state not in {"failed", "uncertain"}:
             raise ValueError("outbound failure state must be failed or uncertain")
@@ -323,6 +342,7 @@ class Storage:
         if cursor.rowcount != 1:
             raise ValueError("outbound attempt is not pending")
 
+    @_serialized
     def list_outbound_attempts(self, *, state=None):
         if state is None:
             rows = self.connection.execute(
@@ -335,6 +355,7 @@ class Storage:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    @_serialized
     def get_outbound_attempt(self, attempt_id):
         row = self.connection.execute(
             "SELECT * FROM outbound_attempts WHERE attempt_id = ?",
@@ -342,6 +363,7 @@ class Storage:
         ).fetchone()
         return None if row is None else dict(row)
 
+    @_serialized
     def pending_snapshot(self):
         decisions = self.connection.execute(
             """
@@ -370,6 +392,7 @@ class Storage:
             "outbound_attempts": [dict(row) for row in outbound],
         }
 
+    @_serialized
     def set_decision_status(self, decision_id, status):
         with self.connection:
             cursor = self.connection.execute(
@@ -384,6 +407,7 @@ class Storage:
         if cursor.rowcount != 1:
             raise KeyError(decision_id)
 
+    @_serialized
     def get_decision(self, decision_id):
         row = self.connection.execute(
             "SELECT * FROM decisions WHERE decision_id = ?",
@@ -391,6 +415,7 @@ class Storage:
         ).fetchone()
         return None if row is None else dict(row)
 
+    @_serialized
     def get_decision_for_anchor(self, platform, chat_id, message_id):
         row = self.connection.execute(
             """
@@ -402,6 +427,7 @@ class Storage:
         ).fetchone()
         return None if row is None else dict(row)
 
+    @_serialized
     def admit_receipt_for_anchor(
         self,
         *,
@@ -444,6 +470,7 @@ class Storage:
             )
         return dict(decision), cursor.rowcount == 1
 
+    @_serialized
     def mark_receipt(self, platform, chat_id, message_id, status):
         with self.connection:
             self.connection.execute(
@@ -456,6 +483,7 @@ class Storage:
                 (status, platform, str(chat_id), str(message_id)),
             )
 
+    @_serialized
     def receipt_status(self, platform, chat_id, message_id):
         row = self.connection.execute(
             """

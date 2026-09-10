@@ -5,7 +5,9 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -233,6 +235,34 @@ class StorageTests(unittest.TestCase):
         attempt = self.store.get_outbound_attempt("attempt-time")
         self.assertIn("created_at", attempt)
         self.assertIn("updated_at", attempt)
+
+    def test_shared_connection_serializes_duplicate_admission_across_threads(self):
+        self.store.attach_anchor("immutable", "telegram", "owner-chat", "alert")
+        start = Barrier(5)
+
+        def admit_duplicate():
+            start.wait()
+            return self.store.admit_receipt_for_anchor(
+                platform="telegram",
+                chat_id="owner-chat",
+                message_id="same-reply",
+                anchor_message_id="alert",
+                sender_id="owner-user",
+                kind="question",
+                body="Why?",
+            )[1]
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(admit_duplicate) for _ in range(4)]
+            start.wait()
+            admitted = [future.result() for future in futures]
+
+        self.assertEqual(admitted.count(True), 1)
+        self.assertEqual(admitted.count(False), 3)
+        self.assertEqual(
+            self.store.receipt_status("telegram", "owner-chat", "same-reply"),
+            "queued",
+        )
 
     def test_database_is_private_and_uses_wal_transport_storage(self):
         self.assertEqual(self.store.path.stat().st_mode & 0o777, 0o600)
