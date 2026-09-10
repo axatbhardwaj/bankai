@@ -4,8 +4,10 @@ from .adapters import (
     CommandFailure,
     CommandResult,
     GithubAdapter,
+    HermesAdapter,
     PaseoAdapter,
 )
+from .cli import cli_main
 from .outbound import DecisionRequest, OutboundService
 from .relay import RelayConfig, ReviewRelay
 from .runtime import create_runtime
@@ -19,11 +21,13 @@ __all__ = [
     "CommandResult",
     "DecisionRequest",
     "GithubAdapter",
+    "HermesAdapter",
     "OutboundService",
     "PaseoAdapter",
     "RelayConfig",
     "ReviewRelay",
     "Storage",
+    "cli_main",
 ]
 
 

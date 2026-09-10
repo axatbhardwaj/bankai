@@ -115,6 +115,22 @@ class StorageTests(unittest.TestCase):
             ["attempt-failed"],
         )
 
+    def test_transport_records_include_persistent_timestamps(self):
+        decision = self.store.get_decision("immutable")
+        self.assertIn("created_at", decision)
+        self.assertIn("updated_at", decision)
+        self.store.create_outbound_attempt(
+            "attempt-time", "immutable", "alert", "Timestamped body"
+        )
+        attempt = self.store.get_outbound_attempt("attempt-time")
+        self.assertIn("created_at", attempt)
+        self.assertIn("updated_at", attempt)
+
+    def test_database_is_private_and_uses_wal_transport_storage(self):
+        self.assertEqual(self.store.path.stat().st_mode & 0o777, 0o600)
+        journal_mode = self.store.connection.execute("PRAGMA journal_mode").fetchone()[0]
+        self.assertEqual(journal_mode.lower(), "wal")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,13 +14,16 @@ CREATE TABLE IF NOT EXISTS decisions (
     proposal_digest TEXT NOT NULL,
     demo INTEGER NOT NULL DEFAULT 0 CHECK (demo IN (0, 1)),
     status TEXT NOT NULL DEFAULT 'open'
-        CHECK (status IN ('open', 'superseded', 'closed', 'blocked', 'uncertain'))
+        CHECK (status IN ('open', 'superseded', 'closed', 'blocked', 'uncertain')),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE TABLE IF NOT EXISTS anchors (
     platform TEXT NOT NULL,
     chat_id TEXT NOT NULL,
     message_id TEXT NOT NULL,
     decision_id TEXT NOT NULL REFERENCES decisions(decision_id),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (platform, chat_id, message_id)
 );
 CREATE TABLE IF NOT EXISTS inbound_receipts (
@@ -33,6 +36,8 @@ CREATE TABLE IF NOT EXISTS inbound_receipts (
     body TEXT NOT NULL,
     forward_status TEXT NOT NULL DEFAULT 'queued'
         CHECK (forward_status IN ('queued', 'forwarded', 'refused', 'failed', 'uncertain')),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (platform, chat_id, message_id)
 );
 CREATE TABLE IF NOT EXISTS outbound_attempts (
@@ -43,7 +48,9 @@ CREATE TABLE IF NOT EXISTS outbound_attempts (
     state TEXT NOT NULL DEFAULT 'pending'
         CHECK (state IN ('pending', 'sent', 'failed', 'uncertain')),
     message_id TEXT,
-    retry_of TEXT REFERENCES outbound_attempts(attempt_id)
+    retry_of TEXT REFERENCES outbound_attempts(attempt_id),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE TRIGGER IF NOT EXISTS decisions_identity_is_immutable
 BEFORE UPDATE OF
@@ -60,9 +67,12 @@ class Storage:
     def __init__(self, path):
         self.path = Path(path)
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.path.parent.chmod(0o700)
         self.connection = sqlite3.connect(self.path)
+        self.path.chmod(0o600)
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
+        self.connection.execute("PRAGMA journal_mode = WAL")
         self.connection.executescript(SCHEMA)
         self._recover_interrupted_operations()
 
@@ -70,7 +80,9 @@ class Storage:
         with self.connection:
             self.connection.execute(
                 """
-                UPDATE decisions SET status = 'uncertain'
+                UPDATE decisions SET
+                    status = 'uncertain',
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE status = 'open' AND decision_id IN (
                     SELECT decision_id FROM inbound_receipts WHERE forward_status = 'queued'
                     UNION
@@ -79,10 +91,20 @@ class Storage:
                 """
             )
             self.connection.execute(
-                "UPDATE inbound_receipts SET forward_status = 'uncertain' WHERE forward_status = 'queued'"
+                """
+                UPDATE inbound_receipts SET
+                    forward_status = 'uncertain',
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                WHERE forward_status = 'queued'
+                """
             )
             self.connection.execute(
-                "UPDATE outbound_attempts SET state = 'uncertain' WHERE state = 'pending'"
+                """
+                UPDATE outbound_attempts SET
+                    state = 'uncertain',
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                WHERE state = 'pending'
+                """
             )
 
     def close(self):
@@ -139,7 +161,9 @@ class Storage:
         with self.connection:
             cursor = self.connection.execute(
                 """
-                UPDATE decisions SET status = 'superseded'
+                UPDATE decisions SET
+                    status = 'superseded',
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE decision_id = ? AND status = 'open'
                 """,
                 (old_decision_id,),
@@ -169,7 +193,10 @@ class Storage:
     def attach_anchor(self, decision_id, platform, chat_id, message_id):
         with self.connection:
             self.connection.execute(
-                "INSERT INTO anchors VALUES (?, ?, ?, ?)",
+                """
+                INSERT INTO anchors (platform, chat_id, message_id, decision_id)
+                VALUES (?, ?, ?, ?)
+                """,
                 (platform, str(chat_id), str(message_id), decision_id),
             )
 
@@ -194,7 +221,10 @@ class Storage:
                 raise KeyError(attempt_id)
             cursor = self.connection.execute(
                 """
-                UPDATE outbound_attempts SET state = 'sent', message_id = ?
+                UPDATE outbound_attempts SET
+                    state = 'sent',
+                    message_id = ?,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE attempt_id = ? AND state = 'pending'
                 """,
                 (str(message_id), attempt_id),
@@ -202,7 +232,10 @@ class Storage:
             if cursor.rowcount != 1:
                 raise ValueError("outbound attempt is not pending")
             self.connection.execute(
-                "INSERT INTO anchors VALUES (?, ?, ?, ?)",
+                """
+                INSERT INTO anchors (platform, chat_id, message_id, decision_id)
+                VALUES (?, ?, ?, ?)
+                """,
                 (platform, str(chat_id), str(message_id), row["decision_id"]),
             )
 
@@ -212,7 +245,9 @@ class Storage:
         with self.connection:
             cursor = self.connection.execute(
                 """
-                UPDATE outbound_attempts SET state = ?
+                UPDATE outbound_attempts SET
+                    state = ?,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE attempt_id = ? AND state = 'pending'
                 """,
                 (state, attempt_id),
@@ -270,7 +305,12 @@ class Storage:
     def set_decision_status(self, decision_id, status):
         with self.connection:
             cursor = self.connection.execute(
-                "UPDATE decisions SET status = ? WHERE decision_id = ?",
+                """
+                UPDATE decisions SET
+                    status = ?,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                WHERE decision_id = ?
+                """,
                 (status, decision_id),
             )
         if cursor.rowcount != 1:
@@ -327,7 +367,9 @@ class Storage:
         with self.connection:
             self.connection.execute(
                 """
-                UPDATE inbound_receipts SET forward_status = ?
+                UPDATE inbound_receipts SET
+                    forward_status = ?,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                 WHERE platform = ? AND chat_id = ? AND message_id = ?
                 """,
                 (status, platform, str(chat_id), str(message_id)),

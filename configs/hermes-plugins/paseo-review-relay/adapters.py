@@ -121,3 +121,39 @@ class GithubAdapter:
             }
         except (KeyError, TypeError, json.JSONDecodeError) as error:
             raise CommandFailure("gh pr view returned invalid JSON") from error
+
+
+class HermesAdapter:
+    def __init__(self, runner):
+        self.runner = runner
+
+    async def send(self, target, body):
+        descriptor, raw_path = tempfile.mkstemp(prefix="hermes-message-", suffix=".txt")
+        message_path = Path(raw_path)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as message_file:
+                message_file.write(body)
+            message_path.chmod(0o600)
+            result = await self.runner.run(
+                [
+                    "hermes",
+                    "send",
+                    "--to",
+                    target,
+                    "--file",
+                    str(message_path),
+                    "--json",
+                ]
+            )
+            if result.returncode != 0:
+                raise CommandFailure("hermes send failed")
+            try:
+                payload = json.loads(result.stdout)
+                message_id = payload["message_id"]
+            except (KeyError, TypeError, json.JSONDecodeError) as error:
+                raise AmbiguousDelivery(
+                    "hermes send succeeded without a confirmed message id"
+                ) from error
+            return str(message_id)
+        finally:
+            message_path.unlink(missing_ok=True)

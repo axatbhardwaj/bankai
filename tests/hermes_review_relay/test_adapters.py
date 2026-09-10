@@ -38,6 +38,23 @@ class PromptReadingRunner:
         return self.result
 
 
+class MessageReadingRunner:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+        self.message_body = None
+        self.message_mode = None
+        self.message_path = None
+
+    async def run(self, argv):
+        message_path = Path(argv[argv.index("--file") + 1])
+        self.message_path = message_path
+        self.message_body = message_path.read_text(encoding="utf-8")
+        self.message_mode = message_path.stat().st_mode & 0o777
+        self.calls.append(tuple(argv))
+        return self.result
+
+
 class RecordingRunner:
     def __init__(self, result):
         self.result = result
@@ -140,6 +157,37 @@ class SubprocessAdapterTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(result, module.CommandResult(0, "relay-ok\n", ""))
+
+    async def test_hermes_sender_anchors_only_json_confirmed_message_id(self):
+        module = load_plugin()
+        self.assertTrue(hasattr(module, "HermesAdapter"), "Hermes sender adapter is missing")
+        runner = MessageReadingRunner(
+            module.CommandResult(0, json.dumps({"message_id": 991}), "")
+        )
+        sender = module.HermesAdapter(runner)
+        body = "Owner answer with ; $(commands) and `backticks`"
+
+        message_id = await sender.send("telegram:owner-chat", body)
+
+        self.assertEqual(message_id, "991")
+        self.assertEqual(runner.message_body, body)
+        self.assertEqual(runner.message_mode, 0o600)
+        self.assertEqual(
+            runner.calls,
+            [
+                (
+                    "hermes",
+                    "send",
+                    "--to",
+                    "telegram:owner-chat",
+                    "--file",
+                    str(runner.message_path),
+                    "--json",
+                )
+            ],
+        )
+        self.assertFalse(runner.message_path.exists())
+        self.assertNotIn(body, runner.calls[0])
 
 
 if __name__ == "__main__":
