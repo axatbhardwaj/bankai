@@ -1,5 +1,9 @@
 # Hermes Review Relay Implementation Plan
 
+Status: historical extraction plan. Runtime source and its Python tests now live
+in the public `paseo-hermes-relay` v0.1.0 repository at immutable commit
+`1f2761cbc75ef24e8e2287f49ba56dd819923388`; Haoshoku retains installer tests.
+
 > For agentic workers: execute this single tightly coupled deliverable with the
 > shared model-routing implementation and independent code-review roles.
 

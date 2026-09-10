@@ -1,6 +1,6 @@
 # Haoshoku Hermes relay integration
 
-Status: implemented locally; standalone relay publication pin pending.
+Status: finalized locally against the published standalone v0.1.0 release.
 
 ## Entry points and host boundary
 
@@ -23,15 +23,14 @@ Status: implemented locally; standalone relay publication pin pending.
   `67764dc0863349a384c16425e73ee8571f3a94b7` using `--commit` with
   `--skip-setup --skip-browser --skip-computer-use --non-interactive` and no
   layout override.
-- Relay source is declared by `configs/hermes-relay/lock.json`. While its commit
-  is null, only the in-repository vendored fallback is allowed. This transition
-  state prevents a dependency on an unpublished repository.
-- Finalization records the published `v0.1.0` commit, after which Haoshoku
-  clones without checkout, checks out that exact commit, verifies `HEAD` and
-  `v0.1.0^{commit}` equal the lock, and validates the plugin name/version and
+- Relay source is declared by `configs/hermes-relay/lock.json` and pinned to the
+  public `v0.1.0` release commit
+  `1f2761cbc75ef24e8e2287f49ba56dd819923388`.
+- Haoshoku clones without checkout, checks out that exact commit, verifies `HEAD`
+  and `v0.1.0^{commit}` equal the lock, and validates the plugin name/version and
   file allowlist. Mismatch is a hard failure.
-- `HAOSHOKU_HERMES_RELAY_SOURCE` supports offline tests only after final pinning
-  and receives the same Git commit, tag, manifest, and allowlist verification.
+- `HAOSHOKU_HERMES_RELAY_SOURCE` supports offline verification and receives the
+  same Git commit, tag, manifest, and allowlist checks.
 
 ## Preservation and configuration
 
@@ -61,9 +60,10 @@ Status: implemented locally; standalone relay publication pin pending.
 - No path restarts Paseo, interrupts active Hermes work, changes schedules, sends
   messages, or performs a live relay review.
 
-## Pending publication transition
+## Publication evidence
 
-After the standalone repository is independently reviewed and published, update
-the lock with its exact commit, verify both remote-fetch and offline-source tests,
-then remove the vendored plugin directory and Haoshoku-owned Python relay tests.
-Those deletions are intentionally excluded until the immutable SHA is supplied.
+The standalone R2 review approved commit
+`1f2761cbc75ef24e8e2287f49ba56dd819923388`; public main and peeled tag `v0.1.0`
+resolve to that SHA, and GitHub CI run `34524156091` succeeded at it. Haoshoku
+verified both a real remote fetch and an offline source override before removing
+the transitional vendored plugin and duplicate Python bridge tests.

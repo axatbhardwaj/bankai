@@ -534,12 +534,11 @@ Busy, unknown, and noninteractive activation states stay explicitly incomplete.
 Haoshoku never restarts Paseo or changes schedules.
 
 Relay source is controlled by [`configs/hermes-relay/lock.json`](configs/hermes-relay/lock.json).
-Until the published `v0.1.0` commit is recorded, its `commit: null` transition
-lock retains the vendored source. Once finalized, Haoshoku fetches the exact
-commit, verifies both `HEAD` and the tag, and rejects mismatches. An offline test
-checkout may be supplied with `HAOSHOKU_HERMES_RELAY_SOURCE=/absolute/path`, but
-only after the lock contains the final commit; the same commit, tag, and manifest
-checks still apply.
+It pins the public `paseo-hermes-relay` v0.1.0 release to immutable commit
+`1f2761cbc75ef24e8e2287f49ba56dd819923388`. Haoshoku fetches that exact commit,
+verifies both `HEAD` and the peeled tag, and rejects mismatches. An offline test
+checkout may be supplied with `HAOSHOKU_HERMES_RELAY_SOURCE=/absolute/path`; the
+same commit, tag, and manifest checks still apply.
 
 Only a fully configured and activated server receives
 `~/.config/haoshoku/hermes-relay.json` with `version: 1` and `enabled: true`.

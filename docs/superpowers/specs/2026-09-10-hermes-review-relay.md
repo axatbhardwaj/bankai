@@ -1,5 +1,8 @@
 # Hermes review intermediary
 
+Status: runtime source and tests moved to the public `paseo-hermes-relay` v0.1.0
+repository at commit `1f2761cbc75ef24e8e2287f49ba56dd819923388`.
+
 The user chose Telegram through the existing Hermes bot for PR decision alerts,
 questions and replies. No Paseo links, new website, second Telegram poller or new
 review orchestrator. The first deployment serves the existing VPS Paseo daemon.
