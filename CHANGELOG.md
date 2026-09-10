@@ -3,14 +3,14 @@
 ## 11.8.0 - 2026-09-11
 
 - Add a Debian-only Hermes relay setup mode and default post-Paseo-profile step,
-	with an immutable Hermes bootstrap pin and immutable public relay source at
-	`paseo-hermes-relay` v0.1.0 commit
-	`1f2761cbc75ef24e8e2287f49ba56dd819923388`, verified offline-source override,
-	private configuration preservation, and idle-only activation.
+  with an immutable Hermes bootstrap pin and immutable public relay source at
+  `paseo-hermes-relay` v0.1.0 commit
+  `1f2761cbc75ef24e8e2287f49ba56dd819923388`, verified offline-source override,
+  private configuration preservation, and idle-only activation.
 - Require a successful per-host enable marker before bundled PR workflows make
-	any Hermes relay or remote transport call; local/Arch workflows remain local.
+  any Hermes relay or remote transport call; local/Arch workflows remain local.
 - Remove the transitional vendored relay and its duplicate Haoshoku Python test
-	suite now that the standalone release and CI are authoritative.
+  suite now that the standalone release and CI are authoritative.
 
 ## 11.7.7 - 2026-09-10
 
