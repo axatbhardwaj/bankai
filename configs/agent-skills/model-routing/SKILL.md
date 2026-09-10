@@ -13,7 +13,7 @@ Before the first delegation for a future task, read `~/.config/haoshoku/paseo-ta
 
 ## Ownership
 
-The main conversation's selected model is the driver and alone creates Paseo specialist agents. The driver owns scope, acceptance, routing, execution, synthesis, decisions, recovery, and the final result. Use its selected model and reasoning settings; do not create a saved driver profile or switch the default model. The driver creates only needed seats and validates returned evidence.
+The main conversation is the driver, using its selected model and reasoning settings, and alone creates Paseo specialist agents. It owns scope, acceptance, routing, execution, synthesis, decisions, recovery, and the final result. Do not create a saved driver profile or switch the default model. The driver creates only needed seats and validates returned evidence.
 
 Prefer subagent-driven work for nontrivial tasks: the driver delegates bounded exploration, research, implementation and review to appropriate Paseo profiles, then synthesizes their evidence. Run independent subtasks in parallel; keep dependent work sequential and reuse a suitable existing worker before adding a seat. Simple lookups and low-impact one-step tasks can stay direct unless a selected workflow explicitly assigns them to a worker. This preference applies within named workflows without changing their role assignments or creating a second orchestrator.
 
@@ -37,7 +37,7 @@ Before consequential technical design, use Astra through `technical-advisor`. Th
 
 An Astra driver may record its own Astra assessment without a redundant child. An explicit independent Astra seat from the user or selected workflow still requires `technical-advisor`. If required Astra advice is unavailable, stop only the dependent technical decision and report the gap; do not substitute another profile.
 
-Reuse the same-task Fable or Astra advisor when evidence or the plan materially changes, and after recurring failure. Do not invoke both advisors automatically; each checkpoint fires only for its own trigger. Keep briefs concise and point to evidence instead of copying it.
+Reuse the same-task Fable or Astra advisor when evidence or the plan materially changes, and after recurring failure. When both triggers apply, use both checkpoints; this is trigger overlap, not an unconditional mirrored dispatch. Do not invoke both advisors automatically when only one trigger applies. Keep briefs concise and point to evidence instead of copying it.
 
 ## High-stakes decision consensus
 

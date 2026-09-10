@@ -17,7 +17,7 @@
 			"model": "gpt-6-astra",
 			"modeId": "full-access",
 			"thinkingOptionId": "high",
-			"notes": "Advise the driver before consequential technical design involving module boundaries, data or API contracts, failure or concurrency handling, or security-relevant configuration. Return a scoped recommendation, risks, alternatives, and acceptance checks with evidence pointers. Ordinary advice is not a veto. Keep product files unchanged. Do not review or implement the candidate, and do not launch a routing team."
+			"notes": "Advise the driver before consequential technical design involving module boundaries, data or API contracts, failure or concurrency handling, or security-relevant configuration. Return a scoped recommendation, risks, alternatives, and acceptance checks with evidence pointers. Ordinary advice is not a veto. For an assigned high-stakes decision, independently verify the supplied proposal and return plain AGREE, DISAGREE, or INSUFFICIENT EVIDENCE against its evidence or revision, with evidence pointers, gaps, and the strongest concrete counterargument. Keep product files unchanged. Do not review or implement the candidate, and do not launch a routing team."
 		},
 		{
 			"id": "research-opus",

@@ -533,25 +533,35 @@ describe("Paseo orchestration policy", () => {
 				/driver/i.test(`${id} ${name}`),
 			),
 		).toEqual([]);
+		expect(routingSkill).toContain(
+			"The main conversation is the driver, using its selected model",
+		);
 
-		// Sol driver: substantial planning and consequential design use distinct seats.
+		// Policy: substantial planning and consequential design have distinct triggers.
 		expect(routingSkill).toMatch(
 			/Before substantial planning[\s\S]+`fable-planner`/,
 		);
 		expect(routingSkill).toMatch(
 			/Before consequential technical design[\s\S]+`technical-advisor`/,
 		);
-		// Astra driver: record the assessment locally unless independence is explicit.
+		expect(routingSkill).toContain(
+			"When both triggers apply, use both checkpoints",
+		);
+		expect(routingSkill).toContain("not an unconditional mirrored dispatch");
+		// Contract: an Astra driver may self-record unless independence is explicit.
 		expect(routingSkill).toContain(
 			"An Astra driver may record its own Astra assessment",
 		);
 		expect(routingSkill).toContain("explicit independent Astra seat");
-		// Routine mechanical work does not trigger advisors from a superficial checklist.
+		// Policy: a superficial checklist does not make routine work substantial.
 		expect(routingSkill).toContain("Routine known work stays direct");
 		expect(routingSkill).toContain("superficial checklist");
 		expect(routingSkill).toContain("Do not invoke both advisors automatically");
 		expect(routingSkill).toContain(
 			"If required Fable planning is unavailable, stop only the dependent planning decision",
+		);
+		expect(routingSkill).toContain(
+			"If required Astra advice is unavailable, stop only the dependent technical decision",
 		);
 
 		for (const category of [
@@ -603,6 +613,43 @@ describe("Paseo orchestration policy", () => {
 				/main conversation's selected\s+model is the driver/,
 			);
 		}
+	});
+
+	it("requires an explicit Astra verdict for assigned high-stakes decisions", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const policy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const technicalAdvisor = policy.agentProfiles.find(
+			({ id }) => id === "technical-advisor",
+		);
+		const briefings = fs.readFileSync(
+			path.join(
+				projectRoot,
+				"configs",
+				"agent-skills",
+				"model-routing",
+				"references",
+				"briefings.md",
+			),
+			"utf8",
+		);
+
+		expect(technicalAdvisor?.notes).toContain(
+			"For an assigned high-stakes decision",
+		);
+		expect(technicalAdvisor?.notes).toContain(
+			"plain AGREE, DISAGREE, or INSUFFICIENT EVIDENCE",
+		);
+		expect(briefings).toContain("Astra independently verifies");
+		expect(briefings).toContain(
+			"returns exactly `AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
+		);
+		expect(briefings).toContain("recorded Astra-driver assessment");
+		expect(technicalAdvisor?.notes).toContain("Ordinary advice is not a veto");
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
