@@ -11,6 +11,8 @@ it never approves, merges, chooses another owner, or expands prior authority.
   gives async work to `ctx.spawn_task`.
 - Owner text is written to a mode-0600 UTF-8 prompt file. All `paseo`, `gh` and
   `hermes` calls use argument arrays without a shell.
+- Paseo commands preserve the local home environment but remove `PASEO_HOST`, so
+  status, owner inspection and delivery cannot be redirected to another daemon.
 - Exact whole-message `approve`, `reject` and `hold` are decision receipts. A
   current GitHub head/base check only gates forwarding; the relay keeps the
   decision `open`, and the driver must revalidate before acting.
@@ -19,6 +21,10 @@ it never approves, merges, chooses another owner, or expands prior authority.
 - Interrupted or ambiguous sends become `uncertain` and are never replayed.
   Only definite `failed` outbound attempts can be retried explicitly.
 - Demo alerts hide real PR identity and reject all three decision words.
+- If state lookup or receipt admission fails for a potential configured-DM reply,
+  the hook consumes it and gives only the configured owner a generic temporary-
+  unavailability acknowledgement. It never claims the reply was forwarded;
+  unrelated platforms, chats, non-replies and unknown anchors remain untouched.
 
 State is a private WAL SQLite database at
 `~/.hermes/plugin-data/paseo-review-relay/relay.sqlite3`. Decision identity,
@@ -30,7 +36,9 @@ Mutable decision statuses are transport-only: `open`, `superseded`, `closed`,
 
 Copy `config.example.json` to
 `~/.hermes/plugin-data/paseo-review-relay/config.json`, replace every placeholder,
-and set mode 0600. Never commit the populated file.
+and set mode 0600. Never commit the populated file. Missing, unreadable, malformed,
+incomplete, group-readable or placeholder configuration registers an inert hook;
+`hermes-relay doctor` rejects it instead of enabling relay authority.
 
 ## Request file
 
