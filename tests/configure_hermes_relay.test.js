@@ -720,11 +720,16 @@ describe("configureHermesRelay", () => {
 		);
 		fs.mkdirSync(pluginDirectory, { recursive: true, mode: 0o700 });
 		for (const file of PLUGIN_FILES) {
+			if (file === "modes.py") continue;
 			fs.copyFileSync(
 				path.join(setup.source, file),
 				path.join(pluginDirectory, file),
 			);
 		}
+		fs.writeFileSync(
+			path.join(pluginDirectory, "plugin.yaml"),
+			"name: paseo-review-relay\nversion: 0.1.0\n",
+		);
 		fs.writeFileSync(
 			path.join(pluginDirectory, "relay.py"),
 			"old relay bytes\n",
@@ -780,6 +785,9 @@ describe("configureHermesRelay", () => {
 		expect(
 			fs.readFileSync(path.join(pluginDirectory, "relay.py"), "utf8"),
 		).toBe("relay.py\n");
+		expect(
+			fs.readFileSync(path.join(pluginDirectory, "modes.py"), "utf8"),
+		).toBe("modes.py\n");
 		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
 		expect(fs.readFileSync(database, "utf8")).toBe("existing authority state");
 	});

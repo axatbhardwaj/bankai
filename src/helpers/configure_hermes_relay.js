@@ -177,7 +177,12 @@ function readJsonObject(file, fsImpl, logger) {
 	}
 }
 
-function validManifest(source, fsImpl, logger, expectedVersion = null) {
+function validManifest(
+	source,
+	fsImpl,
+	logger,
+	{ expectedVersion = null, requiredFiles = HERMES_RELAY_PLUGIN_FILES } = {},
+) {
 	const manifest = path.join(source, "plugin.yaml");
 	try {
 		const content = fsImpl.readFileSync(manifest, "utf8");
@@ -199,7 +204,7 @@ function validManifest(source, fsImpl, logger, expectedVersion = null) {
 			);
 			return false;
 		}
-		for (const file of HERMES_RELAY_PLUGIN_FILES) {
+		for (const file of requiredFiles) {
 			if (!fsImpl.statSync(path.join(source, file)).isFile()) {
 				throw new Error(`missing ${file}`);
 			}
@@ -335,7 +340,9 @@ async function verifyPinnedSource({
 			return false;
 		}
 	}
-	return validManifest(directory, fsImpl, logger, lock.tag.slice(1));
+	return validManifest(directory, fsImpl, logger, {
+		expectedVersion: lock.tag.slice(1),
+	});
 }
 
 async function resolvePluginSource({
@@ -801,7 +808,7 @@ async function configureHermesRelayImpl({
 	try {
 		if (
 			fsImpl.existsSync(pluginDirectory) &&
-			!validManifest(pluginDirectory, fsImpl, logger)
+			!validManifest(pluginDirectory, fsImpl, logger, { requiredFiles: [] })
 		) {
 			logger.error(
 				`Refusing to overwrite foreign plugin directory ${pluginDirectory}.`,

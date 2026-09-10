@@ -37,6 +37,9 @@ Status: finalized locally against the published standalone v0.2.0 release.
 - Only allowlisted plugin files are deployed, including the v0.2.0 `modes.py`
   module. A byte-changing update first backs up the whole existing plugin
   directory once.
+- A legacy installed plugin is recognized by its exact manifest name before the
+  complete pinned v0.2.0 allowlist replaces owned files. This permits the v0.1.0
+  layout, which lacks `modes.py`, to upgrade without weakening source validation.
 - Hermes YAML, other plugins, authentication, relay SQLite database, anchors,
   backups, and unrelated files are preserved. Hermes native CLI owns plugin
   enablement; Haoshoku does not parse or rewrite YAML.
