@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .adapters import AmbiguousDelivery, CommandFailure
+
 
 DECISION_WORDS = {"approve", "reject", "hold"}
 SKIP = {"action": "skip", "reason": "paseo-review-relay"}
@@ -153,7 +155,29 @@ class ReviewRelay:
             f"{revalidation}"
             f"text:\n{event.text}"
         )
-        await self.paseo.send_prompt(decision["owner_agent_id"], prompt)
+        try:
+            await self.paseo.send_prompt(decision["owner_agent_id"], prompt)
+        except AmbiguousDelivery:
+            self.store.set_decision_status(decision["decision_id"], "uncertain")
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "uncertain"
+            )
+            await self.telegram.send(
+                event.source.chat_id,
+                "Forwarding outcome is uncertain and will not be replayed automatically. Treat it as not received until inspected.",
+                reply_to=event.message_id,
+            )
+            return
+        except CommandFailure:
+            self.store.mark_receipt(
+                "telegram", event.source.chat_id, event.message_id, "failed"
+            )
+            await self.telegram.send(
+                event.source.chat_id,
+                "Forwarding failed; the owner did not receive this relay attempt. Reply again to retry.",
+                reply_to=event.message_id,
+            )
+            return
         self.store.mark_receipt("telegram", event.source.chat_id, event.message_id, "forwarded")
         await self.telegram.send(
             event.source.chat_id,

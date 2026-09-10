@@ -29,6 +29,8 @@ def load_plugin():
 class FakePaseo:
     def __init__(self):
         self.prompts = []
+        self.attempts = []
+        self.send_error = None
         self.owner = {"id": "agent-owner", "serverId": "server-vps", "archived": False}
 
     async def inspect_owner(self, agent_id):
@@ -37,6 +39,9 @@ class FakePaseo:
         return {**self.owner, "id": agent_id}
 
     async def send_prompt(self, agent_id, prompt):
+        self.attempts.append((agent_id, prompt))
+        if self.send_error:
+            raise self.send_error
         self.prompts.append((agent_id, prompt))
 
 
@@ -281,6 +286,29 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.paseo.prompts, [])
         self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "refused")
         self.assertIn("expired", self.telegram.messages[0][1].lower())
+
+    async def test_ambiguous_forward_is_persisted_and_never_replayed_after_restart(self):
+        self.paseo.send_error = self.module.AmbiguousDelivery("timeout after process start")
+
+        result = self.relay.pre_gateway_dispatch(event=self.event())
+        try:
+            await self.drain()
+        except Exception as error:
+            self.fail(f"ambiguous delivery escaped the relay task: {error}")
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.store.receipt_status("telegram", "owner-chat", "reply-9"), "uncertain")
+        self.assertEqual(self.store.get_decision("decision-1")["status"], "uncertain")
+        self.assertIn("uncertain", self.telegram.messages[0][1].lower())
+        self.assertIn("not", self.telegram.messages[0][1].lower())
+
+        database = self.store.path
+        self.store.close()
+        self.store = self.module.Storage(database)
+        self.relay.store = self.store
+        self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+        self.assertEqual(len(self.paseo.attempts), 1)
 
 
 if __name__ == "__main__":
