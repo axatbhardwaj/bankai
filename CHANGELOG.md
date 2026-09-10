@@ -2,6 +2,10 @@
 
 ## 11.7.7 - 2026-09-09
 
+- Cap submitted PR review bodies at 7500 characters alongside the existing
+  399-line limit, directing reviewers to tighten prose rather than drop
+  findings when a review runs long.
+
 - Keep PR review and babysitting workspaces under the repository’s existing Paseo
   project. Require explicit project ownership and verify workspace placement
   before launching workers, preventing temporary role checkouts from becoming
