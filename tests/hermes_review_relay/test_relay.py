@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -238,6 +239,86 @@ class HermesReviewRelayTests(unittest.IsolatedAsyncioTestCase):
                 )
         self.assertEqual(self.tasks, [])
         self.assertEqual(self.paseo.prompts, [])
+
+    async def test_lookup_failure_consumes_potential_owner_reply_with_safe_ack(self):
+        def fail_lookup(*args):
+            raise sqlite3.OperationalError("database unavailable")
+
+        self.store.get_decision_for_anchor = fail_lookup
+
+        with self.assertLogs("paseo_review_relay.relay", level="ERROR"):
+            result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(len(self.telegram.messages), 1)
+        self.assertIn("temporarily unavailable", self.telegram.messages[0][1].lower())
+        self.assertIn("nothing was forwarded", self.telegram.messages[0][1].lower())
+
+    async def test_lookup_failure_never_acks_unauthorized_sender(self):
+        def fail_lookup(*args):
+            raise sqlite3.OperationalError("database unavailable")
+
+        self.store.get_decision_for_anchor = fail_lookup
+        event = self.event()
+        event.source.user_id = "intruder"
+
+        with self.assertLogs("paseo_review_relay.relay", level="ERROR"):
+            result = self.relay.pre_gateway_dispatch(event=event)
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.tasks, [])
+        self.assertEqual(self.telegram.messages, [])
+
+    async def test_unrelated_traffic_avoids_failed_anchor_lookup(self):
+        lookup_calls = []
+
+        def fail_lookup(*args):
+            lookup_calls.append(args)
+            raise sqlite3.OperationalError("database unavailable")
+
+        self.store.get_decision_for_anchor = fail_lookup
+        event = self.event()
+        event.source.chat_id = "other-chat"
+
+        result = self.relay.pre_gateway_dispatch(event=event)
+
+        self.assertIsNone(result)
+        self.assertEqual(lookup_calls, [])
+        self.assertEqual(self.tasks, [])
+
+    async def test_admission_failure_consumes_mapped_reply_without_forward_claim(self):
+        def fail_admission(**kwargs):
+            raise sqlite3.OperationalError("database unavailable")
+
+        self.store.admit_receipt_for_anchor = fail_admission
+
+        with self.assertLogs("paseo_review_relay.relay", level="ERROR"):
+            result = self.relay.pre_gateway_dispatch(event=self.event())
+        await self.drain()
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertIn("temporarily unavailable", self.telegram.messages[0][1].lower())
+        self.assertIn("nothing was forwarded", self.telegram.messages[0][1].lower())
+
+    async def test_spawn_failure_marks_receipt_failed_and_stays_inside_hook(self):
+        def fail_spawn(coroutine):
+            raise RuntimeError("scheduler unavailable")
+
+        self.relay.spawn_task = fail_spawn
+
+        with self.assertLogs("paseo_review_relay.relay", level="ERROR"):
+            result = self.relay.pre_gateway_dispatch(event=self.event())
+
+        self.assertEqual(result, {"action": "skip", "reason": "paseo-review-relay"})
+        self.assertEqual(
+            self.store.receipt_status("telegram", "owner-chat", "reply-9"),
+            "failed",
+        )
+        self.assertEqual(self.paseo.prompts, [])
+        self.assertEqual(self.telegram.messages, [])
 
     async def test_closed_decision_is_refused_with_an_expiry_ack(self):
         self.assertTrue(

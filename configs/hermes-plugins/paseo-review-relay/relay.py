@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 from .adapters import AmbiguousDelivery, CommandFailure, ServerIdentityMismatch
@@ -17,6 +18,11 @@ ATTACHMENT_FIELDS = (
     "video_note",
     "voice",
 )
+TEMPORARY_UNAVAILABLE = (
+    "Review replies are temporarily unavailable; nothing was forwarded. "
+    "Ask the driver to inspect the relay before replying again."
+)
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -46,19 +52,32 @@ class ReviewRelay:
         if (
             platform != "telegram"
             or chat_id is None
+            or str(chat_id) != self.config.telegram_chat_id
             or not anchor_message_id
-            or self.store.get_decision_for_anchor(
-                "telegram", chat_id, anchor_message_id
-            )
-            is None
         ):
             return None
+        is_private = getattr(source, "chat_type", None) == "dm"
+        is_owner = (
+            is_private
+            and str(getattr(source, "user_id", None))
+            == self.config.telegram_user_id
+        )
+        try:
+            mapped = self.store.get_decision_for_anchor(
+                "telegram", chat_id, anchor_message_id
+            )
+        except Exception:
+            logger.exception("review relay anchor lookup failed")
+            if is_private:
+                if is_owner:
+                    self._schedule_owner_ack(event, kwargs.get("gateway"))
+                return SKIP
+            return None
+        if mapped is None:
+            return None
         if (
-            getattr(source, "chat_type", None) != "dm"
-            or str(chat_id) != self.config.telegram_chat_id
-            or str(getattr(source, "user_id", None))
-            != self.config.telegram_user_id
-            or not isinstance(event.text, str)
+            not is_owner
+            or not isinstance(getattr(event, "text", None), str)
             or not getattr(event, "message_id", None)
             or self._is_unsafe_telegram_message(
                 getattr(event, "raw_message", None)
@@ -67,23 +86,61 @@ class ReviewRelay:
             return SKIP
 
         kind = "decision" if event.text.casefold() in DECISION_WORDS else "question"
-        decision, admitted = self.store.admit_receipt_for_anchor(
-            platform="telegram",
-            chat_id=source.chat_id,
-            message_id=event.message_id,
-            anchor_message_id=anchor_message_id,
-            sender_id=source.user_id,
-            kind=kind,
-            body=event.text,
-        )
+        try:
+            decision, admitted = self.store.admit_receipt_for_anchor(
+                platform="telegram",
+                chat_id=source.chat_id,
+                message_id=event.message_id,
+                anchor_message_id=anchor_message_id,
+                sender_id=source.user_id,
+                kind=kind,
+                body=event.text,
+            )
+        except Exception:
+            logger.exception("review relay receipt admission failed")
+            self._schedule_owner_ack(event, kwargs.get("gateway"))
+            return SKIP
         if decision is None:
-            return None
+            self._schedule_owner_ack(event, kwargs.get("gateway"))
+            return SKIP
         if admitted:
-            telegram = self.telegram
-            if hasattr(telegram, "bind"):
-                telegram = telegram.bind(kwargs.get("gateway"))
-            self.spawn_task(self._forward(event, decision, kind, telegram))
+            coroutine = None
+            try:
+                telegram = self._bound_telegram(kwargs.get("gateway"))
+                coroutine = self._forward(event, decision, kind, telegram)
+                self.spawn_task(coroutine)
+            except Exception:
+                if coroutine is not None:
+                    coroutine.close()
+                logger.exception("review relay task scheduling failed")
+                try:
+                    self.store.mark_receipt(
+                        "telegram", source.chat_id, event.message_id, "failed"
+                    )
+                except Exception:
+                    logger.exception("review relay could not mark scheduling failure")
         return SKIP
+
+    def _bound_telegram(self, gateway):
+        telegram = self.telegram
+        if hasattr(telegram, "bind"):
+            telegram = telegram.bind(gateway)
+        return telegram
+
+    def _schedule_owner_ack(self, event, gateway):
+        coroutine = None
+        try:
+            telegram = self._bound_telegram(gateway)
+            coroutine = telegram.send(
+                event.source.chat_id,
+                TEMPORARY_UNAVAILABLE,
+                reply_to=event.message_id,
+            )
+            self.spawn_task(coroutine)
+        except Exception:
+            if coroutine is not None:
+                coroutine.close()
+            logger.exception("review relay unavailable acknowledgement could not be scheduled")
 
     @staticmethod
     def _is_unsafe_telegram_message(message):
