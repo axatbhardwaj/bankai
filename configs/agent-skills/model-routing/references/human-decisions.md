@@ -35,3 +35,15 @@ hermes-relay answer DECISION_ID --file /private/path/answer.txt
 The driver installs the executable at `/root/.local/bin/hermes-relay`. Keep request
 and answer files private, and use the guide's `supersede`, `close`, and explicit
 failed-attempt `retry` commands for those less common transport transitions.
+
+While waiting, protect the exact persistent owner from the existing stale-thread
+soft-archive schedule. Inspect its current labels, preserve every unrelated label,
+and add the opt-out label with:
+
+```bash
+paseo agent update <owner-id> --label no-auto-archive=true --json
+```
+
+Reinspect the same owner to confirm the label. Do not change or duplicate the
+cleanup schedule, and remove the opt-out only when the decision lifecycle no
+longer requires that persistent owner.
