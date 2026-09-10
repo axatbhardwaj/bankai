@@ -1,4 +1,6 @@
 import importlib.util
+import multiprocessing
+import os
 import sqlite3
 import sys
 import tempfile
@@ -20,6 +22,67 @@ def load_plugin():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def hold_live_operations(database, ready, release, result):
+    module = load_plugin()
+    store = module.Storage(database)
+    store.open_decision(
+        decision_id="live-process",
+        owner_agent_id="agent-owner",
+        server_id="server-vps",
+        repository="acme/widgets",
+        pr_number=42,
+        head_sha="a" * 40,
+        base_sha="b" * 40,
+        proposal_digest="c" * 64,
+    )
+    store.attach_anchor("live-process", "telegram", "owner-chat", "alert")
+    store.admit_receipt_for_anchor(
+        platform="telegram",
+        chat_id="owner-chat",
+        message_id="reply",
+        anchor_message_id="alert",
+        sender_id="owner-user",
+        kind="question",
+        body="Why?",
+    )
+    store.create_outbound_attempt(
+        "live-attempt", "live-process", "answer", "Owner answer"
+    )
+    ready.set()
+    if not release.wait(10):
+        os._exit(2)
+    try:
+        store.mark_receipt("telegram", "owner-chat", "reply", "forwarded")
+        store.mark_outbound_sent(
+            "live-attempt", "telegram", "owner-chat", "answer-message"
+        )
+    except Exception as error:
+        result.put(f"{type(error).__name__}: {error}")
+    else:
+        result.put("sent")
+    finally:
+        store.close()
+
+
+def abandon_operations(database):
+    module = load_plugin()
+    store = module.Storage(database)
+    store.open_decision(
+        decision_id="dead-process",
+        owner_agent_id="agent-owner",
+        server_id="server-vps",
+        repository="acme/widgets",
+        pr_number=42,
+        head_sha="a" * 40,
+        base_sha="b" * 40,
+        proposal_digest="c" * 64,
+    )
+    store.create_outbound_attempt(
+        "dead-attempt", "dead-process", "alert", "Pending alert"
+    )
+    os._exit(0)
 
 
 class StorageTests(unittest.TestCase):
@@ -55,32 +118,77 @@ class StorageTests(unittest.TestCase):
         self.store.set_decision_status("immutable", "closed")
         self.assertEqual(self.store.get_decision("immutable")["status"], "closed")
 
-    def test_reopen_marks_interrupted_operations_uncertain_without_replay(self):
-        self.store.attach_anchor("immutable", "telegram", "owner-chat", "alert")
-        self.store.admit_receipt_for_anchor(
-            platform="telegram",
-            chat_id="owner-chat",
-            message_id="reply",
-            anchor_message_id="alert",
-            sender_id="owner-user",
-            kind="decision",
-            body="approve",
+    def test_second_process_does_not_recover_live_operations(self):
+        context = multiprocessing.get_context("spawn")
+        database = Path(self.tmp.name) / "live.sqlite3"
+        ready = context.Event()
+        release = context.Event()
+        result = context.Queue()
+        process = context.Process(
+            target=hold_live_operations,
+            args=(database, ready, release, result),
         )
-        self.store.create_outbound_attempt(
-            "attempt-pending", "immutable", "answer", "Owner answer"
-        )
-        database = self.store.path
-        self.store.close()
+        process.start()
+        observer = None
+        try:
+            self.assertTrue(ready.wait(10), "live owner did not create operations")
+            observer = self.module.Storage(database)
+            self.assertEqual(
+                observer.receipt_status("telegram", "owner-chat", "reply"),
+                "queued",
+            )
+            self.assertEqual(
+                observer.get_outbound_attempt("live-attempt")["state"], "pending"
+            )
+            self.assertEqual(
+                observer.get_decision("live-process")["status"], "open"
+            )
+            release.set()
+            process.join(10)
+            self.assertEqual(process.exitcode, 0)
+            self.assertEqual(result.get(timeout=2), "sent")
+            self.assertEqual(
+                observer.get_outbound_attempt("live-attempt")["state"], "sent"
+            )
+            decision, admitted = observer.admit_receipt_for_anchor(
+                platform="telegram",
+                chat_id="owner-chat",
+                message_id="reply-to-answer",
+                anchor_message_id="answer-message",
+                sender_id="owner-user",
+                kind="question",
+                body="Follow-up",
+            )
+            self.assertTrue(admitted)
+            self.assertEqual(decision["decision_id"], "live-process")
+        finally:
+            release.set()
+            process.join(2)
+            if process.is_alive():
+                process.terminate()
+                process.join(2)
+            if observer is not None:
+                observer.close()
 
-        self.store = self.module.Storage(database)
+    def test_dead_process_operations_become_uncertain_without_replay(self):
+        context = multiprocessing.get_context("spawn")
+        database = Path(self.tmp.name) / "dead.sqlite3"
+        process = context.Process(target=abandon_operations, args=(database,))
+        process.start()
+        process.join(10)
+        self.assertEqual(process.exitcode, 0)
 
-        self.assertEqual(
-            self.store.receipt_status("telegram", "owner-chat", "reply"),
-            "uncertain",
-        )
-        attempts = self.store.list_outbound_attempts(state="uncertain")
-        self.assertEqual([attempt["attempt_id"] for attempt in attempts], ["attempt-pending"])
-        self.assertEqual(self.store.get_decision("immutable")["status"], "uncertain")
+        observer = self.module.Storage(database)
+        try:
+            self.assertEqual(
+                observer.get_outbound_attempt("dead-attempt")["state"],
+                "uncertain",
+            )
+            self.assertEqual(
+                observer.get_decision("dead-process")["status"], "uncertain"
+            )
+        finally:
+            observer.close()
 
     def test_pending_snapshot_surfaces_transport_failures(self):
         self.store.attach_anchor("immutable", "telegram", "owner-chat", "alert")
