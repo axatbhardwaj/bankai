@@ -11,11 +11,14 @@ repository/PR, proposal, consequence, recommendation, question, owner, server,
 head, base and proposal digest. Keep one persistent PR owner. While the decision
 is pending, do not issue `APPROVE` or `MERGE_READY` and do not merge.
 
-Telegram is a receipt channel, not the source of action state. Exact `approve`,
-`reject` or `hold` replies are proposal-scoped decision receipts; free-form replies
-are questions. The relay never approves or acts. The driver must revalidate the
-receipt, owner, live PR state, head/base and original authority immediately before
-any action. A revision or proposal change supersedes the old decision.
+Telegram is a receipt channel, not the source of action state. PR request files
+must explicitly set `"mode": "pr"`. Exact `approve`, `reject` or `hold` replies
+are proposal-scoped decision receipts; free-form replies are questions. Before
+forwarding a receipt, PR mode requires GitHub to report that the PR is still open
+at its stored exact head and base. The relay never approves or acts. The driver
+must revalidate the receipt, owner, live PR state, head/base and original
+authority immediately before any action. A revision or proposal change
+supersedes the old decision.
 
 On every later driver run, inspect pending, failed and uncertain relay state before
 claiming readiness. Missing/archived owners, stale revisions, closed decisions and
@@ -31,6 +34,13 @@ run `$HOME/.agents/skills/model-routing/references/hermes-relay-host-enabled`.
 Only exit status 0 permits Hermes transport. If the marker is missing or disabled,
 use the normal local workflow and keep the high-stakes decision in the Paseo conversation;
 do not invoke Hermes, inspect relay state, or make remote calls.
+
+The installed relay also supports generic `"mode": "conversation"` requests.
+Receipt words are opt-in delivery signals only; they do not activate any local
+workflow or authorize action. The persistent Paseo owner must revalidate the
+receipt, authority, context, and live state before acting. Omit receipt words to
+keep every eligible reply as a question. This generic mode does not weaken the
+PR mode GitHub guard above.
 
 ```bash
 hermes-relay pending
