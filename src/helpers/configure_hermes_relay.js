@@ -541,18 +541,32 @@ async function readPaseoIdentity({
 	}
 }
 
-function writePrivateConfig(file, value, writeContent, fsImpl) {
-	let changed = writeContent;
-	if (writeContent) {
-		fsImpl.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, {
-			mode: 0o600,
-		});
-	}
+function writeFileAtomic(file, content, fsImpl) {
+	const stage = path.join(
+		path.dirname(file),
+		`.${path.basename(file)}.stage-${process.pid}`,
+	);
 	try {
+		fsImpl.writeFileSync(stage, content, { mode: 0o600 });
+		fsImpl.renameSync(stage, file);
+	} finally {
+		if (fsImpl.existsSync(stage)) fsImpl.rmSync(stage, { force: true });
+	}
+}
+
+function writePrivateConfig(file, value, writeContent, fsImpl, logger) {
+	let changed = writeContent;
+	try {
+		if (writeContent) {
+			writeFileAtomic(file, `${JSON.stringify(value, null, 2)}\n`, fsImpl);
+		}
 		if ((fsImpl.statSync(file).mode & 0o777) !== 0o600) changed = true;
-	} catch {}
-	fsImpl.chmodSync(file, 0o600);
-	return changed;
+		fsImpl.chmodSync(file, 0o600);
+		return changed;
+	} catch (error) {
+		logger.error(`Could not safely update ${file} (${error.message}).`);
+		return null;
+	}
 }
 
 async function enablePluginIfNeeded({
@@ -622,19 +636,23 @@ async function validatePlugin({
 	return true;
 }
 
-function writeEnableMarker(home, fsImpl) {
+function writeEnableMarker(home, fsImpl, logger) {
 	const directory = path.join(home, ".config", "haoshoku");
 	const marker = path.join(directory, "hermes-relay.json");
 	const content = '{\n  "version": 1,\n  "enabled": true\n}\n';
-	fsImpl.mkdirSync(directory, { recursive: true, mode: 0o700 });
-	fsImpl.chmodSync(directory, 0o700);
-	let current = null;
 	try {
-		current = fsImpl.readFileSync(marker, "utf8");
-	} catch {}
-	if (current !== content)
-		fsImpl.writeFileSync(marker, content, { mode: 0o600 });
-	fsImpl.chmodSync(marker, 0o600);
+		fsImpl.mkdirSync(directory, { recursive: true, mode: 0o700 });
+		fsImpl.chmodSync(directory, 0o700);
+		const current = fsImpl.existsSync(marker)
+			? fsImpl.readFileSync(marker, "utf8")
+			: null;
+		if (current !== content) writeFileAtomic(marker, content, fsImpl);
+		fsImpl.chmodSync(marker, 0o600);
+		return true;
+	} catch (error) {
+		logger.error(`Could not safely update ${marker} (${error.message}).`);
+		return false;
+	}
 }
 
 function hasEnableMarker(home, fsImpl) {
@@ -848,7 +866,9 @@ async function configureHermesRelayImpl({
 		config,
 		!configExists || JSON.stringify(config) !== JSON.stringify(originalConfig),
 		fsImpl,
+		logger,
 	);
+	if (configChanged === null) return false;
 
 	if (
 		!isPrivateId(config.telegramChatId, { allowNegative: true }) ||
@@ -934,7 +954,7 @@ async function configureHermesRelayImpl({
 		}
 	}
 
-	writeEnableMarker(home, fsImpl);
+	if (!writeEnableMarker(home, fsImpl, logger)) return false;
 	logger.success(
 		activationRequired
 			? "Hermes relay is configured and active on this host."

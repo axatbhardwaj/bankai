@@ -336,6 +336,41 @@ describe("configureHermesRelay", () => {
 		).toBe(false);
 	});
 
+	it("preserves private config when its staged write fails", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		const configPath = path.join(dataDirectory, "config.json");
+		const originalConfig =
+			'{"telegramChatId":"123456","telegramUserId":"123456","keep":{"private":true}}\n';
+		fs.writeFileSync(configPath, originalConfig, { mode: 0o600 });
+		setup.fsImpl = {
+			...fs,
+			writeFileSync(file, ...args) {
+				if (path.basename(file).startsWith(".config.json.stage-")) {
+					fs.writeFileSync(file, "partial", { mode: 0o600 });
+					throw new Error("simulated staged config write failure");
+				}
+				return fs.writeFileSync(file, ...args);
+			},
+		};
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = false;
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
+		expect(fs.statSync(configPath).mode & 0o777).toBe(0o600);
+		expect(
+			fs.readdirSync(dataDirectory).some((file) => file.includes(".stage-")),
+		).toBe(false);
+	});
+
 	it("enables, validates, activates, and marks a fully configured relay host", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(
@@ -409,6 +444,59 @@ describe("configureHermesRelay", () => {
 				),
 			),
 		).toEqual({ version: 1, enabled: true });
+		expect(
+			fs.statSync(
+				path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
+			).mode & 0o777,
+		).toBe(0o600);
+	});
+
+	it("leaves no enabled marker when its staged write fails", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+			{ mode: 0o600 },
+		);
+		setup.fsImpl = {
+			...fs,
+			writeFileSync(file, ...args) {
+				if (path.basename(file).startsWith(".hermes-relay.json.stage-")) {
+					fs.writeFileSync(file, "partial", { mode: 0o600 });
+					throw new Error("simulated staged marker write failure");
+				}
+				return fs.writeFileSync(file, ...args);
+			},
+		};
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(fs.existsSync(marker)).toBe(false);
+		expect(
+			fs
+				.readdirSync(path.dirname(marker))
+				.some((file) => file.includes(".stage-")),
+		).toBe(false);
 	});
 
 	it("reruns without rewriting private state or restarting an unchanged enabled relay", async () => {
