@@ -500,6 +500,44 @@ describe("configureHermesRelay", () => {
 		expect(fs.existsSync(marker)).toBe(false);
 	});
 
+	it("keeps an unchanged activated relay enabled while its gateway is busy", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+			{ mode: 0o600 },
+		);
+		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
+		setup.gatewayActivityImpl = async () => "idle";
+		setup.isTTY = true;
+		setup.promptImpl = async () => true;
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+
+		expect(await configureHermesRelay(setup)).toBe(true);
+		expect(fs.existsSync(marker)).toBe(true);
+		setup.calls.length = 0;
+
+		setup.gatewayActivityImpl = async () => "busy";
+		expect(await configureHermesRelay(setup)).toBe(true);
+		expect(fs.existsSync(marker)).toBe(true);
+		expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
+	});
+
 	it("removes a preexisting host marker when an update cannot activate", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(

@@ -55,14 +55,14 @@ Status: finalized locally against the published standalone v0.1.0 release.
 - The enabled marker is also the persistent activation receipt. A missing or
   invalid marker keeps activation pending across process reruns even when the
   second run has no file, config, link, or enablement changes.
-- Every successful run freshly confirms that the gateway is running and idle.
-  Unchanged successful reruns with a valid marker preserve
-  config/database/marker bytes and do not restart the gateway.
+- Every successful run freshly confirms that the gateway is running. Unchanged
+  successful reruns with a valid marker may be idle or busy; they preserve
+  config/database/marker bytes and do not restart or interrupt the gateway.
 - Changed installs activate only when the gateway control socket confirms idle.
-  Busy or unknown activity, noninteractive execution, a declined prompt, or a
-  failed restart returns false and removes any preexisting marker. This also
-  prevents a stopped or unreachable unchanged gateway from retaining active
-  transport status.
+  Busy activity defers only a required activation. Unknown activity,
+  noninteractive execution, a declined prompt, or a failed restart returns false
+  and removes any preexisting marker. This also prevents a stopped or unreachable
+  unchanged gateway from retaining active transport status.
 - No path restarts Paseo, interrupts active Hermes work, changes schedules, sends
   messages, or performs a live relay review.
 

@@ -884,13 +884,13 @@ async function configureHermesRelayImpl({
 	const activationRequired =
 		activationChanged || !hasEnableMarker(home, fsImpl);
 	const activity = await readGatewayActivity({ hermesHome, environment });
-	if (activity === "busy") {
+	if (activity === "busy" && activationRequired) {
 		logger.warning(
 			"Hermes relay is configured, but activation is deferred to protect active Hermes work. Retry after the gateway is idle.",
 		);
 		return false;
 	}
-	if (activity !== "idle") {
+	if (activity !== "idle" && activity !== "busy") {
 		logger.warning(
 			"Hermes relay is configured, but activation is deferred because Haoshoku could not confirm that the gateway is idle. Check gateway status and retry.",
 		);
