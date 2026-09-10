@@ -10,6 +10,7 @@ const PLUGIN_FILES = [
 	"__init__.py",
 	"adapters.py",
 	"cli.py",
+	"modes.py",
 	"outbound.py",
 	"relay.py",
 	"runtime.py",
@@ -19,7 +20,7 @@ const PLUGIN_FILES = [
 	"README.md",
 	"plugin.yaml",
 ];
-const RELAY_COMMIT = "1f2761cbc75ef24e8e2287f49ba56dd819923388";
+const RELAY_COMMIT = "73846214657a165379a1698b6bccff6c9c9e484f";
 
 afterEach(() => {
 	for (const root of roots.splice(0)) {
@@ -38,7 +39,7 @@ function fixture() {
 	for (const file of PLUGIN_FILES) {
 		let content = `${file}\n`;
 		if (file === "plugin.yaml") {
-			content = "name: paseo-review-relay\nversion: 0.1.0\n";
+			content = "name: paseo-review-relay\nversion: 0.2.0\n";
 		} else if (file === "config.example.json") {
 			content = `${JSON.stringify(
 				{
@@ -60,7 +61,7 @@ function fixture() {
 		`${JSON.stringify({
 			version: 1,
 			repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
-			tag: "v0.1.0",
+			tag: "v0.2.0",
 			commit: RELAY_COMMIT,
 		})}\n`,
 	);
@@ -285,6 +286,9 @@ describe("configureHermesRelay", () => {
 		for (const file of PLUGIN_FILES) {
 			expect(fs.existsSync(path.join(pluginDirectory, file))).toBe(true);
 		}
+		expect(
+			fs.readFileSync(path.join(pluginDirectory, "modes.py"), "utf8"),
+		).toBe("modes.py\n");
 		const configPath = path.join(dataDirectory, "config.json");
 		expect(JSON.parse(fs.readFileSync(configPath, "utf8"))).toEqual({
 			telegramChatId: "YOUR_PRIVATE_DM_CHAT_ID",
@@ -602,6 +606,36 @@ describe("configureHermesRelay", () => {
 		expect(fs.existsSync(marker)).toBe(false);
 	});
 
+	it("preserves the original incomplete result when marker revocation is denied", async () => {
+		const setup = fixture();
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+		fs.mkdirSync(path.dirname(marker), { recursive: true });
+		fs.writeFileSync(marker, '{\n  "version": 1,\n  "enabled": true\n}\n');
+		setup.fsImpl = {
+			...fs,
+			rmSync(file, ...args) {
+				if (file === marker) {
+					const error = new Error("permission denied");
+					error.code = "EACCES";
+					throw error;
+				}
+				return fs.rmSync(file, ...args);
+			},
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(fs.existsSync(marker)).toBe(true);
+		expect(setup.messages.join("\n")).toContain(
+			"Could not revoke the Hermes relay host marker",
+		);
+	});
+
 	it("keeps an unchanged activated relay enabled while its gateway is busy", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(
@@ -903,7 +937,7 @@ describe("configureHermesRelay", () => {
 			`${JSON.stringify({
 				version: 1,
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
-				tag: "v0.1.0",
+				tag: "v0.2.0",
 				commit: expectedCommit,
 			})}\n`,
 		);
@@ -963,7 +997,7 @@ describe("configureHermesRelay", () => {
 			`${JSON.stringify({
 				version: 1,
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
-				tag: "v0.1.0",
+				tag: "v0.2.0",
 				commit: expectedCommit,
 			})}\n`,
 		);
@@ -1009,7 +1043,7 @@ describe("configureHermesRelay", () => {
 			`${JSON.stringify({
 				version: 1,
 				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
-				tag: "v0.1.0",
+				tag: "v0.2.0",
 				commit: expectedCommit,
 			})}\n`,
 		);

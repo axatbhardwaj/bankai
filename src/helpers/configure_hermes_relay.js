@@ -8,6 +8,7 @@ export const HERMES_RELAY_PLUGIN_FILES = [
 	"__init__.py",
 	"adapters.py",
 	"cli.py",
+	"modes.py",
 	"outbound.py",
 	"relay.py",
 	"runtime.py",
@@ -669,10 +670,16 @@ function hasEnableMarker(home, fsImpl) {
 	}
 }
 
-function removeEnableMarker(home, fsImpl) {
-	fsImpl.rmSync(path.join(home, ".config", "haoshoku", "hermes-relay.json"), {
-		force: true,
-	});
+function removeEnableMarker(home, fsImpl, logger) {
+	try {
+		fsImpl.rmSync(path.join(home, ".config", "haoshoku", "hermes-relay.json"), {
+			force: true,
+		});
+	} catch (error) {
+		logger.error(
+			`Could not revoke the Hermes relay host marker (${error.message}).`,
+		);
+	}
 }
 
 async function configureHermesRelayImpl({
@@ -966,11 +973,17 @@ async function configureHermesRelayImpl({
 export async function configureHermesRelay(options = {}) {
 	const home = options.home ?? homedir();
 	const fsImpl = options.fsImpl ?? fs;
+	const logger = options.logger ?? log;
 	let complete = false;
 	try {
-		complete = await configureHermesRelayImpl({ ...options, home, fsImpl });
+		complete = await configureHermesRelayImpl({
+			...options,
+			home,
+			fsImpl,
+			logger,
+		});
 		return complete;
 	} finally {
-		if (!complete) removeEnableMarker(home, fsImpl);
+		if (!complete) removeEnableMarker(home, fsImpl, logger);
 	}
 }

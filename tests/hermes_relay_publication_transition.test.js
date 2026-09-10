@@ -5,7 +5,7 @@ import path from "node:path";
 const projectRoot = path.resolve(import.meta.dir, "..");
 
 describe("published Hermes relay source", () => {
-	it("uses only the immutable public v0.1.0 commit", () => {
+	it("uses only the immutable public v0.2.0 commit", () => {
 		const lock = JSON.parse(
 			fs.readFileSync(
 				path.join(projectRoot, "configs", "hermes-relay", "lock.json"),
@@ -16,8 +16,8 @@ describe("published Hermes relay source", () => {
 		expect(lock).toEqual({
 			version: 1,
 			repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
-			tag: "v0.1.0",
-			commit: "1f2761cbc75ef24e8e2287f49ba56dd819923388",
+			tag: "v0.2.0",
+			commit: "73846214657a165379a1698b6bccff6c9c9e484f",
 		});
 		expect(
 			fs.existsSync(path.join(projectRoot, "configs", "hermes-plugins")),
