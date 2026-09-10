@@ -60,6 +60,9 @@ def telegram_identity():
         return None
     return {"chatId": users[0], "userId": users[0]}
 
+def telegram_credentials():
+    return {"ready": bool(private_env().get("TELEGRAM_BOT_TOKEN", "").strip())}
+
 def gateway_activity():
     from gateway.control_socket import query_gateway_control
     status = query_gateway_control(home, "status")
@@ -72,9 +75,19 @@ def gateway_activity():
     return {"activity": "busy" if active else "idle"}
 
 try:
-    result = telegram_identity() if mode == "telegram-identity" else gateway_activity()
+    if mode == "telegram-identity":
+        result = telegram_identity()
+    elif mode == "telegram-credentials":
+        result = telegram_credentials()
+    else:
+        result = gateway_activity()
 except Exception:
-    result = None if mode == "telegram-identity" else {"activity": "unknown"}
+    if mode == "telegram-identity":
+        result = None
+    elif mode == "telegram-credentials":
+        result = {"ready": False}
+    else:
+        result = {"activity": "unknown"}
 print(json.dumps(result, separators=(",", ":")))
 `;
 
@@ -627,11 +640,15 @@ async function validatePlugin({
 function writeEnableMarker(home, fsImpl) {
 	const directory = path.join(home, ".config", "haoshoku");
 	const marker = path.join(directory, "hermes-relay.json");
+	const content = '{\n  "version": 1,\n  "enabled": true\n}\n';
 	fsImpl.mkdirSync(directory, { recursive: true, mode: 0o700 });
 	fsImpl.chmodSync(directory, 0o700);
-	fsImpl.writeFileSync(marker, '{\n  "version": 1,\n  "enabled": true\n}\n', {
-		mode: 0o600,
-	});
+	let current = null;
+	try {
+		current = fsImpl.readFileSync(marker, "utf8");
+	} catch {}
+	if (current !== content)
+		fsImpl.writeFileSync(marker, content, { mode: 0o600 });
 	fsImpl.chmodSync(marker, 0o600);
 }
 
@@ -646,6 +663,7 @@ export async function configureHermesRelay({
 	logger = log,
 	whichImpl = (command) => Bun.which(command),
 	readTelegramIdentityImpl = null,
+	telegramCredentialReadyImpl = null,
 	gatewayActivityImpl = null,
 	nowImpl = () => new Date(),
 	sourceDirectory = environment.HAOSHOKU_HERMES_RELAY_SOURCE,
@@ -678,6 +696,18 @@ export async function configureHermesRelay({
 			return ["idle", "busy"].includes(result?.activity)
 				? result.activity
 				: "unknown";
+		});
+	const telegramCredentialReady =
+		telegramCredentialReadyImpl ??
+		(async () => {
+			const result = await runHermesProbe({
+				mode: "telegram-credentials",
+				hermesHome,
+				fsImpl,
+				environment,
+				runProcessImpl,
+			});
+			return result?.ready === true;
 		});
 	let hermes = findExecutable("hermes", hermesCandidates, whichImpl, fsImpl);
 	if (!hermes) {
@@ -713,7 +743,7 @@ export async function configureHermesRelay({
 	}
 	if (!fsImpl.existsSync(path.join(hermesHome, "config.yaml"))) {
 		logger.error(
-			`Hermes setup is incomplete: create ${path.join(hermesHome, "config.yaml")} and retry.`,
+			`Hermes setup is incomplete. Run hermes setup, configure TELEGRAM_BOT_TOKEN and one private Telegram owner/DM, then run hermes gateway install --no-start-now --start-on-login. Verify the gateway manually and retry: haoshoku --server-hermes-relay. Expected config: ${path.join(hermesHome, "config.yaml")}`,
 		);
 		return false;
 	}
@@ -771,7 +801,11 @@ export async function configureHermesRelay({
 	const configExists = fsImpl.existsSync(configPath);
 	const config = configExists
 		? readJsonObject(configPath, fsImpl, logger)
-		: readJsonObject(path.join(source, "config.example.json"), fsImpl, logger);
+		: readJsonObject(
+				path.join(pluginDirectory, "config.example.json"),
+				fsImpl,
+				logger,
+			);
 	if (!config) return false;
 	const originalConfig = structuredClone(config);
 
@@ -817,6 +851,12 @@ export async function configureHermesRelay({
 	) {
 		logger.error(
 			`Hermes relay configuration is incomplete. Set telegramChatId and telegramUserId in ${configPath}, then retry: haoshoku --server-hermes-relay`,
+		);
+		return false;
+	}
+	if (!(await telegramCredentialReady({ hermesHome, environment }))) {
+		logger.error(
+			`Hermes relay configuration is incomplete. Set TELEGRAM_BOT_TOKEN in ${path.join(hermesHome, ".env")} without printing it, verify the private Telegram owner/DM settings, then retry: haoshoku --server-hermes-relay`,
 		);
 		return false;
 	}

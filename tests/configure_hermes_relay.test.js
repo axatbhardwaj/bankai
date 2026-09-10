@@ -118,6 +118,7 @@ function fixture() {
 		messages,
 		projectRoot,
 		readTelegramIdentityImpl: async () => null,
+		telegramCredentialReadyImpl: async () => true,
 		runProcessImpl,
 		source,
 		whichImpl: (command) =>
@@ -290,6 +291,35 @@ describe("configureHermesRelay", () => {
 		).toBe(false);
 	});
 
+	it("stays incomplete when private Telegram IDs exist but the bot token is absent", async () => {
+		const setup = fixture();
+		const dataDirectory = path.join(
+			setup.hermesHome,
+			"plugin-data",
+			"paseo-review-relay",
+		);
+		fs.mkdirSync(dataDirectory, { recursive: true });
+		fs.writeFileSync(
+			path.join(dataDirectory, "config.json"),
+			`${JSON.stringify({
+				telegramChatId: "123456",
+				telegramUserId: "123456",
+				serverId: "server-vps",
+			})}\n`,
+		);
+		setup.telegramCredentialReadyImpl = async () => false;
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(setup.calls.some((argv) => argv.includes("enable"))).toBe(false);
+		expect(setup.messages.join("\n")).toContain("TELEGRAM_BOT_TOKEN");
+		expect(
+			fs.existsSync(
+				path.join(setup.home, ".config", "haoshoku", "hermes-relay.json"),
+			),
+		).toBe(false);
+	});
+
 	it("enables, validates, activates, and marks a fully configured relay host", async () => {
 		const setup = fixture();
 		const dataDirectory = path.join(
@@ -401,6 +431,18 @@ describe("configureHermesRelay", () => {
 		fs.writeFileSync(configPath, originalConfig, { mode: 0o600 });
 		const database = path.join(dataDirectory, "relay.sqlite3");
 		fs.writeFileSync(database, "existing authority state");
+		const marker = path.join(
+			setup.home,
+			".config",
+			"haoshoku",
+			"hermes-relay.json",
+		);
+		fs.mkdirSync(path.dirname(marker), { recursive: true });
+		fs.writeFileSync(marker, '{\n  "version": 1,\n  "enabled": true\n}\n', {
+			mode: 0o600,
+		});
+		fs.utimesSync(marker, new Date(0), new Date(0));
+		const markerMtime = fs.statSync(marker).mtimeMs;
 		addSuccessfulHermesCommands(setup, { initiallyEnabled: true });
 		let activityChecks = 0;
 		setup.gatewayActivityImpl = async () => {
@@ -412,6 +454,7 @@ describe("configureHermesRelay", () => {
 
 		expect(fs.readFileSync(configPath, "utf8")).toBe(originalConfig);
 		expect(fs.readFileSync(database, "utf8")).toBe("existing authority state");
+		expect(fs.statSync(marker).mtimeMs).toBe(markerMtime);
 		expect(activityChecks).toBe(0);
 		expect(setup.calls.some((argv) => argv.includes("restart"))).toBe(false);
 		expect(
@@ -695,5 +738,63 @@ describe("configureHermesRelay", () => {
 				),
 			),
 		).toBe(true);
+	});
+
+	it("seeds config from a fetched source after its temporary checkout is removed", async () => {
+		const setup = fixture();
+		const expectedCommit = "a".repeat(40);
+		fs.writeFileSync(
+			path.join(setup.projectRoot, "configs", "hermes-relay", "lock.json"),
+			`${JSON.stringify({
+				version: 1,
+				repository: "https://github.com/axatbhardwaj/paseo-hermes-relay.git",
+				tag: "v0.1.0",
+				commit: expectedCommit,
+				vendoredFallback: "../hermes-plugins/paseo-review-relay",
+			})}\n`,
+		);
+		setup.whichImpl = (command) =>
+			({
+				git: "/usr/bin/git",
+				hermes: "/usr/local/bin/hermes",
+				paseo: "/usr/bin/paseo",
+			})[command] ?? null;
+		const baseRunner = setup.runProcessImpl;
+		setup.runProcessImpl = async (argv, options) => {
+			if (argv[0] === "/usr/bin/git" && argv[1] === "clone") {
+				setup.calls.push(argv);
+				fs.cpSync(setup.source, argv.at(-1), { recursive: true });
+				return { exitCode: 0, stdout: "", stderr: "" };
+			}
+			if (argv[0] === "/usr/bin/git" && argv.includes("checkout")) {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: "", stderr: "" };
+			}
+			if (argv[0] === "/usr/bin/git" && argv.includes("rev-parse")) {
+				setup.calls.push(argv);
+				return { exitCode: 0, stdout: `${expectedCommit}\n`, stderr: "" };
+			}
+			return baseRunner(argv, options);
+		};
+
+		expect(await configureHermesRelay(setup)).toBe(false);
+
+		expect(
+			JSON.parse(
+				fs.readFileSync(
+					path.join(
+						setup.hermesHome,
+						"plugin-data",
+						"paseo-review-relay",
+						"config.json",
+					),
+					"utf8",
+				),
+			),
+		).toEqual({
+			telegramChatId: "YOUR_PRIVATE_DM_CHAT_ID",
+			telegramUserId: "YOUR_PRIVATE_TELEGRAM_USER_ID",
+			serverId: "server-vps",
+		});
 	});
 });
