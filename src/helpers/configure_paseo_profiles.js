@@ -21,6 +21,11 @@ const PROVIDER_FIELDS = [
 	"command",
 	"enabled",
 ];
+const PROFILE_PROVIDER_OVERRIDES_FILE = path.join(
+	".config",
+	"haoshoku",
+	"paseo-profile-provider-overrides.json",
+);
 const LEGACY_MANAGED_PROFILE_REPLACEMENTS = new Map([
 	["fable-planner", "planning-advisor"],
 	["research-opus", "research-requirements"],
@@ -111,6 +116,73 @@ export function mergePaseoPolicy(liveConfig, policy) {
 		};
 	}
 	return merged;
+}
+
+function readProfileProviderOverrides(home, fsImpl) {
+	const file = path.join(home, PROFILE_PROVIDER_OVERRIDES_FILE);
+	if (!fsImpl.existsSync(file)) return null;
+
+	let overrides;
+	try {
+		overrides = JSON.parse(fsImpl.readFileSync(file, "utf8"));
+	} catch (error) {
+		throw new Error(`Invalid ${file} (${error.message})`);
+	}
+	if (
+		!isObject(overrides) ||
+		overrides.version !== 1 ||
+		!isObject(overrides.providerRemaps)
+	) {
+		throw new Error(
+			`Invalid ${file}; expected version 1 with a providerRemaps object`,
+		);
+	}
+	for (const [source, target] of Object.entries(overrides.providerRemaps)) {
+		if (
+			source.length === 0 ||
+			source.trim() !== source ||
+			typeof target !== "string" ||
+			target.length === 0 ||
+			target.trim() !== target
+		) {
+			throw new Error(
+				`Invalid ${file}; providerRemaps must map provider IDs to provider IDs`,
+			);
+		}
+	}
+	return overrides.providerRemaps;
+}
+
+function applyProfileProviderOverrides(config, policy, providerRemaps) {
+	if (!providerRemaps) return config;
+	for (const [source, target] of Object.entries(providerRemaps)) {
+		if (source === target) {
+			throw new Error(
+				`Provider remap ${source} -> ${target} is self-referential`,
+			);
+		}
+		const targetProvider = config.agents.providers[target];
+		if (!isObject(targetProvider)) {
+			throw new Error(`Provider remap target ${target} does not exist`);
+		}
+		if (targetProvider.enabled === false) {
+			throw new Error(`Provider remap target ${target} is disabled`);
+		}
+		if (targetProvider.extends !== source) {
+			throw new Error(
+				`Provider remap target ${target} does not extend ${source}`,
+			);
+		}
+	}
+
+	const managedIds = new Set(policy.agentProfiles.map(({ id }) => id));
+	config.daemon.agentProfiles = config.daemon.agentProfiles.map((profile) =>
+		managedIds.has(profile.id) &&
+		Object.hasOwn(providerRemaps, profile.provider)
+			? { ...profile, provider: providerRemaps[profile.provider] }
+			: profile,
+	);
+	return config;
 }
 
 function readJsonObject(file, fsImpl, logger) {
@@ -233,8 +305,14 @@ export async function syncPaseoProfiles({
 	if (!live) return false;
 
 	try {
+		const providerRemaps = readProfileProviderOverrides(home, fsImpl);
+		const merged = applyProfileProviderOverrides(
+			mergePaseoPolicy(live, policy),
+			policy,
+			providerRemaps,
+		);
 		writePolicy({
-			source: mergePaseoPolicy(live, policy),
+			source: merged,
 			destination: configPath,
 			original,
 			fsImpl,
