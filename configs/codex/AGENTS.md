@@ -23,7 +23,7 @@ Android and desktop.
 For engineering work needing planning, research, implementation, independent
 review, or explainers, use the shared model-routing skill at
 `~/.agents/skills/model-routing/SKILL.md`. The main conversation's selected
-model is the driver; Fable advises substantial planning and Astra advises
-consequential technical design. Assigned workers stay within their brief, and
+model is the driver; Fable advises substantial planning and consequential
+technical design. Assigned workers stay within their brief, and
 routine work stays direct. This routing supersedes older paired-orchestration
 and model-casting guidance.

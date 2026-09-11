@@ -24,9 +24,13 @@ const PROVIDER_FIELDS = [
 const RETIRED_MANAGED_PROFILE_REPLACEMENTS = new Map([
 	["docs-muse", "docs-glm"],
 	["pr-requirements-muse", "pr-requirements-glm"],
-	["pr-monitor-muse", "pr-monitor-glm"],
+	["pr-monitor-muse", "pr-monitor"],
 	["research-sonnet", "research-opus"],
 	["explainer-sonnet", "explainer-opus"],
+	["research-grok", "research-web"],
+	["pr-correctness-grok", "pr-correctness"],
+	["pr-monitor-glm", "pr-monitor"],
+	["watchdog-grok", "pr-watchdog"],
 ]);
 
 function isObject(value) {
@@ -73,6 +77,10 @@ export function mergePaseoPolicy(liveConfig, policy) {
 			.filter(([, replacementId]) => managedIds.has(replacementId))
 			.map(([retiredId]) => retiredId),
 	);
+	// Explicitly retired role; preserve all other unmanaged records.
+	if (managedIds.has("fable-planner") && !managedIds.has("technical-advisor")) {
+		retiredManagedIds.add("technical-advisor");
+	}
 	const unmanagedProfiles = Array.isArray(merged.daemon.agentProfiles)
 		? merged.daemon.agentProfiles.filter(
 				({ id } = {}) => !managedIds.has(id) && !retiredManagedIds.has(id),
