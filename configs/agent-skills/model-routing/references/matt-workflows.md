@@ -10,7 +10,7 @@ One user invocation in the driver authorizes delegation of the work inside that 
 
 ## Planning: grill-with-docs, to-spec and to-tickets
 
-Use the same `planning-advisor` and `technical-advisor` sessions for Decision Council triggers throughout planning. Give both the same source-linked decision brief for independent first positions; the driver records its assessment before reading them and owns the final spec or tickets. The generic `docs` route does not replace this planning ownership.
+Use the same `planning-advisor` session for planning-advice triggers throughout planning. Give it a source-linked decision brief; the driver records its assessment before reading the response and owns the final spec or tickets. The generic `docs` route does not replace this planning ownership.
 
 Use researchers independently to establish the facts:
 
@@ -20,9 +20,9 @@ Use researchers independently to establish the facts:
 
 **Before finalizing or publishing with `to-spec`, require current findings from both Opus and Sol.** Collect them in parallel if missing. Reuse findings from the planning session when their sources, code revision and scope still apply; refresh changed or unsupported claims instead of repeating the whole investigation. Each finding must distinguish verified evidence, inference and unresolved questions, with source pointers the driver can inspect.
 
-The driver applies the Decision Council triggers while reconciling those findings before the spec is ready. Resolve material contradictions about requirements, code behavior, integration constraints or testing seams with targeted evidence; surface an unresolved correctness or dependent user decision rather than presenting an assumption as established fact. Preserve `to-spec`'s user confirmation of testing seams and tracker prerequisites. This gate adds research, not another generic interview or approval round.
+The driver applies the planning-advice triggers while reconciling those findings before the spec is ready. Resolve material contradictions about requirements, code behavior, integration constraints or testing seams with targeted evidence; surface an unresolved correctness or dependent user decision rather than presenting an assumption as established fact. Preserve `to-spec`'s user confirmation of testing seams and tracker prerequisites. This gate adds research, not another generic interview or approval round.
 
-When reconciliation records the driver's accepted assessment and plain AGREE from both council advisors for a high-stakes decision captured by the accepted spec, it satisfies the gate once. Reuse that evidence-bound decision during implementation unless a later proposal materially deviates from it.
+When reconciliation records the driver's accepted assessment and plain AGREE from `planning-advisor` for a high-stakes decision captured by the accepted spec, it satisfies the gate once. An unavailable planning advisor pauses only that dependent high-stakes decision unless the user explicitly overrides the gate. Reuse the evidence-bound decision during implementation unless a later proposal materially deviates from it.
 
 For `to-tickets`, use the accepted spec and its evidence to check vertical slices and blocking edges. Research only newly exposed gaps or changed sources. Preserve the skill's user-approved ticket breakdown before publication. The planning stage does not start implementation without the corresponding user invocation.
 

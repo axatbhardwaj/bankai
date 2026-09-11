@@ -153,21 +153,6 @@ function fixture() {
 	};
 }
 
-function writeProfileProviderOverlay(home, value) {
-	const overlayPath = path.join(
-		home,
-		".config",
-		"haoshoku",
-		"paseo-profile-provider-overrides.json",
-	);
-	fs.mkdirSync(path.dirname(overlayPath), { recursive: true });
-	fs.writeFileSync(
-		overlayPath,
-		typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`,
-	);
-	return overlayPath;
-}
-
 const logger = (warnings = [], info = []) => ({
 	error: (value) => warnings.push(value),
 	info: (value) => info.push(value),
@@ -737,7 +722,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("keeps the bundled Astra advisor while preserving custom profiles and secrets", () => {
+	it("retires the managed Astra advisor while preserving custom profiles and secrets", () => {
 		const policy = JSON.parse(
 			fs.readFileSync(
 				path.join(import.meta.dir, "..", "configs/paseo/agent-profiles.json"),
@@ -748,17 +733,22 @@ describe("Paseo orchestration policy", () => {
 			daemon: {
 				auth: { token: "keep" },
 				agentProfiles: [
-					{ id: "technical-advisor", model: "stale-astra" },
-					{ id: "custom-astra", model: "gpt-6-astra" },
+					{
+						id: "technical-advisor",
+						model: "stale-astra",
+						secret: "retire-with-profile",
+					},
+					{
+						id: "custom-astra",
+						model: "gpt-6-astra",
+						secret: "keep-custom-secret",
+					},
 				],
 			},
 		};
 		const merged = mergePaseoPolicy(live, policy);
 		const fableAdvisor = policy.agentProfiles.find(
 			({ id }) => id === "planning-advisor",
-		);
-		const astraAdvisor = policy.agentProfiles.find(
-			({ id }) => id === "technical-advisor",
 		);
 		expect(fableAdvisor).toMatchObject({
 			name: "Fable Advisor",
@@ -767,24 +757,30 @@ describe("Paseo orchestration policy", () => {
 			modeId: "bypassPermissions",
 			thinkingOptionId: "xhigh",
 		});
-		expect(astraAdvisor).toMatchObject({
-			name: "Astra Advisor",
-			provider: "codex",
-			model: "gpt-6-astra",
-			modeId: "full-access",
-			thinkingOptionId: "xhigh",
-		});
-		expect(merged.daemon.agentProfiles).toContainEqual(astraAdvisor);
+		expect(fableAdvisor.notes).toContain("Sole standing planning advisor");
+		expect(fableAdvisor.notes).toContain(
+			"High-stakes decisions require this advisor's plain AGREE",
+		);
+		expect(fableAdvisor.notes).toContain(
+			"unless the user explicitly overrides the gate",
+		);
+		expect(
+			policy.agentProfiles.some(({ id }) => id === "technical-advisor"),
+		).toBe(false);
+		expect(
+			merged.daemon.agentProfiles.some(({ id }) => id === "technical-advisor"),
+		).toBe(false);
 		expect(merged.daemon.agentProfiles.at(-1)).toEqual({
 			id: "custom-astra",
 			model: "gpt-6-astra",
+			secret: "keep-custom-secret",
 		});
 		expect(merged.daemon.auth).toEqual(live.daemon.auth);
 		expect(live.daemon.agentProfiles).toHaveLength(2);
 		expect(mergePaseoPolicy(merged, policy)).toEqual(merged);
 	});
 
-	it("routes Decision Council scenarios while keeping known work direct", () => {
+	it("routes sole-advisor planning while keeping known work direct", () => {
 		const root = path.join(
 			import.meta.dir,
 			"..",
@@ -801,12 +797,20 @@ describe("Paseo orchestration policy", () => {
 			path.join(root, "references", "matt-workflows.md"),
 			"utf8",
 		);
+		const readme = fs.readFileSync(
+			path.join(import.meta.dir, "..", "README.md"),
+			"utf8",
+		);
 		expect(routing).toContain(
 			"The main conversation is the driver, using its selected model",
 		);
 		for (const contract of [
-			"Prefer Sol at medium reasoning",
-			"`implement-code` and `review-code` default to medium",
+			"Prefer Astra at low reasoning",
+			"preferred Astra driver starts at low",
+			"unrelated work returns to low",
+			"Astra xhigh remains available on demand",
+			"without a dedicated advisor profile",
+			"`implement-code` and `review-code` remain at medium",
 			"Override `thinkingOptionId` per launch",
 			"security or trust boundaries",
 			"irreversible data or infrastructure changes",
@@ -821,10 +825,12 @@ describe("Paseo orchestration policy", () => {
 			"initial nontrivial approach",
 			"Any sliver of decision doubt",
 			"directly reading or testing",
-			"same source-linked question and evidence",
+			"a source-linked question and evidence",
 			"records its own assessment before reading",
 			"Routine mechanical work with a known approach stays direct",
-			"`planning-advisor` and `technical-advisor`",
+			"`planning-advisor` at xhigh as the sole standing advisor",
+			"`planning-advisor` must return plain AGREE",
+			"unless the user explicitly overrides this gate",
 			"Implementation stays with `implement-code`",
 		]) {
 			expect(routing).toContain(contract);
@@ -835,13 +841,24 @@ describe("Paseo orchestration policy", () => {
 		for (const contract of [
 			"strongest counterargument",
 			"targeted resolving check",
-			"both advisors must return plain `AGREE`",
+			"driver records its accepted assessment",
+			"`planning-advisor` must return plain `AGREE`",
+			"unless the user explicitly overrides this gate",
 			"at most two focused evidence rounds",
-			"Missing either advisor pauses only the dependent decision",
 		]) {
 			expect(briefings).toContain(contract);
 		}
-		expect(mattWorkflows).toContain("Decision Council");
+		expect(mattWorkflows).toContain("planning-advice triggers");
+		expect(mattWorkflows).toContain("plain AGREE from `planning-advisor`");
+		expect(mattWorkflows).toContain(
+			"unless the user explicitly overrides the gate",
+		);
+		expect(`${routing}\n${briefings}\n${mattWorkflows}`).not.toContain(
+			"technical-advisor",
+		);
+		expect(`${routing}\n${briefings}\n${mattWorkflows}`).not.toContain(
+			"Decision Council",
+		);
 		for (const relativePath of [
 			"configs/codex/AGENTS.md",
 			"configs/claude/CLAUDE.md",
@@ -850,12 +867,16 @@ describe("Paseo orchestration policy", () => {
 				path.join(import.meta.dir, "..", relativePath),
 				"utf8",
 			);
-			expect(instructions).toContain("Fable");
-			expect(instructions).toContain(
-				"Advisor and Astra Advisor together at xhigh",
-			);
+			expect(instructions).toContain("Prefer Astra low");
+			expect(instructions).toContain("sole standing planning advisor");
+			expect(instructions).toContain("Astra xhigh remains");
+			expect(instructions).toContain("Fable's plain AGREE");
+			expect(instructions).toContain("unless the user overrides");
 			expect(instructions).toContain("actual selected main conversation");
+			expect(instructions).not.toContain("technical-advisor");
 		}
+		expect(readme).toContain("Fable's plain AGREE");
+		expect(readme).toContain("unless the user explicitly overrides the gate");
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
@@ -1025,200 +1046,6 @@ describe("Paseo orchestration policy", () => {
 			daemon: { agentProfiles: policy.agentProfiles },
 			agents: { providers: policy.providers },
 		});
-	});
-
-	it("leaves managed profile providers unchanged when the owner overlay is absent", async () => {
-		const { configPath, home, policyPath, projectRoot } = fixture();
-		const codexPolicy = {
-			version: 1,
-			agentProfiles: [
-				{
-					id: "technical-advisor",
-					provider: "codex",
-					model: "gpt-6-astra",
-				},
-			],
-			providers: {},
-		};
-		fs.writeFileSync(policyPath, `${JSON.stringify(codexPolicy, null, 2)}\n`);
-
-		expect(await syncPaseoProfiles({ home, projectRoot })).toBe(true);
-		expect(JSON.parse(fs.readFileSync(configPath, "utf8"))).toEqual({
-			version: 1,
-			daemon: { agentProfiles: codexPolicy.agentProfiles },
-			agents: { providers: {} },
-		});
-	});
-
-	it("limits a valid provider remap to managed profiles without altering provider configuration", async () => {
-		const { configPath, home, policyPath, projectRoot } = fixture();
-		const managedProfiles = [
-			{
-				id: "technical-advisor",
-				provider: "codex",
-				model: "gpt-6-astra",
-			},
-			{
-				id: "future-codex-role",
-				provider: "codex",
-				model: "gpt-5.6-sol",
-			},
-			{
-				id: "planning-advisor",
-				provider: "claude",
-				model: "claude-fable-5-1",
-			},
-		];
-		fs.writeFileSync(
-			policyPath,
-			`${JSON.stringify({ version: 1, agentProfiles: managedProfiles, providers: {} }, null, 2)}\n`,
-		);
-		const live = {
-			version: 7,
-			daemon: {
-				auth: { token: "keep-daemon-secret" },
-				agentProfiles: [
-					{
-						id: "personal-codex",
-						provider: "codex",
-						model: "gpt-5.6-sol",
-						secret: "keep-profile-secret",
-					},
-				],
-			},
-			agents: {
-				providers: {
-					"codex-router": {
-						extends: "codex",
-						enabled: true,
-						env: {
-							OPENAI_API_KEY: "keep-provider-secret",
-							OPENAI_BASE_URL: "http://127.0.0.1:8317",
-						},
-						models: ["gpt-5.6-sol", "gpt-6-astra"],
-					},
-				},
-			},
-		};
-		fs.mkdirSync(path.dirname(configPath), { recursive: true });
-		fs.writeFileSync(configPath, `${JSON.stringify(live, null, 2)}\n`);
-		writeProfileProviderOverlay(home, {
-			version: 1,
-			providerRemaps: { codex: "codex-router" },
-		});
-
-		expect(
-			await syncPaseoProfiles({
-				home,
-				projectRoot,
-				whichImpl: () => null,
-			}),
-		).toBe(true);
-		const synced = JSON.parse(fs.readFileSync(configPath, "utf8"));
-		expect(synced.daemon.agentProfiles).toEqual([
-			{ ...managedProfiles[0], provider: "codex-router" },
-			{ ...managedProfiles[1], provider: "codex-router" },
-			managedProfiles[2],
-			live.daemon.agentProfiles[0],
-		]);
-		expect(synced.daemon.auth).toEqual(live.daemon.auth);
-		expect(synced.agents.providers).toEqual(live.agents.providers);
-	});
-
-	it("does not treat inherited object properties as configured provider remaps", async () => {
-		const { configPath, home, policyPath, projectRoot } = fixture();
-		const inheritedNameProfile = {
-			id: "custom-provider-role",
-			provider: "toString",
-			model: "custom-model",
-		};
-		fs.writeFileSync(
-			policyPath,
-			`${JSON.stringify(
-				{
-					version: 1,
-					agentProfiles: [inheritedNameProfile],
-					providers: {},
-				},
-				null,
-				2,
-			)}\n`,
-		);
-		writeProfileProviderOverlay(home, { version: 1, providerRemaps: {} });
-
-		expect(await syncPaseoProfiles({ home, projectRoot })).toBe(true);
-		expect(JSON.parse(fs.readFileSync(configPath, "utf8"))).toEqual({
-			version: 1,
-			daemon: { agentProfiles: [inheritedNameProfile] },
-			agents: { providers: {} },
-		});
-	});
-
-	it.each([
-		["malformed JSON", "{\n"],
-		["an unsupported schema version", { version: 2, providerRemaps: {} }],
-		["a non-object remap table", { version: 1, providerRemaps: [] }],
-		[
-			"a self-referential remap",
-			{ version: 1, providerRemaps: { codex: "codex" } },
-		],
-		[
-			"a missing target provider",
-			{ version: 1, providerRemaps: { codex: "missing" } },
-		],
-		[
-			"a disabled target provider",
-			{ version: 1, providerRemaps: { codex: "disabled-router" } },
-		],
-		[
-			"a target derived from a different provider",
-			{ version: 1, providerRemaps: { codex: "wrong-router" } },
-		],
-	])("rejects %s before changing the Paseo config", async (_name, overlay) => {
-		const { configPath, home, policyPath, projectRoot } = fixture();
-		fs.writeFileSync(
-			policyPath,
-			`${JSON.stringify(
-				{
-					version: 1,
-					agentProfiles: [
-						{
-							id: "technical-advisor",
-							provider: "codex",
-							model: "gpt-6-astra",
-						},
-					],
-					providers: {},
-				},
-				null,
-				2,
-			)}\n`,
-		);
-		const original = {
-			version: 9,
-			owner: "keep",
-			daemon: { agentProfiles: [] },
-			agents: {
-				providers: {
-					"codex-router": { extends: "codex", enabled: true },
-					"disabled-router": { extends: "codex", enabled: false },
-					"wrong-router": { extends: "claude", enabled: true },
-				},
-			},
-		};
-		fs.mkdirSync(path.dirname(configPath), { recursive: true });
-		const originalBytes = `${JSON.stringify(original, null, 2)}\n`;
-		fs.writeFileSync(configPath, originalBytes);
-		writeProfileProviderOverlay(home, overlay);
-
-		expect(
-			await syncPaseoProfiles({
-				home,
-				projectRoot,
-				whichImpl: () => null,
-			}),
-		).toBe(false);
-		expect(fs.readFileSync(configPath, "utf8")).toBe(originalBytes);
 	});
 
 	it("refuses a missing config with an ambiguous PID before any CLI call", async () => {

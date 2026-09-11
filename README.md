@@ -273,12 +273,14 @@ source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
 mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
-Prefer Sol at medium effort when choosing the main conversation; the actual
-selected model remains the driver. Fable Advisor (`planning-advisor`) and Astra
-Advisor (`technical-advisor`) both run at xhigh as the Decision Council,
-consulted together for initial nontrivial approaches and whenever any decision
-uncertainty remains. High-stakes decisions require both advisors' plain AGREE
-plus the driver's accepted assessment. Ordinary implementation and
+Prefer Astra at low effort when choosing the main conversation; the actual
+selected model remains the driver. Escalation is bounded to the reasoning work
+that needs it, with Astra xhigh available on demand and unrelated work returning
+to low. Fable Advisor (`planning-advisor`) runs at xhigh as the sole standing
+planning advisor; there is no dedicated Astra advisor profile or mandatory
+two-advisor council. High-stakes decisions require Fable's plain AGREE and the
+driver's accepted assessment; an unavailable Fable pauses only that decision
+unless the user explicitly overrides the gate. Ordinary implementation and
 exact-candidate review default to medium; the shared model-routing reasoning
 policy defines the per-launch high overrides and escalation triggers without
 changing review, test, revision, or authority gates.

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Prefer Astra at low reasoning as the main driver, with effort escalation
+  when needed. Keep Fable xhigh as the sole standing planning advisor and
+  preserve Sol medium implementation and Opus medium review.
+- Retire the managed Astra advisor profile during setup while preserving
+  custom profiles and provider credentials.
+- Remove the unreleased local provider-remapping layer; managed Codex roles
+  use the direct Codex provider.
+
 ## 11.8.3 - 2026-09-11
 
 - Keep delegated workflow chats available until the driver accepts all

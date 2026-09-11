@@ -8,16 +8,7 @@
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "xhigh",
-			"notes": "Fable Advisor for the Decision Council and persistent planning partner. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
-		},
-		{
-			"id": "technical-advisor",
-			"name": "Astra Advisor",
-			"provider": "codex",
-			"model": "gpt-6-astra",
-			"modeId": "full-access",
-			"thinkingOptionId": "xhigh",
-			"notes": "Astra Advisor for the Decision Council and technical judgment. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
+			"notes": "Sole standing planning advisor at xhigh. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. High-stakes decisions require this advisor's plain AGREE plus the driver's accepted assessment; unavailability pauses only the dependent high-stakes decision unless the user explicitly overrides the gate. Stay bounded: keep files unchanged, create no children, and do not review candidates."
 		},
 		{
 			"id": "research-requirements",
