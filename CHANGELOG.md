@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Keep pre-created peer-review angle checkouts under the reviewed repository's
+  existing Paseo project by requiring explicit project registration and
+  workspace-ID launches at the point of dispatch.
+
 ## 11.8.2 - 2026-09-11
 
 - Retire the separate Astra advisor profile; keep the selected model as driver
