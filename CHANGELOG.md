@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.8.2 - 2026-09-11
 
 - Retire the separate Astra advisor profile; keep the selected model as driver
   and Fable as general planning/design advisor. Preserve human escalation and
