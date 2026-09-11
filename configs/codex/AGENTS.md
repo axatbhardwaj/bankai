@@ -22,8 +22,10 @@ Android and desktop.
 
 For engineering work needing planning, research, implementation, independent
 review, or explainers, use the shared model-routing skill at
-`~/.agents/skills/model-routing/SKILL.md`. The main conversation's selected
-model is the driver; Fable advises substantial planning and consequential
-technical design. Assigned workers stay within their brief, and
-routine work stays direct. This routing supersedes older paired-orchestration
-and model-casting guidance.
+`~/.agents/skills/model-routing/SKILL.md`. Prefer Sol medium for the main
+conversation when selecting it; the actual selected main conversation stays
+the driver without an implicit profile/default change or handoff. Use Fable
+Advisor and Astra Advisor together at xhigh for the Decision Council on initial
+nontrivial approach decisions and whenever decision doubt remains. Assigned
+workers stay within their brief, and known mechanical work stays direct. This
+routing supersedes older paired-orchestration and model-casting guidance.

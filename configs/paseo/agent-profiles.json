@@ -3,12 +3,21 @@
 	"agentProfiles": [
 		{
 			"id": "fable-planner",
-			"name": "Planning Advisor",
+			"name": "Fable Advisor",
 			"provider": "claude",
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
-			"notes": "Persistent planning partner for the driver. Examine requirements, design tradeoffs, acceptance criteria, plan revisions, evaluations and assigned high-stakes decisions. For a decision assessment, independently verify evidence and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers and the strongest concrete counterargument. Do not review the whole candidate or issue a candidate verdict. Keep product files unchanged; stay bounded and do not substitute other seats."
+			"thinkingOptionId": "xhigh",
+			"notes": "Fable Advisor for the Decision Council and persistent planning partner. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
+		},
+		{
+			"id": "technical-advisor",
+			"name": "Astra Advisor",
+			"provider": "codex",
+			"model": "gpt-6-astra",
+			"modeId": "full-access",
+			"thinkingOptionId": "xhigh",
+			"notes": "Astra Advisor for the Decision Council and technical judgment. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
 		},
 		{
 			"id": "research-opus",

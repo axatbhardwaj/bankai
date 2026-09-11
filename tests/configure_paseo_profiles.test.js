@@ -635,45 +635,54 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("retires only the Astra advisor while preserving custom profiles and secrets", () => {
-		const policy = {
-			version: 1,
-			agentProfiles: [{ id: "fable-planner", model: "claude-fable-5-1" }],
-			providers: {},
-		};
-		const live = {
-			daemon: {
-				auth: { token: "keep" },
-				agentProfiles: [
-					{ id: "technical-advisor", model: "gpt-6-astra" },
-					{ id: "custom-astra", model: "gpt-6-astra" },
-				],
-			},
-		};
-		const merged = mergePaseoPolicy(live, policy);
-		expect(merged.daemon.agentProfiles.map((p) => p.id)).toEqual([
-			"fable-planner",
-			"custom-astra",
-		]);
-		expect(merged.daemon.auth).toEqual(live.daemon.auth);
-		expect(live.daemon.agentProfiles).toHaveLength(2);
-		const incomplete = mergePaseoPolicy(live, {
-			agentProfiles: [],
-			providers: {},
-		});
-		expect(incomplete.daemon.agentProfiles).toEqual(live.daemon.agentProfiles);
-		const bundle = JSON.parse(
+	it("keeps the bundled Astra advisor while preserving custom profiles and secrets", () => {
+		const policy = JSON.parse(
 			fs.readFileSync(
 				path.join(import.meta.dir, "..", "configs/paseo/agent-profiles.json"),
 				"utf8",
 			),
 		);
-		expect(bundle.agentProfiles.some((p) => p.id === "technical-advisor")).toBe(
-			false,
+		const live = {
+			daemon: {
+				auth: { token: "keep" },
+				agentProfiles: [
+					{ id: "technical-advisor", model: "stale-astra" },
+					{ id: "custom-astra", model: "gpt-6-astra" },
+				],
+			},
+		};
+		const merged = mergePaseoPolicy(live, policy);
+		const fableAdvisor = policy.agentProfiles.find(
+			({ id }) => id === "fable-planner",
 		);
+		const astraAdvisor = policy.agentProfiles.find(
+			({ id }) => id === "technical-advisor",
+		);
+		expect(fableAdvisor).toMatchObject({
+			name: "Fable Advisor",
+			provider: "claude",
+			model: "claude-fable-5-1",
+			modeId: "bypassPermissions",
+			thinkingOptionId: "xhigh",
+		});
+		expect(astraAdvisor).toMatchObject({
+			name: "Astra Advisor",
+			provider: "codex",
+			model: "gpt-6-astra",
+			modeId: "full-access",
+			thinkingOptionId: "xhigh",
+		});
+		expect(merged.daemon.agentProfiles).toContainEqual(astraAdvisor);
+		expect(merged.daemon.agentProfiles.at(-1)).toEqual({
+			id: "custom-astra",
+			model: "gpt-6-astra",
+		});
+		expect(merged.daemon.auth).toEqual(live.daemon.auth);
+		expect(live.daemon.agentProfiles).toHaveLength(2);
+		expect(mergePaseoPolicy(merged, policy)).toEqual(merged);
 	});
 
-	it("keeps driver selection neutral and routes advice to Fable", () => {
+	it("routes Decision Council scenarios while keeping known work direct", () => {
 		const root = path.join(
 			import.meta.dir,
 			"..",
@@ -686,15 +695,50 @@ describe("Paseo orchestration policy", () => {
 			path.join(root, "references", "briefings.md"),
 			"utf8",
 		);
+		const mattWorkflows = fs.readFileSync(
+			path.join(root, "references", "matt-workflows.md"),
+			"utf8",
+		);
 		expect(routing).toContain(
 			"The main conversation is the driver, using its selected model",
 		);
-		expect(routing).toContain("Fable is the single general advisor");
-		expect(routing).not.toContain("`technical-advisor`");
-		expect(briefings).toContain(
-			"The driver and Fable must both record plain AGREE",
-		);
-		expect(briefings).toContain("escalate the dependent decision");
+		for (const contract of [
+			"Prefer Sol at medium reasoning",
+			"initial nontrivial approach",
+			"Any sliver of decision doubt",
+			"directly reading or testing",
+			"same source-linked question and evidence",
+			"records its own assessment before reading",
+			"Routine mechanical work with a known approach stays direct",
+			"`fable-planner` and `technical-advisor`",
+			"Implementation stays with `implement-sol-high`",
+		]) {
+			expect(routing).toContain(contract);
+		}
+		for (const contract of [
+			"strongest counterargument",
+			"targeted resolving check",
+			"both advisors must return plain `AGREE`",
+			"at most two focused evidence rounds",
+			"Missing either advisor pauses only the dependent decision",
+		]) {
+			expect(briefings).toContain(contract);
+		}
+		expect(mattWorkflows).toContain("Decision Council");
+		for (const relativePath of [
+			"configs/codex/AGENTS.md",
+			"configs/claude/CLAUDE.md",
+		]) {
+			const instructions = fs.readFileSync(
+				path.join(import.meta.dir, "..", relativePath),
+				"utf8",
+			);
+			expect(instructions).toContain("Fable");
+			expect(instructions).toContain(
+				"Advisor and Astra Advisor together at xhigh",
+			);
+			expect(instructions).toContain("actual selected main conversation");
+		}
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
@@ -780,6 +824,26 @@ describe("Paseo orchestration policy", () => {
 			}
 			expect(contents).not.toContain("Grok");
 		}
+	});
+
+	it("keeps peer-review checkouts under the repository project", () => {
+		const skill = fs.readFileSync(
+			path.join(
+				import.meta.dir,
+				"..",
+				"configs",
+				"agent-skills",
+				"paseo-pr-review",
+				"SKILL.md",
+			),
+			"utf8",
+		);
+
+		expect(skill).toContain(
+			"paseo workspace create --project <project-id> --isolation local",
+		);
+		expect(skill).toContain("paseo run --workspace <workspace-id>");
+		expect(skill).toContain("workspace.projectId == project-id");
 	});
 
 	it("keeps recurring heartbeats session-owned and healthy ticks driver-quiet", () => {

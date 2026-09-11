@@ -1,6 +1,6 @@
 ---
 name: model-routing
-description: Use for engineering planning with ambiguous requirements, design tradeoffs, conflicting findings or repeated failed fixes; Matt Pocock planning and implementation skills; and specialist exploration, research, implementation, review, explanations, documentation or PR babysitting. Keep ordinary low-impact work proportional.
+description: Use for engineering work with decision uncertainty, nontrivial approach choices, conflicting evidence or repeated failed fixes; Matt Pocock planning and implementation skills; and specialist exploration, research, implementation, review, explanations, documentation or PR babysitting. Keep known mechanical work proportional.
 ---
 
 # Model routing
@@ -13,31 +13,29 @@ Before the first delegation for a future task, read `~/.config/haoshoku/paseo-ta
 
 ## Ownership
 
-The main conversation is the driver, using its selected model and reasoning settings, and alone creates Paseo specialist agents. It owns scope, acceptance, routing, execution, synthesis, decisions, recovery, and the final result. Do not create a saved driver profile or switch the default model. The driver creates only needed seats and validates returned evidence.
+The main conversation is the driver, using its selected model and reasoning settings, and alone creates Paseo specialist agents. Prefer Sol at medium reasoning when the main conversation can be selected; the actual selection remains the owner. It owns scope, acceptance, routing, execution, synthesis, decisions, recovery, and the final result. Keep the current runtime default and profile unchanged, and transfer ownership only through an explicit `paseo-handoff`. The driver creates only needed seats and validates returned evidence.
 
 Prefer subagent-driven work for nontrivial tasks: the driver delegates bounded exploration, research, implementation and review to appropriate Paseo profiles, then synthesizes their evidence. Run independent subtasks in parallel; keep dependent work sequential and reuse a suitable existing worker before adding a seat. Simple lookups and low-impact one-step tasks can stay direct unless a selected workflow explicitly assigns them to a worker. This preference applies within named workflows without changing their role assignments or creating a second orchestrator.
 
 Workers perform bounded independent workflows and return evidence to the driver. A worker that sees this policy through global instructions does not launch another routing team. Native subagents required by an explicitly invoked skill remain allowed inside that worker's scope.
 
-An explicit `paseo-handoff` may transfer driver ownership. An explicitly invoked `implement-spec` is run by the driver, owns its graph, and selects routing profiles without a competing scheduler.
+An explicitly invoked `implement-spec` is run by the driver, owns its graph, and selects routing profiles without a competing scheduler.
 
-## Planning with Fable
+## Decision Council
 
-Before substantial planning, use Fable through `fable-planner`. Planning is substantial when the task requires a written plan or acceptance decisions beyond a mechanical change, or has ambiguous requirements, multiple credible approaches, boundary or public-behavior changes, conflicting evidence, or repeated failures. Delegate while the approach is still open so Fable can shape the plan. A superficial checklist does not make routine known work substantial. Routine known work stays direct unless a selected workflow assigns it to a worker.
+Use `fable-planner` and `technical-advisor` together at xhigh for the Decision Council. Automatically consult both in parallel before committing to an initial nontrivial approach that interprets requirements, chooses among alternatives, introduces new behavior, interfaces, or boundaries, sets a failure strategy, or has uncertain acceptance.
 
-Give Fable the objective, constraints and available evidence, and ownership of a bounded planning output: recommended approach, alternatives and tradeoffs, assumptions and evidence gaps, acceptance criteria, and implementation steps or the next diagnostic experiment. Fable inspects relevant sources and returns the proposal; the driver assesses it and owns the final decision. Continue independent evidence gathering while Fable works.
+Any sliver of decision doubt triggers the council, including doubt about whether council is warranted. Consult when a worker flags a decision, evidence conflicts, an unexpected result undermines the current explanation, a repair hypothesis is rejected before another speculative fix, the driver would dismiss a substantive review finding, or the material plan changes.
 
-Reuse the same Fable session when new evidence materially changes the plan. Simple lookups, mechanical edits and routine execution of an accepted plan stay direct unless the selected workflow assigns a worker. Ordinary planning advice does not require formal consensus; apply the gate below only to high-stakes decisions. Fable keeps product files unchanged, implementation stays with its assigned seat, and Opus retains independent candidate review.
+Resolve a factual unknown by directly reading or testing when that can settle it; send remaining decision uncertainty to the council. Routine mechanical work with a known approach stays direct without a council pass for each edit. File count, worker launch, or hedge words alone do not trigger consultation.
 
-If required Fable planning is unavailable, stop only the dependent planning decision and report the gap; do not silently settle the plan or substitute another profile.
+The driver records its own assessment before reading advisor outputs. Give both advisors the same source-linked question and evidence, constraints, and acceptance criteria without a preferred answer. They take independent first positions and return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, their strongest counterargument, and a targeted resolving check. Reuse the same-task advisor sessions and accepted evidence-bound decisions until a material change.
 
-## Design advice and high-stakes decisions
+Ordinary disagreement calls for the targeted resolving check or new evidence. If only preference remains, choose the safe, reversible, in-scope convention. Correctness uncertainty requires an experiment, or the dependent human decision when no experiment is available. Consulting does not reopen existing authority or require repeated approval.
 
-Fable is the single general advisor for substantial planning and consequential design. The selected driver owns technical reasoning and synthesis; no separate Astra profile is required. Use the same Fable session for scoped design advice, risks, alternatives, and acceptance checks.
+For decisions involving security or trust boundaries, irreversible data or infrastructure changes, significant financial or loss risk, or material architecture commitments, both advisors must return plain AGREE and the driver must record an accepted assessment before proceeding. Driver dissent starts a focused evidence round rather than an override. Run at most two focused evidence rounds, then send only the dependent decision to the human. Missing either advisor pauses only that dependent decision; use no substitute. Council agreement never grants missing external authority.
 
-For a new decision involving security or trust boundaries, irreversible data or infrastructure changes, significant financial or loss risk, or material architecture commitments, the driver records its own assessment and obtains independent Fable assessment against the same evidence or revision. Both record plain AGREE before proceeding; a conditional answer or silence is unresolved. Use at most two focused evidence rounds, then escalate the dependent decision to the human. Existing explicit authorization is not reopened without a material deviation. This never grants missing external authority. If Fable is unavailable, pause only the dependent decision and report the gap.
-
-Fable assesses decisions and keeps product files unchanged. Opus remains the independent candidate reviewer. Follow the receipt contract in [references/briefings.md](references/briefings.md).
+The council assesses decisions only: advisors keep files unchanged, create no children, and do not review candidates. Implementation stays with `implement-sol-high`; Opus remains the independent candidate reviewer. Follow the briefing and receipt contract in [references/briefings.md](references/briefings.md).
 
 ## Selected workflows
 
@@ -45,9 +43,9 @@ When the user invokes `grill-with-docs`, `to-spec`, `to-tickets`, `implement` or
 
 ## Default routes
 
-- Use `fable-planner` for substantial planning and the Fable side of high-stakes decisions.
+- Use `fable-planner` and `technical-advisor` together for Decision Council consultations.
 - For bounded codebase exploration, use `explore-sonnet` to map modules, repository conventions and documented intent, or `explore-terra` to trace execution paths, callers, dependencies and relevant tests. Choose the seat matching the question; use both in parallel for distinct questions. Explorers return source locations, observations and uncertainties without product edits. Reuse existing research evidence or a suitable active researcher instead of duplicating the same scan.
-- For substantial research, have `research-opus` independently investigate requirements, documents, prior decisions, and alternatives while `research-sol-medium` traces code, dependencies, tests, and implementation constraints. Apply the Fable planning and design triggers above when reconciling their findings; the driver owns the final synthesis. Use `research-web` only for targeted current external research.
+- For substantial research, have `research-opus` independently investigate requirements, documents, prior decisions, and alternatives while `research-sol-medium` traces code, dependencies, tests, and implementation constraints. Apply the Decision Council triggers when reconciling their findings; the driver owns the final synthesis. Use `research-web` only for targeted current external research.
 - Give writable implementation, tests, and repairs to `implement-sol-high`. Repository work uses one dedicated task worktree, repository policies, and the gh stack.
 - Route recurring watchers and watchdogs through the independent `pr-monitor` and `pr-watchdog` Opus profiles. Their own sessions hold the timers and keep routine healthy ticks snapshot-only.
 - For authored-PR babysitting to merge-ready, use [paseo-pr-babysit](../paseo-pr-babysit/SKILL.md): Opus monitors and watchdogs, Sol repairs, and Opus reviews before the driver publishes.
@@ -64,7 +62,7 @@ Use this workflow without Dvandva. Ordinary authorized work proceeds directly. P
 
 ## Evidence and recovery
 
-Paseo owns agent and session state. Keep only a concise handoff artifact: objective, acceptance, source pointers, agent/workspace IDs and roles, current revision, verification, consensus decisions with category, both verdicts, evidence pointers, and revision or evidence-set identity, unresolved findings, owner, and next action. Notifications are wake-ups; inspect artifacts and run acceptance checks before declaring completion.
+Paseo owns agent and session state. Keep only a concise handoff artifact: objective, acceptance, source pointers, agent/workspace IDs and roles, current revision, verification, each decision and council status, evidence identity and resolving result, unresolved findings, owner, and next action. Notifications are wake-ups; inspect artifacts and run acceptance checks before declaring completion.
 
 After interruption or an ambiguous launch, inspect recorded Paseo state and reuse the existing session when appropriate. Build no separate workflow state engine around this policy.
 
