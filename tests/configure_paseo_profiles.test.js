@@ -782,6 +782,26 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
+	it("keeps peer-review checkouts under the repository project", () => {
+		const skill = fs.readFileSync(
+			path.join(
+				import.meta.dir,
+				"..",
+				"configs",
+				"agent-skills",
+				"paseo-pr-review",
+				"SKILL.md",
+			),
+			"utf8",
+		);
+
+		expect(skill).toContain(
+			"paseo workspace create --project <project-id> --isolation local",
+		);
+		expect(skill).toContain("paseo run --workspace <workspace-id>");
+		expect(skill).toContain("workspace.projectId == project-id");
+	});
+
 	it("keeps recurring heartbeats session-owned and healthy ticks driver-quiet", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const skill = fs.readFileSync(
