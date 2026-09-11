@@ -1,14 +1,19 @@
 # Changelog
 
-## Unreleased
+## 11.8.3 - 2026-09-11
 
 - Keep delegated workflow chats available until the driver accepts all
   evidence, then require exit cleanup reconciliation before completion,
   handoff, or driver archive. Receipt-bind supported background CLI launches
   with null parentage, hard-retain mismatched non-null parentage, settle and
   rebind cross-run reuse, and report a reason for every retained worker.
-- Restore Astra Advisor (`technical-advisor`) and rename the existing Fable
-  profile (`fable-planner`) to Fable Advisor. Run both at xhigh as a frequently
+- Default ordinary implementation and exact-candidate code review to medium,
+  with explicit per-launch high escalation, while retaining xhigh Decision
+  Council advisors and all existing revision, review, test, and authority gates.
+  Replace model/effort-bearing managed profile aliases with responsibility IDs
+  during upgrade without changing custom profiles or provider secrets.
+- Restore Astra Advisor (`technical-advisor`) and name the existing Fable
+  profile (`planning-advisor`) Fable Advisor. Run both at xhigh as a frequently
   consulted Decision Council for initial nontrivial approaches and remaining
   decision uncertainty.
 - Keep pre-created peer-review angle checkouts under the reviewed repository's

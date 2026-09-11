@@ -14,12 +14,12 @@ const policy = {
 	version: 1,
 	agentProfiles: [
 		{
-			id: "review-opus",
-			name: "review-opus",
+			id: "review-code",
+			name: "review-code",
 			provider: "claude",
 			model: "opus",
 			modeId: "safe",
-			thinkingOptionId: "high",
+			thinkingOptionId: "medium",
 			notes: "Review the exact candidate.",
 		},
 	],
@@ -48,9 +48,9 @@ const recurringOpusProfiles = [
 	},
 ];
 
-const legacyWorkflowProfiles = [
+const currentWorkflowProfiles = [
 	{
-		id: "docs-glm",
+		id: "docs",
 		name: "Documentation",
 		provider: "claude",
 		model: "claude-opus-5",
@@ -58,7 +58,7 @@ const legacyWorkflowProfiles = [
 		thinkingOptionId: "medium",
 	},
 	{
-		id: "pr-requirements-glm",
+		id: "pr-requirements",
 		name: "PR Requirements Review",
 		provider: "claude",
 		model: "claude-opus-5",
@@ -88,9 +88,9 @@ const renamedWorkflowProfiles = [
 	...recurringOpusProfiles,
 ];
 
-const opusReplacementProfiles = [
+const currentResearchAndExplainerProfiles = [
 	{
-		id: "research-opus",
+		id: "research-requirements",
 		name: "Requirements Research",
 		provider: "claude",
 		model: "claude-opus-5",
@@ -98,7 +98,7 @@ const opusReplacementProfiles = [
 		thinkingOptionId: "high",
 	},
 	{
-		id: "explainer-opus",
+		id: "explainer",
 		name: "Visual Explainer",
 		provider: "claude",
 		model: "claude-opus-5",
@@ -106,6 +106,25 @@ const opusReplacementProfiles = [
 		thinkingOptionId: "medium",
 	},
 ];
+
+const responsibilityProfileReplacements = new Map([
+	["fable-planner", "planning-advisor"],
+	["research-opus", "research-requirements"],
+	["research-sol-medium", "research-code"],
+	["implement-sol-high", "implement-code"],
+	["review-opus", "review-code"],
+	["docs-glm", "docs"],
+	["pr-security-opus", "pr-security"],
+	["pr-integration-sol", "pr-integration"],
+	["pr-requirements-glm", "pr-requirements"],
+	["pr-architecture-opus", "pr-architecture"],
+	["explore-sonnet", "explore-codebase"],
+	["explore-terra", "explore-execution"],
+	["explainer-opus", "explainer"],
+	["explainer-review-terra", "explainer-review"],
+	["explainer-content-sol", "explainer-content"],
+	["explainer-content-opus", "explainer-content-review"],
+]);
 
 afterEach(() => {
 	for (const root of roots.splice(0)) {
@@ -174,7 +193,7 @@ describe("Paseo orchestration policy", () => {
 				listen: "127.0.0.1:7777",
 				cors: ["private"],
 				agentProfiles: [
-					{ id: "review-opus", model: "old" },
+					{ id: "review-code", model: "old" },
 					{ id: "personal", model: "keep" },
 				],
 			},
@@ -203,7 +222,7 @@ describe("Paseo orchestration policy", () => {
 		});
 	});
 
-	it("preserves live role-ID and custom profiles when applying the bundled policy", () => {
+	it("replaces managed role IDs while preserving custom profiles and secrets", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -255,19 +274,77 @@ describe("Paseo orchestration policy", () => {
 		};
 
 		const merged = mergePaseoPolicy(live, bundledPolicy);
-
-		expect(merged.daemon.agentProfiles.slice(-liveProfiles.length)).toEqual(
-			liveProfiles,
+		const bundledProfiles = new Map(
+			bundledPolicy.agentProfiles.map((profile) => [profile.id, profile]),
 		);
+
+		for (const id of ["planning-advisor", "implement-code", "review-code"]) {
+			expect(merged.daemon.agentProfiles).toContainEqual(
+				bundledProfiles.get(id),
+			);
+		}
+		expect(merged.daemon.agentProfiles.at(-1)).toEqual(liveProfiles.at(-1));
 		expect(merged.daemon.auth).toEqual(live.daemon.auth);
 		expect(merged.agents.providers.codex).toEqual(live.agents.providers.codex);
 		expect(mergePaseoPolicy(merged, bundledPolicy)).toEqual(merged);
 	});
 
+	it("retires every model-bearing alias only when its responsibility is bundled", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const bundledPolicy = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				"utf8",
+			),
+		);
+		const customProfile = {
+			id: "custom-high",
+			model: "private-model",
+			secret: "keep-custom-secret",
+		};
+		const live = {
+			version: 17,
+			daemon: {
+				auth: { token: "keep-auth-secret" },
+				agentProfiles: [
+					...[...responsibilityProfileReplacements].map(([id]) => ({
+						id,
+						thinkingOptionId: "high",
+						secret: `retire-${id}`,
+					})),
+					customProfile,
+				],
+			},
+			agents: {
+				providers: { codex: { env: { CODEX_TOKEN: "keep-provider-secret" } } },
+			},
+		};
+
+		const merged = mergePaseoPolicy(live, bundledPolicy);
+		const mergedIds = merged.daemon.agentProfiles.map(({ id }) => id);
+
+		for (const [legacyId, replacementId] of responsibilityProfileReplacements) {
+			expect(mergedIds).not.toContain(legacyId);
+			expect(mergedIds).toContain(replacementId);
+		}
+		expect(merged.daemon.agentProfiles.at(-1)).toEqual(customProfile);
+		expect(merged.daemon.auth).toEqual(live.daemon.auth);
+		expect(merged.agents.providers.codex).toEqual(live.agents.providers.codex);
+		expect(mergePaseoPolicy(merged, bundledPolicy)).toEqual(merged);
+
+		const noReplacement = mergePaseoPolicy(
+			{ daemon: { agentProfiles: [{ id: "implement-sol-high" }] } },
+			policy,
+		);
+		expect(noReplacement.daemon.agentProfiles.at(-1)).toEqual({
+			id: "implement-sol-high",
+		});
+	});
+
 	it("replaces retired managed profiles without disturbing unrelated live state", () => {
 		const upgradedPolicy = {
 			...policy,
-			agentProfiles: [...policy.agentProfiles, ...legacyWorkflowProfiles],
+			agentProfiles: [...policy.agentProfiles, ...currentWorkflowProfiles],
 		};
 		const live = {
 			version: 7,
@@ -304,7 +381,7 @@ describe("Paseo orchestration policy", () => {
 		});
 		expect(merged.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			...legacyWorkflowProfiles,
+			...currentWorkflowProfiles,
 			{ id: "personal", provider: "opencode", model: "keep" },
 		]);
 		expect(merged.agents.providers.opencode).toEqual(
@@ -326,13 +403,13 @@ describe("Paseo orchestration policy", () => {
 			{ daemon: { agentProfiles: retired } },
 			{
 				...policy,
-				agentProfiles: [...policy.agentProfiles, legacyWorkflowProfiles[2]],
+				agentProfiles: [...policy.agentProfiles, currentWorkflowProfiles[2]],
 			},
 		);
 
 		expect(merged.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			legacyWorkflowProfiles[2],
+			currentWorkflowProfiles[2],
 			retired[0],
 			retired[1],
 		]);
@@ -383,7 +460,7 @@ describe("Paseo orchestration policy", () => {
 		);
 	});
 
-	it("retires legacy research and presentation profiles only with their replacements", () => {
+	it("retires legacy research and explainer profiles only with their replacements", () => {
 		const legacyResearch = {
 			id: "research-sonnet",
 			model: "keep-until-replacement",
@@ -406,14 +483,17 @@ describe("Paseo orchestration policy", () => {
 		};
 		const researchOnlyPolicy = {
 			...policy,
-			agentProfiles: [...policy.agentProfiles, opusReplacementProfiles[0]],
+			agentProfiles: [
+				...policy.agentProfiles,
+				currentResearchAndExplainerProfiles[0],
+			],
 		};
 
 		const researchOnly = mergePaseoPolicy(live, researchOnlyPolicy);
 
 		expect(researchOnly.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			opusReplacementProfiles[0],
+			currentResearchAndExplainerProfiles[0],
 			legacyPresentation,
 			custom,
 		]);
@@ -424,11 +504,14 @@ describe("Paseo orchestration policy", () => {
 		);
 		const presentationOnly = mergePaseoPolicy(live, {
 			...policy,
-			agentProfiles: [...policy.agentProfiles, opusReplacementProfiles[1]],
+			agentProfiles: [
+				...policy.agentProfiles,
+				currentResearchAndExplainerProfiles[1],
+			],
 		});
 		expect(presentationOnly.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			opusReplacementProfiles[1],
+			currentResearchAndExplainerProfiles[1],
 			legacyResearch,
 			custom,
 		]);
@@ -437,20 +520,20 @@ describe("Paseo orchestration policy", () => {
 			...researchOnlyPolicy,
 			agentProfiles: [
 				...researchOnlyPolicy.agentProfiles,
-				opusReplacementProfiles[1],
+				currentResearchAndExplainerProfiles[1],
 			],
 		};
 		const complete = mergePaseoPolicy(researchOnly, completePolicy);
 
 		expect(complete.daemon.agentProfiles).toEqual([
 			policy.agentProfiles[0],
-			...opusReplacementProfiles,
+			...currentResearchAndExplainerProfiles,
 			custom,
 		]);
 		expect(mergePaseoPolicy(complete, completePolicy)).toEqual(complete);
 	});
 
-	it("ships renamed Opus workflow routes while retaining generic Grok support", () => {
+	it("ships responsibility workflow routes while retaining generic Grok support", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -462,11 +545,11 @@ describe("Paseo orchestration policy", () => {
 			bundledPolicy.agentProfiles.map((profile) => [profile.id, profile]),
 		);
 
-		for (const expected of opusReplacementProfiles) {
+		for (const expected of currentResearchAndExplainerProfiles) {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
 		}
-		for (const id of ["docs-glm", "pr-requirements-glm"]) {
+		for (const id of ["docs", "pr-requirements"]) {
 			expect(profiles.get(id)).toMatchObject({
 				provider: "claude",
 				model: "claude-opus-5",
@@ -505,48 +588,52 @@ describe("Paseo orchestration policy", () => {
 		).toBe(false);
 		expect(profiles.has("research-sonnet")).toBe(false);
 		expect(profiles.has("explainer-sonnet")).toBe(false);
-		expect(profiles.get("research-sol-medium")?.thinkingOptionId).toBe(
-			"medium",
-		);
-		expect(profiles.get("explainer-content-sol")?.thinkingOptionId).toBe(
-			"medium",
-		);
-		expect(profiles.get("explore-sonnet")?.thinkingOptionId).toBe("xhigh");
-		expect(profiles.get("explainer-content-opus")?.thinkingOptionId).toBe(
+		expect(profiles.get("research-code")?.thinkingOptionId).toBe("medium");
+		expect(profiles.get("explainer-content")?.thinkingOptionId).toBe("medium");
+		expect(profiles.get("explore-codebase")?.thinkingOptionId).toBe("xhigh");
+		expect(profiles.get("explainer-content-review")?.thinkingOptionId).toBe(
 			"high",
 		);
-		expect(profiles.get("explainer-review-terra")?.thinkingOptionId).toBe(
-			"high",
-		);
-		expect(profiles.get("docs-glm")?.notes).toContain(
-			"Ordinary prose stays prose",
-		);
-		expect(profiles.get("docs-glm")?.notes).toContain("visual-explainer");
-		expect(profiles.get("explainer-opus")?.notes).toContain(
+		expect(profiles.get("explainer-review")?.thinkingOptionId).toBe("high");
+		expect(profiles.get("docs")?.notes).toContain("Ordinary prose stays prose");
+		expect(profiles.get("docs")?.notes).toContain("visual-explainer");
+		expect(profiles.get("explainer")?.notes).toContain(
 			"~/.config/haoshoku/visual-explainer.json",
 		);
-		expect(profiles.get("explainer-opus")?.notes).toContain(
-			"fixed dark or light",
-		);
-		expect(profiles.get("explainer-opus")?.notes).toContain(
+		expect(profiles.get("explainer")?.notes).toContain("fixed dark or light");
+		expect(profiles.get("explainer")?.notes).toContain(
 			"explicit per-request theme overrides",
 		);
-		expect(profiles.get("explainer-review-terra")?.notes).toContain(
+		expect(profiles.get("explainer-review")?.notes).toContain(
 			"source accuracy",
 		);
-		expect(profiles.get("explainer-content-sol")?.notes).toContain(
+		expect(profiles.get("explainer-content")?.notes).toContain(
 			"only when assigned",
 		);
+		for (const id of ["implement-code", "review-code"]) {
+			expect(profiles.get(id)?.thinkingOptionId).toBe("medium");
+			expect(profiles.get(id)?.notes).toContain("per-launch high override");
+		}
+		for (const id of [
+			"pr-security",
+			"pr-architecture",
+			"pr-complexity",
+			"explainer-content-review",
+			"explainer-review",
+		]) {
+			expect(profiles.get(id)?.thinkingOptionId, id).toBe("high");
+		}
 
 		for (const profile of bundledPolicy.agentProfiles) {
 			if (
 				profile.model === "claude-opus-5" &&
 				![
-					"explainer-opus",
-					"docs-glm",
+					"explainer",
+					"docs",
 					"research-web",
 					"pr-correctness",
-					"pr-requirements-glm",
+					"pr-requirements",
+					"review-code",
 					"pr-monitor",
 					"pr-watchdog",
 				].includes(profile.id)
@@ -601,7 +688,7 @@ describe("Paseo orchestration policy", () => {
 			notes:
 				"Independently review only Complexity and Simplicity for the pinned PR revision. Apply ~/.agents/skills/model-routing/references/simplicity-review.md. Return evidence, coverage and limitations; keep product files unchanged, launch no nested review, and submit nothing externally.",
 		});
-		expect(profiles.get("review-opus")?.notes).toContain(
+		expect(profiles.get("review-code")?.notes).toContain(
 			"~/.agents/skills/model-routing/references/simplicity-review.md",
 		);
 		expect(peerReview).toContain("six independent reviews");
@@ -617,7 +704,7 @@ describe("Paseo orchestration policy", () => {
 			"../model-routing/references/simplicity-review.md",
 		);
 		expect(briefings).toContain("[simplicity checklist](simplicity-review.md)");
-		expect(briefings).toContain("inside the existing `review-opus` seat");
+		expect(briefings).toContain("inside the existing `review-code` seat");
 		for (const requirement of [
 			"unnecessary abstractions",
 			"unnecessary layers",
@@ -653,7 +740,7 @@ describe("Paseo orchestration policy", () => {
 		};
 		const merged = mergePaseoPolicy(live, policy);
 		const fableAdvisor = policy.agentProfiles.find(
-			({ id }) => id === "fable-planner",
+			({ id }) => id === "planning-advisor",
 		);
 		const astraAdvisor = policy.agentProfiles.find(
 			({ id }) => id === "technical-advisor",
@@ -704,17 +791,32 @@ describe("Paseo orchestration policy", () => {
 		);
 		for (const contract of [
 			"Prefer Sol at medium reasoning",
+			"`implement-code` and `review-code` default to medium",
+			"Override `thinkingOptionId` per launch",
+			"security or trust boundaries",
+			"irreversible data or infrastructure changes",
+			"significant financial or loss risk",
+			"material architecture commitments",
+			"same substantive defect survives two evidence-backed attempts",
+			"evidence rejects the current causal explanation",
+			"substantive review finding remains disputed",
+			"File count, ordinary unfamiliarity, one failing test",
+			"unrelated tasks start at medium",
+			"immutable-revision, independent-review, test, or authority gates",
 			"initial nontrivial approach",
 			"Any sliver of decision doubt",
 			"directly reading or testing",
 			"same source-linked question and evidence",
 			"records its own assessment before reading",
 			"Routine mechanical work with a known approach stays direct",
-			"`fable-planner` and `technical-advisor`",
-			"Implementation stays with `implement-sol-high`",
+			"`planning-advisor` and `technical-advisor`",
+			"Implementation stays with `implement-code`",
 		]) {
 			expect(routing).toContain(contract);
 		}
+		expect(mattWorkflows).toContain(
+			"per-launch `thinkingOptionId` override to high",
+		);
 		for (const contract of [
 			"strongest counterargument",
 			"targeted resolving check",
@@ -753,8 +855,8 @@ describe("Paseo orchestration policy", () => {
 			fs.readFileSync(path.join(skillRoot, relativePath), "utf8"),
 		);
 
-		expect(contents[0]).toContain("`research-opus`");
-		expect(contents[1]).toContain("`research-opus`");
+		expect(contents[0]).toContain("`research-requirements`");
+		expect(contents[1]).toContain("`research-requirements`");
 		expect(contents[0]).toContain("visual-explainer");
 		expect(contents[0]).toContain("Ordinary prose remains prose");
 		expect(contents[2]).toContain("visual-explainer.json");
@@ -784,11 +886,11 @@ describe("Paseo orchestration policy", () => {
 		);
 		const routed = bundledPolicy.agentProfiles
 			.filter(({ id }) =>
-				legacyWorkflowProfiles.some((profile) => profile.id === id),
+				currentWorkflowProfiles.some((profile) => profile.id === id),
 			)
 			.map(({ notes: _notes, ...profile }) => profile);
 
-		expect(routed).toEqual(legacyWorkflowProfiles);
+		expect(routed).toEqual(currentWorkflowProfiles);
 		expect(
 			bundledPolicy.agentProfiles.map(({ id }) => id),
 		).not.toContainAnyValues([
@@ -799,14 +901,11 @@ describe("Paseo orchestration policy", () => {
 		]);
 
 		const skillExpectations = {
-			"model-routing/SKILL.md": [
-				"docs-glm",
-				"recurring watchers and watchdogs",
-			],
-			"model-routing/references/briefings.md": ["docs-glm"],
-			"model-routing/references/matt-workflows.md": ["docs-glm"],
+			"model-routing/SKILL.md": ["docs", "recurring watchers and watchdogs"],
+			"model-routing/references/briefings.md": ["docs"],
+			"model-routing/references/matt-workflows.md": ["docs"],
 			"paseo-pr-babysit/SKILL.md": ["pr-monitor", "pr-watchdog"],
-			"paseo-pr-review/SKILL.md": ["pr-correctness", "pr-requirements-glm"],
+			"paseo-pr-review/SKILL.md": ["pr-correctness", "pr-requirements"],
 		};
 		for (const [relativePath, expected] of Object.entries(skillExpectations)) {
 			const contents = fs.readFileSync(
@@ -823,6 +922,27 @@ describe("Paseo orchestration policy", () => {
 				expect(contents).not.toContain(retiredId);
 			}
 			expect(contents).not.toContain("Grok");
+		}
+
+		const activeReferencePaths = [
+			"README.md",
+			"configs/codex/AGENTS.md",
+			"configs/claude/CLAUDE.md",
+			...Object.keys(skillExpectations).map((relativePath) =>
+				path.join("configs", "agent-skills", relativePath),
+			),
+			"configs/agent-skills/model-routing/references/simplicity-review.md",
+		];
+		for (const relativePath of activeReferencePaths) {
+			const contents = fs.readFileSync(
+				path.join(projectRoot, relativePath),
+				"utf8",
+			);
+			for (const legacyId of responsibilityProfileReplacements.keys()) {
+				expect(contents, `${relativePath}: ${legacyId}`).not.toContain(
+					legacyId,
+				);
+			}
 		}
 	});
 

@@ -1,7 +1,7 @@
 # Complexity and simplicity review
 
 Use this checklist for the `pr-complexity` peer-review angle and inside the
-existing `review-opus` implementation checkpoint. Review only the candidate's
+existing `review-code` implementation checkpoint. Review only the candidate's
 changed scope and its necessary integration surface.
 
 - Identify unnecessary abstractions, unnecessary layers, unnecessary

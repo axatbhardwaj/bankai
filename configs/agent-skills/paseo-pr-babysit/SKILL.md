@@ -13,8 +13,8 @@ Use `paseo` for sessions and heartbeats and `model-routing` for capability check
 | --- | --- | --- |
 | Monitor | `pr-monitor` | Recurring GitHub observations and changed-event reports |
 | Watchdog | `pr-watchdog` | Monitor snapshot, session and heartbeat health |
-| Implementer | `implement-sol-high` | Diagnose failures, repair code, test, and draft responses |
-| Reviewer | `review-opus` | Review the exact local candidate and exact proposed public responses |
+| Implementer | `implement-code` | Diagnose failures, repair code, test, and draft responses |
+| Reviewer | `review-code` | Review the exact local candidate and exact proposed public responses |
 | Driver | Main conversation | Own dispatch, acceptance, publication and terminal verification |
 
 The monitor and watchdog never implement, launch or repair workers, push, post, resolve threads or merge. The watchdog never reads GitHub. Only the driver creates specialist agents. Reuse Sol and Opus sequentially with revision-specific briefs. Exact runtime settings live in Paseo profiles; unavailable capabilities block their role without silent fallback.

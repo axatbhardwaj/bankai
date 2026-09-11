@@ -5,17 +5,17 @@ description: Use when reviewing a peer's pull request or when the user requests 
 
 # Paseo PR review
 
-The main conversation drives six independent reviews of one immutable PR revision, then validates and consolidates the evidence. Use `paseo` for session mechanics and `model-routing` for capability checks and recovery. This workflow replaces the single `review-opus` route for peer PR reviews; implementation checkpoint reviews retain that route. An explicit request for `code-review` retains its own two-axis workflow.
+The main conversation drives six independent reviews of one immutable PR revision, then validates and consolidates the evidence. Use `paseo` for session mechanics and `model-routing` for capability checks and recovery. This workflow replaces the single `review-code` route for peer PR reviews; implementation checkpoint reviews retain that route. An explicit request for `code-review` retains its own two-axis workflow.
 
 ## Review seats
 
 | Angle | Paseo profile | Focus |
 | --- | --- | --- |
-| Security and trust boundaries | `pr-security-opus` | Authorization, validation, secrets, abuse paths |
+| Security and trust boundaries | `pr-security` | Authorization, validation, secrets, abuse paths |
 | Correctness and failure paths | `pr-correctness` | Logic, edge cases, races, retries, partial failures |
-| Integration and regressions | `pr-integration-sol` | Callers, contracts, compatibility, migrations, test gaps |
-| Requirements and user behavior | `pr-requirements-glm` | Acceptance criteria, missing behavior, confusing scenarios |
-| Architecture and maintainability | `pr-architecture-opus` | Boundaries, abstractions, coupling, repository conventions |
+| Integration and regressions | `pr-integration` | Callers, contracts, compatibility, migrations, test gaps |
+| Requirements and user behavior | `pr-requirements` | Acceptance criteria, missing behavior, confusing scenarios |
+| Architecture and maintainability | `pr-architecture` | Boundaries, abstractions, coupling, repository conventions |
 | Complexity and simplicity | `pr-complexity` | Apply the shared [simplicity checklist](../model-routing/references/simplicity-review.md) |
 
 Exact model, effort and mode settings live in Paseo profiles. Before launching, resolve all six profiles and validate their providers, models and effort settings. Missing capability is an explicit blocked seat, including unavailable Opus; ask the user for a replacement rather than silently substituting or claiming complete coverage. Ready seats may proceed independently. A listed model is not proof of successful authentication or execution.

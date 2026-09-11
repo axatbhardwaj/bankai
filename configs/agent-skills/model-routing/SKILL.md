@@ -21,9 +21,15 @@ Workers perform bounded independent workflows and return evidence to the driver.
 
 An explicitly invoked `implement-spec` is run by the driver, owns its graph, and selects routing profiles without a competing scheduler.
 
+## Reasoning effort
+
+`implement-code` and `review-code` default to medium. Override `thinkingOptionId` per launch instead of creating duplicate high profiles. Start the affected phase at high for security or trust boundaries, irreversible data or infrastructure changes, significant financial or loss risk, and material architecture commitments. The combined-branch final review for `implement-spec` also starts at high.
+
+Escalate only the affected phase to high when the same substantive defect survives two evidence-backed attempts, evidence rejects the current causal explanation, or a substantive review finding remains disputed after source and test verification. File count, ordinary unfamiliarity, one failing test, and routine review corrections do not trigger high; unrelated tasks start at medium. Effort selection does not relax immutable-revision, independent-review, test, or authority gates.
+
 ## Decision Council
 
-Use `fable-planner` and `technical-advisor` together at xhigh for the Decision Council. Automatically consult both in parallel before committing to an initial nontrivial approach that interprets requirements, chooses among alternatives, introduces new behavior, interfaces, or boundaries, sets a failure strategy, or has uncertain acceptance.
+Use `planning-advisor` and `technical-advisor` together at xhigh for the Decision Council. Automatically consult both in parallel before committing to an initial nontrivial approach that interprets requirements, chooses among alternatives, introduces new behavior, interfaces, or boundaries, sets a failure strategy, or has uncertain acceptance.
 
 Any sliver of decision doubt triggers the council, including doubt about whether council is warranted. Consult when a worker flags a decision, evidence conflicts, an unexpected result undermines the current explanation, a repair hypothesis is rejected before another speculative fix, the driver would dismiss a substantive review finding, or the material plan changes.
 
@@ -35,7 +41,7 @@ Ordinary disagreement calls for the targeted resolving check or new evidence. If
 
 For decisions involving security or trust boundaries, irreversible data or infrastructure changes, significant financial or loss risk, or material architecture commitments, both advisors must return plain AGREE and the driver must record an accepted assessment before proceeding. Driver dissent starts a focused evidence round rather than an override. Run at most two focused evidence rounds, then send only the dependent decision to the human. Missing either advisor pauses only that dependent decision; use no substitute. Council agreement never grants missing external authority.
 
-The council assesses decisions only: advisors keep files unchanged, create no children, and do not review candidates. Implementation stays with `implement-sol-high`; Opus remains the independent candidate reviewer. Follow the briefing and receipt contract in [references/briefings.md](references/briefings.md).
+The council assesses decisions only: advisors keep files unchanged, create no children, and do not review candidates. Implementation stays with `implement-code`; Opus remains the independent candidate reviewer. Follow the briefing and receipt contract in [references/briefings.md](references/briefings.md).
 
 ## Selected workflows
 
@@ -43,17 +49,17 @@ When the user invokes `grill-with-docs`, `to-spec`, `to-tickets`, `implement` or
 
 ## Default routes
 
-- Use `fable-planner` and `technical-advisor` together for Decision Council consultations.
-- For bounded codebase exploration, use `explore-sonnet` to map modules, repository conventions and documented intent, or `explore-terra` to trace execution paths, callers, dependencies and relevant tests. Choose the seat matching the question; use both in parallel for distinct questions. Explorers return source locations, observations and uncertainties without product edits. Reuse existing research evidence or a suitable active researcher instead of duplicating the same scan.
-- For substantial research, have `research-opus` independently investigate requirements, documents, prior decisions, and alternatives while `research-sol-medium` traces code, dependencies, tests, and implementation constraints. Apply the Decision Council triggers when reconciling their findings; the driver owns the final synthesis. Use `research-web` only for targeted current external research.
-- Give writable implementation, tests, and repairs to `implement-sol-high`. Repository work uses one dedicated task worktree, repository policies, and the gh stack.
+- Use `planning-advisor` and `technical-advisor` together for Decision Council consultations.
+- For bounded codebase exploration, use `explore-codebase` to map modules, repository conventions and documented intent, or `explore-execution` to trace execution paths, callers, dependencies and relevant tests. Choose the seat matching the question; use both in parallel for distinct questions. Explorers return source locations, observations and uncertainties without product edits. Reuse existing research evidence or a suitable active researcher instead of duplicating the same scan.
+- For substantial research, have `research-requirements` independently investigate requirements, documents, prior decisions, and alternatives while `research-code` traces code, dependencies, tests, and implementation constraints. Apply the Decision Council triggers when reconciling their findings; the driver owns the final synthesis. Use `research-web` only for targeted current external research.
+- Give writable implementation, tests, and repairs to `implement-code` at the effort selected by the reasoning policy above. Repository work uses one dedicated task worktree, repository policies, and the gh stack.
 - Route recurring watchers and watchdogs through the independent `pr-monitor` and `pr-watchdog` Opus profiles. Their own sessions hold the timers and keep routine healthy ticks snapshot-only.
 - For authored-PR babysitting to merge-ready, use [paseo-pr-babysit](../paseo-pr-babysit/SKILL.md): Opus monitors and watchdogs, Sol repairs, and Opus reviews before the driver publishes.
 - For peer PR reviews or an explicitly requested six-angle review, use [paseo-pr-review](../paseo-pr-review/SKILL.md). Its six seats replace the single-review route. An explicit `code-review` request retains that skill's two-axis workflow.
-- For implementation checkpoints and other applicable Git candidates, have `review-opus` run `code-review` once and apply [references/simplicity-review.md](references/simplicity-review.md) inside that seat. The driver and implementer do not duplicate its review or add another checkpoint agent.
-- For requested or materially useful visual artifacts, use the pinned upstream `visual-explainer` skill. Ordinary prose remains prose. Prefer `explainer-opus` for rendering and use `explainer-review-terra`, `explainer-content-sol`, or `explainer-content-opus` only when the artifact's fidelity, source risk, or repair needs justify them; there is no mandatory Markdown-to-HTML chain.
+- For implementation checkpoints and other applicable Git candidates, have `review-code` run `code-review` once at the effort selected by the reasoning policy above and apply [references/simplicity-review.md](references/simplicity-review.md) inside that seat. The driver and implementer do not duplicate its review or add another checkpoint agent.
+- For requested or materially useful visual artifacts, use the pinned upstream `visual-explainer` skill. Ordinary prose remains prose. Prefer `explainer` for rendering and use `explainer-review`, `explainer-content`, or `explainer-content-review` only when the artifact's fidelity, source risk, or repair needs justify them; there is no mandatory Markdown-to-HTML chain.
 - Resolve the visual theme in the worker brief: an explicit request wins, otherwise read `~/.config/haoshoku/visual-explainer.json` and default to `dark`. Fixed `dark` or `light` requires full rendering and stays fixed across OS preferences, including when a request also says quick; explain that fallback. `system` may use upstream quick mode. Preserve source accuracy and the user's chosen format.
-- Use `docs-glm` for ordinary documentation from accepted evidence.
+- Use `docs` for ordinary documentation from accepted evidence.
 - Reuse `paseo-advisor` for a second opinion and `paseo-committee` for a hard unresolved disagreement.
 
 Before dispatching review or documentation, read [references/briefings.md](references/briefings.md) and satisfy its briefing contract.
