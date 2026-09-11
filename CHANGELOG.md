@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.8.3 - 2026-09-11
 
 - Default ordinary implementation and exact-candidate code review to medium,
   with explicit per-launch high escalation, while retaining xhigh Decision
