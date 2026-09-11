@@ -1,5 +1,17 @@
 # Changelog
 
+## 11.8.2 - 2026-09-11
+
+- Retire the separate Astra advisor profile; keep the selected model as driver
+  and Fable as general planning/design advisor. Preserve human escalation and
+  independent review.
+- Add an independent Opus-high Complexity and Simplicity angle to peer PR
+  reviews, and apply its shared checklist inside the existing Opus
+  implementation checkpoint without adding another checkpoint agent.
+- Replace active Grok workflow routes with renamed Claude Opus 5 research,
+  correctness, monitor, and watchdog profiles while preserving generic Grok
+  provider support and safely retiring superseded managed profile IDs.
+
 ## 11.8.1 - 2026-09-11
 
 - Make the main conversation's selected model the workflow driver, use Fable

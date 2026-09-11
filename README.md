@@ -241,17 +241,23 @@ the same metadata; each independent agent host must run its own Haoshoku
 configuration.
 
 Ordinary documentation uses `docs-glm`; PR correctness and requirements review
-use `pr-correctness-grok` and `pr-requirements-glm`. These legacy IDs run
-Claude Opus 5 at medium effort. Recurring PR monitoring keeps the stable
-`pr-monitor-glm` ID, while `watchdog-grok` checks its health; both use
-standalone Grok 4.6 without mode or thinking-option fields. The bundled
-`grok agent stdio` command leaves OIDC authentication to the Grok CLI and adds
-no API-key override. During an upgrade, Haoshoku removes each corresponding
-retired managed Muse profile (`docs-muse`, `pr-requirements-muse`, or
-`pr-monitor-muse`) only when its replacement is present in the bundled policy;
-custom profile IDs remain untouched.
+use `pr-correctness` and `pr-requirements-glm`. Targeted web research uses
+`research-web`. These routes run Claude Opus 5 at medium effort with bypass
+permissions. Recurring PR monitoring uses `pr-monitor` at medium effort, while
+the independent `pr-watchdog` checks its health at low effort. The generic
+bundled `grok agent stdio` provider remains available and leaves OIDC
+authentication to the Grok CLI without an API-key override. During an upgrade,
+Haoshoku removes superseded managed workflow IDs only when their replacement is
+present in the bundled policy; custom profile IDs and provider secrets remain
+untouched.
 
-PR babysitting launches the Grok monitor and watchdog as separate sessions.
+Peer PR review uses six independent angles. The sixth `pr-complexity` profile
+runs Claude Opus 5 at high effort and checks complexity and simplicity against
+one shared checklist. The existing `review-opus` implementation checkpoint
+applies that same checklist inside its normal review; it does not launch another
+checkpoint agent.
+
+PR babysitting launches the Opus monitor and watchdog as separate sessions.
 Each owns its own expiring heartbeat; healthy ticks update snapshots without
 waking the driver, while failures and renewal needs are deduplicated and sent
 to the driver for acknowledgement and coordination.
@@ -263,14 +269,11 @@ source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
 mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
-The main conversation's selected model is the driver; no bundled driver profile
-or default-model switch is required. `fable-planner` is its high-effort partner
-for substantial planning. `technical-advisor` uses Astra (`gpt-6-astra`, high)
-for consequential technical design. An Astra driver may record that assessment
-itself unless an independent seat is explicitly required. New high-stakes
-decisions still require Astra's position first and Fable's independent plain
-agreement on the same evidence. Ordinary work stays direct, Opus remains the
-independent candidate reviewer, and human publication authority is unchanged.
+The main conversation's selected model is the driver. Fable provides general
+planning and design advice; the separate Astra advisor profile is retired.
+High-stakes decisions require agreement from the driver and independent Fable
+assessment, with unresolved decisions escalated to the human. Sol implements
+and repairs; Opus independently reviews.
 
 ## Claude Remote Control
 

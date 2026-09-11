@@ -29,18 +29,22 @@ const policy = {
 	},
 };
 
-const recurringGrokProfiles = [
+const recurringOpusProfiles = [
 	{
-		id: "pr-monitor-glm",
+		id: "pr-monitor",
 		name: "PR Monitor",
-		provider: "grok",
-		model: "grok-4.6",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
 	},
 	{
-		id: "watchdog-grok",
-		name: "Monitor Watchdog",
-		provider: "grok",
-		model: "grok-4.6",
+		id: "pr-watchdog",
+		name: "PR Watchdog",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "low",
 	},
 ];
 
@@ -58,10 +62,30 @@ const legacyWorkflowProfiles = [
 		name: "PR Requirements Review",
 		provider: "claude",
 		model: "claude-opus-5",
-		modeId: "plan",
+		modeId: "bypassPermissions",
 		thinkingOptionId: "medium",
 	},
-	recurringGrokProfiles[0],
+	recurringOpusProfiles[0],
+];
+
+const renamedWorkflowProfiles = [
+	{
+		id: "research-web",
+		name: "Web Research",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
+	},
+	{
+		id: "pr-correctness",
+		name: "PR Correctness Review",
+		provider: "claude",
+		model: "claude-opus-5",
+		modeId: "bypassPermissions",
+		thinkingOptionId: "medium",
+	},
+	...recurringOpusProfiles,
 ];
 
 const opusReplacementProfiles = [
@@ -314,6 +338,51 @@ describe("Paseo orchestration policy", () => {
 		]);
 	});
 
+	it("migrates renamed workflow aliases idempotently while preserving unrelated state", () => {
+		const renamedPolicy = {
+			...policy,
+			agentProfiles: [...policy.agentProfiles, ...renamedWorkflowProfiles],
+		};
+		const live = {
+			version: 11,
+			daemon: {
+				auth: { token: "keep-auth-secret" },
+				agentProfiles: [
+					{ id: "research-grok", secret: "retire" },
+					{ id: "pr-correctness-grok", secret: "retire" },
+					{ id: "pr-monitor-glm", secret: "retire" },
+					{ id: "pr-monitor-muse", secret: "retire-alias" },
+					{ id: "watchdog-grok", secret: "retire" },
+					{ id: "custom-grok-tool", secret: "keep-custom-secret" },
+				],
+			},
+			agents: {
+				providers: {
+					grok: { env: { GROK_TOKEN: "keep-provider-secret" } },
+				},
+			},
+		};
+
+		const merged = mergePaseoPolicy(live, renamedPolicy);
+
+		expect(merged.daemon.agentProfiles).toEqual([
+			policy.agentProfiles[0],
+			...renamedWorkflowProfiles,
+			{ id: "custom-grok-tool", secret: "keep-custom-secret" },
+		]);
+		expect(merged.daemon.auth).toEqual(live.daemon.auth);
+		expect(merged.agents.providers.grok).toEqual({
+			env: { GROK_TOKEN: "keep-provider-secret" },
+			...policy.providers.grok,
+		});
+		expect(mergePaseoPolicy(merged, renamedPolicy)).toEqual(merged);
+
+		const withoutReplacement = mergePaseoPolicy(live, policy);
+		expect(withoutReplacement.daemon.agentProfiles.slice(1)).toEqual(
+			live.daemon.agentProfiles,
+		);
+	});
+
 	it("retires legacy research and presentation profiles only with their replacements", () => {
 		const legacyResearch = {
 			id: "research-sonnet",
@@ -381,7 +450,7 @@ describe("Paseo orchestration policy", () => {
 		expect(mergePaseoPolicy(complete, completePolicy)).toEqual(complete);
 	});
 
-	it("ships Opus routes and provider-native Grok recurring profiles", () => {
+	it("ships renamed Opus workflow routes while retaining generic Grok support", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -397,29 +466,43 @@ describe("Paseo orchestration policy", () => {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
 		}
-		for (const id of [
-			"docs-glm",
-			"pr-correctness-grok",
-			"pr-requirements-glm",
-		]) {
+		for (const id of ["docs-glm", "pr-requirements-glm"]) {
 			expect(profiles.get(id)).toMatchObject({
 				provider: "claude",
 				model: "claude-opus-5",
+				modeId: "bypassPermissions",
 				thinkingOptionId: "medium",
 			});
 		}
-		for (const expected of recurringGrokProfiles) {
+		for (const expected of renamedWorkflowProfiles) {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
-			expect(actual).not.toHaveProperty("modeId");
-			expect(actual).not.toHaveProperty("thinkingOptionId");
 		}
+		expect(bundledPolicy.providers.grok).toEqual({
+			extends: "acp",
+			label: "Grok",
+			description:
+				"xAI's Grok Build agentic coding CLI with parallel subagents. Requires a SuperGrok or X Premium+ subscription.",
+			command: ["grok", "agent", "stdio"],
+		});
 		expect(
 			bundledPolicy.agentProfiles.some(
 				({ provider }) => provider === "opencode",
 			),
 		).toBe(false);
-		expect(profiles.get("pr-correctness-grok")?.modeId).toBe("plan");
+		for (const retiredId of [
+			"research-grok",
+			"pr-correctness-grok",
+			"pr-monitor-glm",
+			"watchdog-grok",
+		]) {
+			expect(profiles.has(retiredId)).toBe(false);
+		}
+		expect(
+			bundledPolicy.agentProfiles.some(({ id, name }) =>
+				`${id} ${name}`.toLowerCase().includes("grok"),
+			),
+		).toBe(false);
 		expect(profiles.has("research-sonnet")).toBe(false);
 		expect(profiles.has("explainer-sonnet")).toBe(false);
 		expect(profiles.get("research-sol-medium")?.thinkingOptionId).toBe(
@@ -461,8 +544,11 @@ describe("Paseo orchestration policy", () => {
 				![
 					"explainer-opus",
 					"docs-glm",
-					"pr-correctness-grok",
+					"research-web",
+					"pr-correctness",
 					"pr-requirements-glm",
+					"pr-monitor",
+					"pr-watchdog",
 				].includes(profile.id)
 			) {
 				expect(profile.thinkingOptionId, profile.id).toBe("high");
@@ -470,7 +556,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("ships driver-neutral Fable and Astra advisor routing", () => {
+	it("ships one authoritative simplicity checklist across peer and checkpoint review", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
 		const bundledPolicy = JSON.parse(
@@ -479,177 +565,136 @@ describe("Paseo orchestration policy", () => {
 				"utf8",
 			),
 		);
-		const fable = bundledPolicy.agentProfiles.find(
-			({ id }) => id === "fable-planner",
+		const profiles = new Map(
+			bundledPolicy.agentProfiles.map((profile) => [profile.id, profile]),
 		);
-		const technicalAdvisor = bundledPolicy.agentProfiles.find(
-			({ id }) => id === "technical-advisor",
+		const peerReview = fs.readFileSync(
+			path.join(skillRoot, "paseo-pr-review", "SKILL.md"),
+			"utf8",
 		);
-		const { notes: technicalAdvisorNotes, ...technicalAdvisorRuntime } =
-			technicalAdvisor ?? {};
-		const routingSkill = fs.readFileSync(
-			path.join(skillRoot, "model-routing", "SKILL.md"),
+		const babysit = fs.readFileSync(
+			path.join(skillRoot, "paseo-pr-babysit", "SKILL.md"),
 			"utf8",
 		);
 		const briefings = fs.readFileSync(
 			path.join(skillRoot, "model-routing", "references", "briefings.md"),
 			"utf8",
 		);
-		const mattWorkflows = fs.readFileSync(
-			path.join(skillRoot, "model-routing", "references", "matt-workflows.md"),
+		const simplicity = fs.readFileSync(
+			path.join(
+				skillRoot,
+				"model-routing",
+				"references",
+				"simplicity-review.md",
+			),
 			"utf8",
 		);
-		const portablePolicies = ["codex/AGENTS.md", "claude/CLAUDE.md"].map(
-			(relativePath) =>
-				fs.readFileSync(
-					path.join(projectRoot, "configs", relativePath),
-					"utf8",
-				),
-		);
+		const simplicityContract = simplicity.replace(/\s+/g, " ");
 
-		expect(fable).toMatchObject({
-			model: "claude-fable-5-1",
+		expect(profiles.get("pr-complexity")).toEqual({
+			id: "pr-complexity",
+			name: "PR Complexity Review",
+			provider: "claude",
+			model: "claude-opus-5",
+			modeId: "bypassPermissions",
 			thinkingOptionId: "high",
+			notes:
+				"Independently review only Complexity and Simplicity for the pinned PR revision. Apply ~/.agents/skills/model-routing/references/simplicity-review.md. Return evidence, coverage and limitations; keep product files unchanged, launch no nested review, and submit nothing externally.",
 		});
-		expect(fable?.notes).toContain("planning partner for the driver");
-		expect(fable?.notes).toContain("AGREE, DISAGREE, or INSUFFICIENT EVIDENCE");
-		expect(fable?.notes).toContain("with evidence pointers");
-		expect(fable?.notes).toContain("Do not review the whole candidate");
-		expect(fable?.notes).toContain("Keep product files unchanged");
-		expect(technicalAdvisorRuntime).toEqual({
-			id: "technical-advisor",
-			name: "Technical Advisor",
-			provider: "codex",
-			model: "gpt-6-astra",
-			modeId: "full-access",
-			thinkingOptionId: "high",
-		});
-		expect(technicalAdvisorNotes).toContain("scoped recommendation");
-		expect(technicalAdvisorNotes).toContain("risks, alternatives");
-		expect(technicalAdvisorNotes).toContain("acceptance checks");
-		expect(technicalAdvisorNotes).toContain("Do not review or implement");
-		expect(
-			bundledPolicy.agentProfiles.filter(({ id, name }) =>
-				/driver/i.test(`${id} ${name}`),
-			),
-		).toEqual([]);
-		expect(routingSkill).toContain(
-			"The main conversation is the driver, using its selected model",
+		expect(profiles.get("review-opus")?.notes).toContain(
+			"~/.agents/skills/model-routing/references/simplicity-review.md",
 		);
-
-		// Policy: substantial planning and consequential design have distinct triggers.
-		expect(routingSkill).toMatch(
-			/Before substantial planning[\s\S]+`fable-planner`/,
+		expect(peerReview).toContain("six independent reviews");
+		expect(peerReview).toContain(
+			"| Complexity and simplicity | `pr-complexity` |",
 		);
-		expect(routingSkill).toMatch(
-			/Before consequential technical design[\s\S]+`technical-advisor`/,
+		expect(peerReview).toContain("all six reports");
+		expect(peerReview).toContain("six-angle coverage");
+		expect(peerReview).toContain("rerun the six angles");
+		expect(babysit).toContain("six-angle peer-review workflow");
+		expect(babysit).not.toContain("five-angle peer-review workflow");
+		expect(peerReview).toContain(
+			"../model-routing/references/simplicity-review.md",
 		);
-		expect(routingSkill).toContain(
-			"When both triggers apply, use both checkpoints",
-		);
-		expect(routingSkill).toContain("not an unconditional mirrored dispatch");
-		// Contract: an Astra driver may self-record unless independence is explicit.
-		expect(routingSkill).toContain(
-			"An Astra driver may record its own Astra assessment",
-		);
-		expect(routingSkill).toContain("explicit independent Astra seat");
-		// Policy: a superficial checklist does not make routine work substantial.
-		expect(routingSkill).toContain("Routine known work stays direct");
-		expect(routingSkill).toContain("superficial checklist");
-		expect(routingSkill).toContain("Do not invoke both advisors automatically");
-		expect(routingSkill).toContain(
-			"If required Fable planning is unavailable, stop only the dependent planning decision",
-		);
-		expect(routingSkill).toContain(
-			"If required Astra advice is unavailable, stop only the dependent technical decision",
-		);
-
-		for (const category of [
-			"security or trust boundaries",
-			"irreversible data or infrastructure changes",
-			"significant financial or loss risk",
-			"material architecture commitments",
-		]) {
-			expect(routingSkill).toContain(category);
-		}
-		expect(routingSkill).toContain("Astra and Fable both record plain AGREE");
-		expect(routingSkill).toContain("Obtain Astra's position first");
-		expect(routingSkill).toContain("already explicitly authorized");
-		expect(routingSkill).toContain("material deviation");
-		expect(routingSkill).toContain("do not reopen an accepted decision");
-		expect(routingSkill).toContain("two focused evidence rounds");
-		expect(routingSkill).toContain(
-			"If either required advisor is unavailable, stop only the dependent decision",
-		);
-		expect(routingSkill).toContain(
-			"`paseo-advisor` and `paseo-committee` are not substitutes",
-		);
-		expect(routingSkill).toContain("no silent override");
-		expect(routingSkill).toContain("Opus approval");
-		expect(routingSkill).toContain("not approval of a candidate");
-		expect(routingSkill).toContain(
-			"consensus decisions with category, both verdicts, evidence pointers, and revision or evidence-set identity",
-		);
-
+		expect(briefings).toContain("[simplicity checklist](simplicity-review.md)");
+		expect(briefings).toContain("inside the existing `review-opus` seat");
 		for (const requirement of [
-			"Astra's position before reading Fable's",
-			"selected model",
-			"technical-advisor",
-			"recommendation, risks, alternatives, and acceptance checks",
-			"independently verifies at least one material claim",
-			"strongest concrete counterargument",
-			"`AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
-			"question, both positions, evidence pointers, resolving fact, and recommended default",
-			"rejected classification",
-			"revision or evidence set",
+			"unnecessary abstractions",
+			"unnecessary layers",
+			"unnecessary dependencies",
+			"unnecessary configuration",
+			"speculative features",
+			"concrete simpler alternative",
+			"requirements, security, and testability",
+			"Fewer lines alone are not enough",
+			"non-blocking unless",
+			"concrete consequence or documented rule",
+			"No unrelated rewrites",
 		]) {
-			expect(briefings).toContain(requirement);
-		}
-		expect(mattWorkflows).toContain("satisfies the consensus gate once");
-		expect(mattWorkflows).toContain("selected model remains the driver");
-		expect(mattWorkflows).not.toContain("intended to run on Astra");
-		for (const portablePolicy of portablePolicies) {
-			expect(portablePolicy).toMatch(
-				/main conversation's selected\s+model is the driver/,
-			);
+			expect(simplicityContract).toContain(requirement);
 		}
 	});
 
-	it("requires an explicit Astra verdict for assigned high-stakes decisions", () => {
-		const projectRoot = path.resolve(import.meta.dir, "..");
-		const policy = JSON.parse(
+	it("retires only the Astra advisor while preserving custom profiles and secrets", () => {
+		const policy = {
+			version: 1,
+			agentProfiles: [{ id: "fable-planner", model: "claude-fable-5-1" }],
+			providers: {},
+		};
+		const live = {
+			daemon: {
+				auth: { token: "keep" },
+				agentProfiles: [
+					{ id: "technical-advisor", model: "gpt-6-astra" },
+					{ id: "custom-astra", model: "gpt-6-astra" },
+				],
+			},
+		};
+		const merged = mergePaseoPolicy(live, policy);
+		expect(merged.daemon.agentProfiles.map((p) => p.id)).toEqual([
+			"fable-planner",
+			"custom-astra",
+		]);
+		expect(merged.daemon.auth).toEqual(live.daemon.auth);
+		expect(live.daemon.agentProfiles).toHaveLength(2);
+		const incomplete = mergePaseoPolicy(live, {
+			agentProfiles: [],
+			providers: {},
+		});
+		expect(incomplete.daemon.agentProfiles).toEqual(live.daemon.agentProfiles);
+		const bundle = JSON.parse(
 			fs.readFileSync(
-				path.join(projectRoot, "configs", "paseo", "agent-profiles.json"),
+				path.join(import.meta.dir, "..", "configs/paseo/agent-profiles.json"),
 				"utf8",
 			),
 		);
-		const technicalAdvisor = policy.agentProfiles.find(
-			({ id }) => id === "technical-advisor",
+		expect(bundle.agentProfiles.some((p) => p.id === "technical-advisor")).toBe(
+			false,
 		);
+	});
+
+	it("keeps driver selection neutral and routes advice to Fable", () => {
+		const root = path.join(
+			import.meta.dir,
+			"..",
+			"configs",
+			"agent-skills",
+			"model-routing",
+		);
+		const routing = fs.readFileSync(path.join(root, "SKILL.md"), "utf8");
 		const briefings = fs.readFileSync(
-			path.join(
-				projectRoot,
-				"configs",
-				"agent-skills",
-				"model-routing",
-				"references",
-				"briefings.md",
-			),
+			path.join(root, "references", "briefings.md"),
 			"utf8",
 		);
-
-		expect(technicalAdvisor?.notes).toContain(
-			"For an assigned high-stakes decision",
+		expect(routing).toContain(
+			"The main conversation is the driver, using its selected model",
 		);
-		expect(technicalAdvisor?.notes).toContain(
-			"plain AGREE, DISAGREE, or INSUFFICIENT EVIDENCE",
-		);
-		expect(briefings).toContain("Astra independently verifies");
+		expect(routing).toContain("Fable is the single general advisor");
+		expect(routing).not.toContain("`technical-advisor`");
 		expect(briefings).toContain(
-			"returns exactly `AGREE`, `DISAGREE`, or `INSUFFICIENT EVIDENCE`",
+			"The driver and Fable must both record plain AGREE",
 		);
-		expect(briefings).toContain("recorded Astra-driver assessment");
-		expect(technicalAdvisor?.notes).toContain("Ordinary advice is not a veto");
+		expect(briefings).toContain("escalate the dependent decision");
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
@@ -685,7 +730,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("ships stable documentation and PR workflow profile IDs", () => {
+	it("ships current documentation and PR workflow profile IDs", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -706,6 +751,7 @@ describe("Paseo orchestration policy", () => {
 			"docs-muse",
 			"pr-requirements-muse",
 			"pr-monitor-muse",
+			"pr-monitor-glm",
 		]);
 
 		const skillExpectations = {
@@ -715,8 +761,8 @@ describe("Paseo orchestration policy", () => {
 			],
 			"model-routing/references/briefings.md": ["docs-glm"],
 			"model-routing/references/matt-workflows.md": ["docs-glm"],
-			"paseo-pr-babysit/SKILL.md": ["pr-monitor-glm", "watchdog-grok"],
-			"paseo-pr-review/SKILL.md": ["pr-requirements-glm"],
+			"paseo-pr-babysit/SKILL.md": ["pr-monitor", "pr-watchdog"],
+			"paseo-pr-review/SKILL.md": ["pr-correctness", "pr-requirements-glm"],
 		};
 		for (const [relativePath, expected] of Object.entries(skillExpectations)) {
 			const contents = fs.readFileSync(
@@ -724,6 +770,15 @@ describe("Paseo orchestration policy", () => {
 				"utf8",
 			);
 			for (const value of expected) expect(contents).toContain(value);
+			for (const retiredId of [
+				"research-grok",
+				"pr-correctness-grok",
+				"pr-monitor-glm",
+				"watchdog-grok",
+			]) {
+				expect(contents).not.toContain(retiredId);
+			}
+			expect(contents).not.toContain("Grok");
 		}
 	});
 
@@ -741,7 +796,7 @@ describe("Paseo orchestration policy", () => {
 		);
 
 		for (const contract of [
-			"separate Grok monitor and watchdog sessions",
+			"separate Opus monitor and watchdog sessions",
 			"Each session creates and owns its own heartbeat",
 			'`*/5 * * * *` with `expiresIn: "24h"`',
 			'`0 * * * *` with `expiresIn: "48h"`',
