@@ -269,11 +269,13 @@ source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
 mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
-The main conversation's selected model is the driver. Fable provides general
-planning and design advice; the separate Astra advisor profile is retired.
-High-stakes decisions require agreement from the driver and independent Fable
-assessment, with unresolved decisions escalated to the human. Sol implements
-and repairs; Opus independently reviews.
+Prefer Sol at medium effort when choosing the main conversation; the actual
+selected model remains the driver. Fable Advisor (`fable-planner`) and Astra
+Advisor (`technical-advisor`) both run at xhigh as the Decision Council,
+consulted together for initial nontrivial approaches and whenever any decision
+uncertainty remains. High-stakes decisions require both advisors' plain AGREE
+plus the driver's accepted assessment. Sol implements and repairs at high;
+Opus independently reviews.
 
 ## Claude Remote Control
 
