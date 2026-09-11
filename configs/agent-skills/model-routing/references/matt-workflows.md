@@ -10,12 +10,12 @@ One user invocation in the driver authorizes delegation of the work inside that 
 
 ## Planning: grill-with-docs, to-spec and to-tickets
 
-Use the same `fable-planner` and `technical-advisor` sessions for Decision Council triggers throughout planning. Give both the same source-linked decision brief for independent first positions; the driver records its assessment before reading them and owns the final spec or tickets. The generic `docs-glm` route does not replace this planning ownership.
+Use the same `planning-advisor` and `technical-advisor` sessions for Decision Council triggers throughout planning. Give both the same source-linked decision brief for independent first positions; the driver records its assessment before reading them and owns the final spec or tickets. The generic `docs` route does not replace this planning ownership.
 
 Use researchers independently to establish the facts:
 
-- `research-opus`: requirements, authoritative documentation, prior decisions and alternatives.
-- `research-sol-medium`: actual code paths, callers, dependencies, existing tests and implementation constraints.
+- `research-requirements`: requirements, authoritative documentation, prior decisions and alternatives.
+- `research-code`: actual code paths, callers, dependencies, existing tests and implementation constraints.
 - `research-web`: targeted current external questions when they arise. Give it a concrete question rather than launching it without a research need.
 
 **Before finalizing or publishing with `to-spec`, require current findings from both Opus and Sol.** Collect them in parallel if missing. Reuse findings from the planning session when their sources, code revision and scope still apply; refresh changed or unsupported claims instead of repeating the whole investigation. Each finding must distinguish verified evidence, inference and unresolved questions, with source pointers the driver can inspect.
@@ -30,9 +30,9 @@ For `to-tickets`, use the accepted spec and its evidence to check vertical slice
 
 The driver orchestrates the complete ticket workflow. Sol owns all product code, tests and repairs, including one-line fixes; the ordinary low-impact direct-work exception does not apply inside this workflow. The driver may inspect evidence and run acceptance checks, but routes code changes back to Sol.
 
-1. Read the full ticket, parent spec, relevant decisions, standards and dependency revisions. Resolve inputs required by the selected skill and the [review briefing contract](briefings.md). Assign one dedicated task worktree to `implement-sol-high`, with the skill's TDD/testing instructions, pre-agreed seams, acceptance criteria and source pointers.
+1. Read the full ticket, parent spec, relevant decisions, standards and dependency revisions. Resolve inputs required by the selected skill and the [review briefing contract](briefings.md). Assign one dedicated task worktree to `implement-code`, with the skill's TDD/testing instructions, pre-agreed seams, acceptance criteria and source pointers. Select effort using the shared [reasoning policy](../SKILL.md#reasoning-effort).
 2. Sol implements and verifies the work, then checkpoints the local candidate as a commit so Opus can review immutable bytes. This review checkpoint is not permission to push, publish or mark the ticket complete.
-3. The driver dispatches `review-opus` against the candidate in a separate pinned checkout. Opus executes the `implement` skill's `code-review` step once, including its native Standards and Spec subagents, and applies the shared [simplicity checklist](simplicity-review.md) inside the same seat. The driver and Sol do not run a second full review, add a simplicity checkpoint agent, or replace it with the six-angle peer-PR workflow.
+3. The driver dispatches `review-code` against the candidate in a separate pinned checkout, using the shared [reasoning policy](../SKILL.md#reasoning-effort). Opus executes the `implement` skill's `code-review` step once, including its native Standards and Spec subagents, and applies the shared [simplicity checklist](simplicity-review.md) inside the same seat. The driver and Sol do not run a second full review, add a simplicity checkpoint agent, or replace it with the six-angle peer-PR workflow.
 4. Opus returns an explicit APPROVE or REQUEST_CHANGES verdict bound to the candidate SHA, with the two axes distinguishable. Send required findings to the same Sol session for fixes and verification, then send the changed candidate to Opus. Repeat autonomously until accepted or a concrete blocker needs the user's decision. A revision change, including integration or rebase, invalidates the old acceptance.
 5. Complete only when the final committed candidate satisfies ticket acceptance criteria, required checks pass for that candidate, Opus approves that exact revision with no unresolved required findings, and requested delivery is verified. Preserve the selected skill's full-suite check at the end; if review repairs changed code afterward, rerun the required final checks against the final candidate. Do not repeat checks for an unchanged candidate without a new reason.
 
@@ -40,4 +40,4 @@ Routine fix/review iterations need no repeated user approval. Report a real bloc
 
 ## Whole-spec implementation: implement-spec
 
-The invoked `implement-spec` owns the ticket graph and integration lifecycle; do not add another scheduler. Map its implementation, repair and merge/integration workers to `implement-sol-high`, using its separate ticket worktrees and serialized integration. Map its final `code-review` step to `review-opus` on the combined branch. Apply the same Sol repair, Opus re-review and final-candidate checks above before marking that PR ready for review. A ticket assigned as a graph worker does not start a second whole-spec workflow.
+The invoked `implement-spec` owns the ticket graph and integration lifecycle; do not add another scheduler. Map its implementation, repair and merge/integration workers to `implement-code`, using its separate ticket worktrees and serialized integration. Map its final `code-review` step to `review-code` on the combined branch with a per-launch `thinkingOptionId` override to high. Apply the same Sol repair, Opus re-review and final-candidate checks above before marking that PR ready for review. A ticket assigned as a graph worker does not start a second whole-spec workflow.

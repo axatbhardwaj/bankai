@@ -240,8 +240,8 @@ are not inferred or migrated. Phone and desktop clients on the same daemon see
 the same metadata; each independent agent host must run its own Haoshoku
 configuration.
 
-Ordinary documentation uses `docs-glm`; PR correctness and requirements review
-use `pr-correctness` and `pr-requirements-glm`. Targeted web research uses
+Ordinary documentation uses `docs`; PR correctness and requirements review
+use `pr-correctness` and `pr-requirements`. Targeted web research uses
 `research-web`. These routes run Claude Opus 5 at medium effort with bypass
 permissions. Recurring PR monitoring uses `pr-monitor` at medium effort, while
 the independent `pr-watchdog` checks its health at low effort. The generic
@@ -253,7 +253,7 @@ untouched.
 
 Peer PR review uses six independent angles. The sixth `pr-complexity` profile
 runs Claude Opus 5 at high effort and checks complexity and simplicity against
-one shared checklist. The existing `review-opus` implementation checkpoint
+one shared checklist. The existing `review-code` implementation checkpoint
 applies that same checklist inside its normal review; it does not launch another
 checkpoint agent.
 
@@ -262,20 +262,22 @@ Each owns its own expiring heartbeat; healthy ticks update snapshots without
 waking the driver, while failures and renewal needs are deduplicated and sent
 to the driver for acknowledgement and coordination.
 
-Substantial research pairs `research-opus` at high effort with
-`research-sol-medium` at medium. Requested visual artifacts use the
-`explainer-opus` presentation profile and the pinned upstream visual-explainer;
+Substantial research pairs `research-requirements` at high effort with
+`research-code` at medium. Requested visual artifacts use the
+`explainer` presentation profile and the pinned upstream visual-explainer;
 source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
 mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
 Prefer Sol at medium effort when choosing the main conversation; the actual
-selected model remains the driver. Fable Advisor (`fable-planner`) and Astra
+selected model remains the driver. Fable Advisor (`planning-advisor`) and Astra
 Advisor (`technical-advisor`) both run at xhigh as the Decision Council,
 consulted together for initial nontrivial approaches and whenever any decision
 uncertainty remains. High-stakes decisions require both advisors' plain AGREE
-plus the driver's accepted assessment. Sol implements and repairs at high;
-Opus independently reviews.
+plus the driver's accepted assessment. Ordinary implementation and
+exact-candidate review default to medium; the shared model-routing reasoning
+policy defines the per-launch high overrides and escalation triggers without
+changing review, test, revision, or authority gates.
 
 ## Claude Remote Control
 

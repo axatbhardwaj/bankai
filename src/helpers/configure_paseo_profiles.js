@@ -21,12 +21,28 @@ const PROVIDER_FIELDS = [
 	"command",
 	"enabled",
 ];
-const RETIRED_MANAGED_PROFILE_REPLACEMENTS = new Map([
-	["docs-muse", "docs-glm"],
-	["pr-requirements-muse", "pr-requirements-glm"],
+const LEGACY_MANAGED_PROFILE_REPLACEMENTS = new Map([
+	["fable-planner", "planning-advisor"],
+	["research-opus", "research-requirements"],
+	["research-sol-medium", "research-code"],
+	["implement-sol-high", "implement-code"],
+	["review-opus", "review-code"],
+	["docs-glm", "docs"],
+	["pr-security-opus", "pr-security"],
+	["pr-integration-sol", "pr-integration"],
+	["pr-requirements-glm", "pr-requirements"],
+	["pr-architecture-opus", "pr-architecture"],
+	["explore-sonnet", "explore-codebase"],
+	["explore-terra", "explore-execution"],
+	["explainer-opus", "explainer"],
+	["explainer-review-terra", "explainer-review"],
+	["explainer-content-sol", "explainer-content"],
+	["explainer-content-opus", "explainer-content-review"],
+	["docs-muse", "docs"],
+	["pr-requirements-muse", "pr-requirements"],
 	["pr-monitor-muse", "pr-monitor"],
-	["research-sonnet", "research-opus"],
-	["explainer-sonnet", "explainer-opus"],
+	["research-sonnet", "research-requirements"],
+	["explainer-sonnet", "explainer"],
 	["research-grok", "research-web"],
 	["pr-correctness-grok", "pr-correctness"],
 	["pr-monitor-glm", "pr-monitor"],
@@ -73,14 +89,10 @@ export function mergePaseoPolicy(liveConfig, policy) {
 
 	const managedIds = new Set(policy.agentProfiles.map(({ id }) => id));
 	const retiredManagedIds = new Set(
-		[...RETIRED_MANAGED_PROFILE_REPLACEMENTS]
+		[...LEGACY_MANAGED_PROFILE_REPLACEMENTS]
 			.filter(([, replacementId]) => managedIds.has(replacementId))
 			.map(([retiredId]) => retiredId),
 	);
-	// Explicitly retired role; preserve all other unmanaged records.
-	if (managedIds.has("fable-planner") && !managedIds.has("technical-advisor")) {
-		retiredManagedIds.add("technical-advisor");
-	}
 	const unmanagedProfiles = Array.isArray(merged.daemon.agentProfiles)
 		? merged.daemon.agentProfiles.filter(
 				({ id } = {}) => !managedIds.has(id) && !retiredManagedIds.has(id),

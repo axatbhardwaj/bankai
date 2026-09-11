@@ -27,5 +27,7 @@ conversation when selecting it; the actual selected main conversation stays
 the driver without an implicit profile/default change or handoff. Use Fable
 Advisor and Astra Advisor together at xhigh for the Decision Council on initial
 nontrivial approach decisions and whenever decision doubt remains. Assigned
-workers stay within their brief, and known mechanical work stays direct. This
-routing supersedes older paired-orchestration and model-casting guidance.
+workers stay within their brief, and known mechanical work stays direct.
+Ordinary implementation and exact-candidate review default to medium; apply the
+shared skill's per-launch high policy. This routing supersedes older
+paired-orchestration and model-casting guidance.
