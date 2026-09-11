@@ -6,6 +6,9 @@
   profile (`fable-planner`) to Fable Advisor. Run both at xhigh as a frequently
   consulted Decision Council for initial nontrivial approaches and remaining
   decision uncertainty.
+- Keep pre-created peer-review angle checkouts under the reviewed repository's
+  existing Paseo project by requiring explicit project registration and
+  workspace-ID launches at the point of dispatch.
 
 ## 11.8.2 - 2026-09-11
 

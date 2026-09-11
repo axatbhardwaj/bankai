@@ -57,7 +57,9 @@ under the existing project that owns the task target.
 4. Launch on the verified workspace ID. For a newly created workspace this is
    exactly the ID returned by creation. Pass `workspaceId` to `create_agent`;
    CLI launches use `paseo run --workspace <workspace-id> ...`.
-   `paseo run --cwd <path>` is path lookup, not an ownership-safe fallback.
+   `paseo run --new-workspace ...` cannot accept a project ID, and
+   `paseo run --cwd <path>` is path lookup. Neither is an ownership-safe
+   shortcut for a checkout created before the launch.
 
 Task labels are metadata for naming, discovery, and cleanup after placement.
 They do not establish project ownership or group independently created
