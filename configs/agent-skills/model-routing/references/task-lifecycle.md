@@ -16,9 +16,21 @@ the Paseo UI.
    missing or cannot be inspected, do not guess: continue normal routing
    without lifecycle metadata or cleanup and report the tooling gap.
 2. Start the explicit roster with the driver ID, role, and workspace. Add only
-   real Paseo agent IDs returned by Paseo-managed launches for this run. The
-   separate sessions launched by the Paseo PR skills are included. Keep the
-   roster in the handoff; source roles and workspace IDs from launch receipts.
+   real Paseo agent IDs backed by a driver-recorded launch or reuse receipt for
+   this run. This includes supported CLI launches such as:
+
+   ```bash
+   paseo run --background --workspace "$workspace_id" \
+     --label "haoshoku.task=$task_id" --json
+   ```
+
+   A CLI launch receipt remains valid when inspection reports a null
+   `ParentAgentId`. The separate sessions launched by the Paseo PR skills are
+   also included. Keep each receipt's exact agent ID, role, and workspace in
+   the roster and handoff. To reuse an agent from an earlier
+   run, settle the old run first: record the old roster's dispositions, then
+   record the exact ID's
+   fresh inspection as the reuse receipt and re-roster it for the new run.
    Paseo remains the state owner.
 3. Set only the shared task label on the driver and every Paseo roster member:
 
@@ -26,11 +38,12 @@ the Paseo UI.
    paseo agent update "$agent_id" --label "haoshoku.task=$task_id" --json
    ```
 
-   This preserves unrelated labels. Record the successful update receipt. A
-   reused driver has one current `haoshoku.task` value; keep earlier run
-   identity in its completed parent summaries rather than treating that label
-   as history. `paseo.parent-agent-id` is reserved persisted parentage: read it,
-   never set or rewrite it.
+   This preserves unrelated labels. Record this run's exact task-label update
+   receipt for every roster member; a launch-time label does not replace this
+   receipt. A reused driver or worker has one current `haoshoku.task` value;
+   keep earlier run identity in the completed driver summary rather than
+   treating that label as history. `paseo.parent-agent-id` is reserved
+   persisted parentage: read it, never set or rewrite it.
 4. When `renameChats` is true, set each visible title to
    `<Task or PR> · <Role>`. Include a round where it distinguishes repeated
    work, such as `PR 123 · Review R2`:
@@ -40,11 +53,11 @@ the Paseo UI.
    ```
 
    Name the first review attempt `Review R1` when another round is plausible,
-   then advance `R<N>` for each distinct review attempt. If a suitable
-   same-task Paseo session is reused, rename it; if the workflow launches a new
-   Paseo session, add that returned ID to the roster.
+   then advance `R<N>` for each distinct review attempt. Reuse a same-run Paseo
+   session only by its exact roster ID and rename it. Cross-run reuse follows
+   steps 2 and 3: settle, inspect, re-roster, and relabel the exact ID.
 
-5. After every Paseo-managed launch, inspect the returned ID with
+5. After every Paseo-managed launch or reuse, inspect the returned ID with
    `paseo inspect "$agent_id" --json`. Record its actual `ParentAgentId`,
    `Status`, `PendingPermissions`, `Cwd`, and `Worktree`. Keep the role and
    workspace ID from the launch receipt and the task ID from the label-update
@@ -61,14 +74,15 @@ is eligible for cleanup.
 
 `paseo ls --global --label "haoshoku.task=$task_id" --json` may rediscover
 candidates after interruption. Intersect its result with the explicit roster
-and inspected parent chain. A matching name, parent, PR, workspace, or label by
-itself never adopts an agent. Do not infer or migrate chats that predate this
-task run.
+and recorded receipts, then apply the cleanup eligibility rules below. A
+matching name, parent, PR, workspace, or label by itself never adopts an agent.
+Do not infer or migrate chats that predate this task run.
 
 ## Complete and clean up
 
-The driver decides completion from role results and acceptance evidence. Idle
-status is not completion.
+The driver decides completion from role results and acceptance evidence. Retain
+every workflow chat while the run is active so it remains visible and reusable;
+idle status or an interim/final role report alone is not completion.
 
 1. Collect every non-driver roster member's final report. Record the exact
    revision or evidence set, verification, findings, and unresolved owner/next
@@ -85,19 +99,32 @@ status is not completion.
    paseo heartbeat delete "$heartbeat_id" --json
    paseo stop "$monitor_agent_id" --json
    ```
-3. The driver confirms the task complete only after reports, acceptance checks,
-   and owned monitor/heartbeat shutdown are recorded.
-4. If `cleanup` is `keep`, retain every agent. If it is `archive`, exclude the
-   driver and handle one explicit descendant at a time. A fresh
+3. The driver confirms the task complete only after all reports, acceptance
+   checks, and owned monitor/heartbeat shutdown are recorded.
+4. Run cleanup reconciliation as a mandatory exit step before the driver sends
+   its complete final response, hands off, or is archived. Archival cleanup is
+   available only after step 3. For an active handoff, retain the workflow
+   workers and transfer the roster, receipts, evidence state, and next actions.
+   Record the disposition and a concrete reason for every retained worker.
+5. If `cleanup` is `keep`, retain every agent. If it is `archive`, exclude the
+   driver and handle one explicit roster member at a time. A fresh
    `paseo ls --global --label "haoshoku.task=$task_id" --json` result must still
    contain that exact roster ID; use it only as a membership check, never as an
    archive list. Immediately inspect the same ID with
-   `paseo inspect "$agent_id" --json`. Archive only when its parent chain still
-   matches, `PendingPermissions` is empty, the inspected status plus the owner's
-   final report show no running, error, permission, or waiting work, its role
-   evidence is complete, and concurrent ownership or a pending launch has been
-   excluded. Otherwise retain the worker.
-5. Prefer the no-force command for that eligible descendant immediately after
+   `paseo inspect "$agent_id" --json` and classify its parentage:
+
+   - A null `ParentAgentId` is eligible only when the exact ID is in the
+     explicit driver roster and both its original driver-recorded launch or
+     reuse receipt and this run's exact task-label update receipt are recorded.
+   - A non-null parent chain is eligible only when inspection reaches this
+     driver. A non-null mismatched parent chain is a hard retain condition.
+
+   After parentage qualifies, archive only when `PendingPermissions` is empty,
+   the inspected status plus the owner's final report show no running, error,
+   permission, or waiting work, its role evidence is complete, and concurrent
+   ownership or a pending launch has been excluded. Otherwise retain the worker
+   with the failed eligibility check as its concrete reason.
+6. Prefer the no-force command for that eligible roster member immediately after
    its checks, before checking the next ID:
 
    ```bash

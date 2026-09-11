@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Keep delegated workflow chats available until the driver accepts all
+  evidence, then require exit cleanup reconciliation before completion,
+  handoff, or driver archive. Receipt-bind supported background CLI launches
+  with null parentage, hard-retain mismatched non-null parentage, settle and
+  rebind cross-run reuse, and report a reason for every retained worker.
 - Restore Astra Advisor (`technical-advisor`) and rename the existing Fable
   profile (`fable-planner`) to Fable Advisor. Run both at xhigh as a frequently
   consulted Decision Council for initial nontrivial approaches and remaining
