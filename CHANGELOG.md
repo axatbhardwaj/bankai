@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Keep delegated workflow chats available until the driver accepts all
+  evidence, then require exit cleanup reconciliation before completion,
+  handoff, or driver archive. Receipt-bind supported background CLI launches
+  with null parentage, hard-retain mismatched non-null parentage, settle and
+  rebind cross-run reuse, and report a reason for every retained worker.
+
 ## 11.8.2 - 2026-09-11
 
 - Retire the separate Astra advisor profile; keep the selected model as driver

@@ -231,14 +231,18 @@ timer, state engine, or native UI grouping/filter. Paseo 0.7.2 performs the
 running-state check before its archive API call, so it cannot guarantee atomic
 idle-only archival; the convention requires owner quiescence, no pending
 launches, and an immediate recheck, retaining ambiguous workers. Each future
-run gets an identity made
-from its human task slug, full parent agent ID, and a fresh run discriminator;
-an explicit handoff roster of real Paseo agent IDs and inspected Paseo parentage
-bind cleanup to that run. Provider-native subagents remain inside their owning
-Paseo agent's report and never receive Paseo lifecycle commands. Existing chats
-are not inferred or migrated. Phone and desktop clients on the same daemon see
-the same metadata; each independent agent host must run its own Haoshoku
-configuration.
+run gets an identity made from its human task slug, full parent agent ID, and a
+fresh run discriminator. The bundled task-lifecycle reference is the
+authoritative procedure: it keeps workflow chats available until completion
+and requires exit reconciliation before a final response, handoff, or driver
+archive. Exact rosters plus launch/reuse and current label-update receipts bind
+supported background CLI launches even when `ParentAgentId` is null; mismatched
+non-null parentage is retained. Cross-run reuse first settles the prior run,
+then re-rosters and relabels the exact agent. Provider-native subagents remain
+inside their owning Paseo agent's report and never receive Paseo lifecycle
+commands. Existing chats are not inferred or migrated. Phone and desktop
+clients on the same daemon see the same metadata; each independent agent host
+must run its own Haoshoku configuration.
 
 Ordinary documentation uses `docs-glm`; PR correctness and requirements review
 use `pr-correctness` and `pr-requirements-glm`. Targeted web research uses
