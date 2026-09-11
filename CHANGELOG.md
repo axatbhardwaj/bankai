@@ -2,6 +2,11 @@
 
 ## 11.8.3 - 2026-09-11
 
+- Keep delegated workflow chats available until the driver accepts all
+  evidence, then require exit cleanup reconciliation before completion,
+  handoff, or driver archive. Receipt-bind supported background CLI launches
+  with null parentage, hard-retain mismatched non-null parentage, settle and
+  rebind cross-run reuse, and report a reason for every retained worker.
 - Default ordinary implementation and exact-candidate code review to medium,
   with explicit per-launch high escalation, while retaining xhigh Decision
   Council advisors and all existing revision, review, test, and authority gates.

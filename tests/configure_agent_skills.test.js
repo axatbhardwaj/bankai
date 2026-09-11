@@ -178,6 +178,19 @@ describe("Haoshoku agent skills", () => {
 		expect(lifecycle).toContain("<slug>--<full-driver-paseo-id>--<run-id>");
 		expect(lifecycle).toContain("paseo.parent-agent-id");
 		expect(lifecycle).toContain("Provider-native subagents");
+		expect(lifecycle).toContain("paseo run --background");
+		expect(lifecycle).toContain("driver-recorded launch or reuse receipt");
+		expect(lifecycle).toContain("this run's exact task-label update receipt");
+		expect(lifecycle).toContain("A null `ParentAgentId` is eligible only when");
+		expect(lifecycle).toContain(
+			"A non-null mismatched parent chain is a hard retain condition",
+		);
+		expect(lifecycle).toContain("mandatory exit step");
+		expect(lifecycle).toContain("concrete reason for every retained worker");
+		expect(lifecycle).toContain("settle the old run first");
+		expect(lifecycle).not.toContain(
+			"Archive only when its parent chain still matches",
+		);
 		expect(lifecycle).toContain("never retry with `--force`");
 		expect(
 			fs.readFileSync(
