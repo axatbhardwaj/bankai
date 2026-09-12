@@ -15,7 +15,6 @@ import {
 	syncAudioConfig,
 } from "./src/helpers/configure_audio.js";
 import { configureBraveManagedPolicies } from "./src/helpers/configure_brave_managed_policies.js";
-import { configureHermesRelay } from "./src/helpers/configure_hermes_relay.js";
 import {
 	backupClaudeConfig,
 	syncClaudeConfig,
@@ -33,6 +32,7 @@ import {
 	syncCodexConfig,
 } from "./src/helpers/configure_codex.js";
 import { installGhStack } from "./src/helpers/configure_gh_stack.js";
+import { configureHermesRelay } from "./src/helpers/configure_hermes_relay.js";
 import {
 	backupHyprmoncfg,
 	configureHyprmoncfg,
@@ -54,10 +54,14 @@ import {
 	syncPaseoProfiles,
 } from "./src/helpers/configure_paseo_profiles.js";
 import {
+	configurePaseoSchedules,
+	runPaseoSchedules,
+} from "./src/helpers/configure_paseo_schedules.js";
+import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
+import {
 	ensurePaseoTaskConfig,
 	setPaseoTaskConfig,
 } from "./src/helpers/configure_paseo_tasks.js";
-import { configurePaseoServer } from "./src/helpers/configure_paseo_server.js";
 import {
 	backupPrWatch,
 	syncPrWatch,
@@ -84,7 +88,7 @@ function parseEnabledState(value) {
 program
 	.name("haoshoku")
 	.description("Haoshoku: portable setup for Arch / Omarchy and Debian Server.")
-	.version("11.8.3")
+	.version("11.8.4")
 	.addHelpText("before", getBanner());
 
 program
@@ -126,6 +130,18 @@ program
 	.option("--agent-skills", "Deploy Haoshoku agent skills")
 	.option("--agent-skills-backup", "Backup Haoshoku-owned orchestration skills")
 	.option("--paseo-tasks", "Configure the default Paseo task lifecycle policy")
+	.option(
+		"--paseo-schedules",
+		"Configure explicit local Paseo schedule mappings",
+	)
+	.option(
+		"--paseo-schedules-check",
+		"Preview configured local Paseo schedule model differences",
+	)
+	.option(
+		"--paseo-schedules-apply",
+		"Back up, update, and verify configured local Paseo schedules",
+	)
 	.option(
 		"--paseo-tasks-enabled <state>",
 		"Set Paseo task lifecycle (enabled or disabled)",
@@ -348,6 +364,23 @@ async function runAction(options) {
 
 	if (options.paseoTasks) {
 		if (!ensurePaseoTaskConfig()) process.exitCode = 1;
+		return;
+	}
+
+	if (options.paseoSchedules) {
+		if (!(await configurePaseoSchedules())) process.exitCode = 1;
+		return;
+	}
+
+	if (options.paseoSchedulesCheck) {
+		const result = await runPaseoSchedules("check");
+		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+
+	if (options.paseoSchedulesApply) {
+		const result = await runPaseoSchedules("apply");
+		if (!result.ok) process.exitCode = 1;
 		return;
 	}
 
