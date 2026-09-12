@@ -7,17 +7,8 @@
 			"provider": "claude",
 			"model": "claude-fable-5-1",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "xhigh",
-			"notes": "Fable Advisor for the Decision Council and persistent planning partner. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
-		},
-		{
-			"id": "technical-advisor",
-			"name": "Astra Advisor",
-			"provider": "codex",
-			"model": "gpt-6-astra",
-			"modeId": "full-access",
-			"thinkingOptionId": "xhigh",
-			"notes": "Astra Advisor for the Decision Council and technical judgment. Independently produce a source-grounded assessment of the driver's question and evidence; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. Stay bounded: keep files unchanged, create no children, and do not review candidates."
+			"thinkingOptionId": "medium",
+			"notes": "Sole standing planning advisor at medium. Assess only unresolved consequential decisions after cheap factual checks; return AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a resolving check. High-stakes decisions require this advisor's plain AGREE plus the driver's accepted assessment; unavailability pauses only the dependent high-stakes decision unless the user explicitly overrides the gate. Stay bounded: keep files unchanged, create no children, and do not review candidates."
 		},
 		{
 			"id": "research-requirements",
@@ -25,8 +16,8 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
-			"notes": "Research requirements, documentation, prior decisions and alternatives. For substantial research, investigate independently before reading the Sol research conclusions. Return sources, uncertainties and implications; product code stays unchanged."
+			"thinkingOptionId": "medium",
+			"notes": "Research unresolved requirements, documentation, prior decisions and alternatives. Return sources, uncertainties and implications; product code stays unchanged. Work independently when the driver assigns high-risk validation alongside another researcher."
 		},
 		{
 			"id": "research-code",
@@ -43,7 +34,7 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "low",
 			"notes": "Targeted current external research when it adds value. Return authoritative sources, dates, evidence and unresolved questions. Stay within the research brief."
 		},
 		{
@@ -53,7 +44,7 @@
 			"model": "gpt-5.6-sol",
 			"modeId": "full-access",
 			"thinkingOptionId": "medium",
-			"notes": "Implement code, meaningful tests and repairs in the assigned task worktree. Default to medium effort; the driver applies any per-launch high override required by the shared model-routing policy. Follow the selected Matt skill when invoked. Return changed revision and verification evidence for independent Opus review; use gh stack for authorized Git delivery."
+			"notes": "Author code, meaningful tests and repairs in the assigned task worktree. The profile defaults to Sol medium for the ordinary pair; for a high-stakes pair the driver applies the per-launch high override and model-family override to Opus. Follow the selected Matt skill when invoked. Return the changed revision and verification evidence for the independently selected review-code session; use gh stack for authorized Git delivery."
 		},
 		{
 			"id": "review-code",
@@ -62,7 +53,7 @@
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
 			"thinkingOptionId": "medium",
-			"notes": "Independent review of the exact candidate revision and its spec in an isolated checkout. Default to medium effort; the driver applies any per-launch high override required by the shared model-routing policy. Use code-review for applicable Git review; keep Standards and Spec findings distinct. For implementation checkpoints, apply ~/.agents/skills/model-routing/references/simplicity-review.md inside this same seat. Own the verdict, return evidence and avoid product edits. External review submission requires user authority."
+			"notes": "Independently review the exact candidate revision and its spec in an isolated checkout. The profile defaults to Opus medium for the ordinary pair; for a high-stakes pair the driver applies the per-launch high override and model-family override to a fresh Sol session. Review Standards, Spec and ~/.agents/skills/model-routing/references/simplicity-review.md directly in one session. Invoke code-review only when the user explicitly selects that two-axis method or a full parallel review. Own the verdict, return evidence and avoid product edits. External review submission requires user authority."
 		},
 		{
 			"id": "docs",
@@ -70,7 +61,7 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "low",
 			"notes": "Author ordinary documentation from accepted evidence. Lead with the answer, significance and next action; cite material claims. Ordinary prose stays prose. When a visual artifact is requested, the driver may route it through the pinned upstream visual-explainer skill. Return artifacts and evidence; publish only when authorized."
 		},
 		{
@@ -124,7 +115,7 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "medium",
 			"notes": "Independently review only Complexity and Simplicity for the pinned PR revision. Apply ~/.agents/skills/model-routing/references/simplicity-review.md. Return evidence, coverage and limitations; keep product files unchanged, launch no nested review, and submit nothing externally."
 		},
 		{
@@ -133,7 +124,7 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "low",
 			"notes": "Monitor one authored PR through paseo-pr-babysit. Read GitHub state and maintain only the assigned monitor snapshot and own heartbeat. Report changed failures, feedback, blockers or readiness evidence to the driver. Keep product files unchanged. Never implement, launch workers, push, post replies, resolve threads or merge. Use five-minute heartbeat ticks; return a compact no-change result when unchanged."
 		},
 		{
@@ -160,25 +151,25 @@
 			"provider": "codex",
 			"model": "gpt-5.6-terra",
 			"modeId": "full-access",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "low",
 			"notes": "Trace execution paths, callers, dependencies and relevant tests; identify existing implementation seams. Perform only the bounded exploration assigned by the driver. Return source locations, evidence and uncertainties; keep product files unchanged. Write exploration notes only to the assigned output path. Do not launch a routing team or take implementation or review ownership."
 		},
 		{
 			"id": "explainer",
 			"name": "Visual Explainer",
 			"provider": "claude",
-			"model": "claude-opus-5",
+			"model": "claude-sonnet-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "xhigh",
 			"notes": "Build and repair requested HTML visual artifacts using the pinned upstream visual-explainer skill. Read ~/.config/haoshoku/visual-explainer.json before rendering; an explicit per-request theme overrides it. A fixed dark or light theme uses the full renderer even when quick mode was requested, with the fallback explained; system may use quick mode. Verify claims against supplied sources and inspect desktop/mobile rendering and reduced motion. Return the HTML path, SHA-256 and render evidence. Stay within the assigned artifact scope; no routing team or publication."
 		},
 		{
 			"id": "explainer-review",
 			"name": "Visual Review",
 			"provider": "codex",
-			"model": "gpt-5.6-sol",
+			"model": "gpt-5.6-luna",
 			"modeId": "full-access",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "max",
 			"notes": "Independently review a rendered visual artifact against its supplied sources. Verify source accuracy, first-screen comprehension, requested theme, accessibility, desktop/mobile overflow and reduced motion. Return APPROVE or REQUEST_CHANGES bound to the exact HTML SHA-256 with evidence. Keep artifacts unchanged; route repairs to the assigned author. No nested routing team, generic code-review or publication."
 		},
 		{
@@ -187,7 +178,7 @@
 			"provider": "codex",
 			"model": "gpt-5.6-sol",
 			"modeId": "full-access",
-			"thinkingOptionId": "medium",
+			"thinkingOptionId": "low",
 			"notes": "Prepare or repair source-backed explanatory content only when assigned. Verify material claims against authoritative sources, lead with the answer and meaning, and include uncertainty and the next action. Return the requested artifact and source evidence. This is optional support, not a mandatory stage before visual-explainer rendering; do not launch a routing team or publish."
 		},
 		{
@@ -196,12 +187,13 @@
 			"provider": "claude",
 			"model": "claude-opus-5",
 			"modeId": "bypassPermissions",
-			"thinkingOptionId": "high",
+			"thinkingOptionId": "medium",
 			"notes": "Independently review explanatory content when its risk or accuracy needs a dedicated content pass. Verify reasoning, source accuracy, coverage, readability and uncertainty; return APPROVE or REQUEST_CHANGES bound to the reviewed artifact with concrete corrections. This is not a required precursor to visual-explainer rendering. Keep the artifact unchanged; no nested routing team, generic code-review or publication."
 		}
 	],
 	"providers": {
 		"grok": {
+			"enabled": false,
 			"extends": "acp",
 			"label": "Grok",
 			"description": "xAI's Grok Build agentic coding CLI with parallel subagents. Requires a SuperGrok or X Premium+ subscription.",

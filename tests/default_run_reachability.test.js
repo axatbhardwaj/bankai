@@ -2,9 +2,8 @@ import { afterEach, beforeAll, describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-
-import { log, promptUser } from "../src/common/utils.js";
 import { promptDeviceType } from "../src/common/device_type.js";
+import { log, promptUser } from "../src/common/utils.js";
 import {
 	configureUserApps,
 	runCachyOSSetup,
@@ -46,6 +45,11 @@ function deployModeFeaturesFromCli() {
 		"--paseo-tasks-enabled",
 		"--paseo-task-cleanup",
 		"--paseo-task-renaming",
+		// Schedule ownership and mutation are always explicit, host-local modes.
+		// Normal setup must never connect to or modify the schedule API.
+		"--paseo-schedules",
+		"--paseo-schedules-check",
+		"--paseo-schedules-apply",
 		"--skills",
 		"--skills-update",
 		"--3-4-migrate",

@@ -21,6 +21,7 @@ const PROVIDER_FIELDS = [
 	"command",
 	"enabled",
 ];
+const RETIRED_MANAGED_PROFILE_IDS = new Set(["technical-advisor"]);
 const LEGACY_MANAGED_PROFILE_REPLACEMENTS = new Map([
 	["fable-planner", "planning-advisor"],
 	["research-opus", "research-requirements"],
@@ -88,11 +89,12 @@ export function mergePaseoPolicy(liveConfig, policy) {
 		: {};
 
 	const managedIds = new Set(policy.agentProfiles.map(({ id }) => id));
-	const retiredManagedIds = new Set(
-		[...LEGACY_MANAGED_PROFILE_REPLACEMENTS]
+	const retiredManagedIds = new Set([
+		...RETIRED_MANAGED_PROFILE_IDS,
+		...[...LEGACY_MANAGED_PROFILE_REPLACEMENTS]
 			.filter(([, replacementId]) => managedIds.has(replacementId))
 			.map(([retiredId]) => retiredId),
-	);
+	]);
 	const unmanagedProfiles = Array.isArray(merged.daemon.agentProfiles)
 		? merged.daemon.agentProfiles.filter(
 				({ id } = {}) => !managedIds.has(id) && !retiredManagedIds.has(id),

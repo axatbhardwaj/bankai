@@ -1,12 +1,14 @@
 # Worker briefing contracts
 
-Every brief names the selected profile and carries its relevant notes, objective, authoritative sources, constraints, acceptance criteria, expected artifacts, and required evidence. Resolve known preconditions in the main conversation before dispatch. A worker reports newly discovered gaps to the driver as evidence rather than opening a hidden user decision.
+Every worker receives a compact, source-linked brief: selected profile and relevant notes, objective, authoritative pointers, constraints, acceptance criteria, expected artifacts, and required evidence. Prefer pointers and changed evidence over transcript copies. Resolve known preconditions in the main conversation before dispatch. A worker reports newly discovered gaps to the driver as evidence rather than opening a hidden user decision.
 
-For implementation and review, record the effort selected under the shared [reasoning policy](../SKILL.md#reasoning-effort) and the reason for any per-launch high override.
+For implementation and review, record the selected [implementation pair](../SKILL.md#implementation-pairs), each session identity, and the reason for a high-stakes selection or per-launch effort override.
 
-Reuse same-task Decision Council sessions when evidence or the plan materially changes. Give them changed evidence pointers and the prior receipt rather than restating the whole task.
+Reuse the same-task planning-advisor session when evidence or the plan materially changes. Give it changed evidence pointers and the prior receipt rather than restating the whole task. Reuse cached reads of unchanged skill references.
 
 ## Exact-revision review
+
+Independence is session-based: the reviewer must have authored none of the candidate, including uncommitted changes, tests, integration work and draft responses in scope. A different model label does not make an author session independent. Use a separate checkout pinned to the immutable candidate. A fresh session may use a model family seen earlier in the task only when that session contributed nothing to the reviewed candidate.
 
 For the single `review-code` route, the driver resolves and gives `review-code`:
 
@@ -19,17 +21,23 @@ For an implementation checkpoint, include the [simplicity checklist](simplicity-
 
 Missing review inputs are surfaced in the main conversation before dispatch. Never silently skip the Spec axis or leave a worker to ask for a missing precondition.
 
-Opus invokes `code-review` once for that candidate. Its required native Standards and Spec subagents perform the independent review. Opus returns findings and its verdict bound to the candidate SHA. The driver and implementer do not duplicate this review. A changed revision is a new candidate and receives a new review. Formal GitHub review and merge mutations retain their own authority boundaries.
+For the ordinary pair, Opus covers Standards, Spec and simplicity directly in one session. For the high-stakes pair, a fresh Sol high session covers the same axes. The reviewer returns findings and its verdict bound to the candidate SHA. The upstream `code-review` two-axis subagent method remains opt-in when the user explicitly selects it or requests a full parallel review. The driver and implementer do not duplicate the review.
 
-## Decision Council
+## Mid-session escalation
 
-The driver records its own assessment before reading advisor outputs. Give `planning-advisor` and `technical-advisor` the same source-linked question and evidence, constraints, and acceptance criteria without a preferred answer. Run their independent first positions in parallel. Each returns exactly AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a targeted resolving check.
+When high-stakes risk emerges after the ordinary Sol author has begun writing, checkpoint the candidate and evidence, stop concurrent authorship, and record the ownership boundary. If the driver selects the high-stakes pair, transfer implementation ownership to an Opus high session. The former author session cannot review the result; launch a fresh Sol high reviewer that authored none of the candidate. The first review after the handoff covers the full candidate. Later unchanged-scope revisions may use delta review under the rules below. This transfers worker ownership, not the main conversation.
+
+For a changed candidate, reuse the same reviewer with the prior receipt, exact delta and affected coverage. A substantive scope, base or behavior change receives a full re-review; an explicitly selected skill may also require one. Never reuse approval without a refreshed SHA receipt. Existing tests and checks may be reused only while the revision is unchanged. Formal GitHub review and merge mutations retain their own authority boundaries.
+
+## Planning advisor
+
+The driver records its own assessment before reading the advisor output. Give `planning-advisor` the source-linked question and evidence, constraints, and acceptance criteria without a preferred answer. It returns exactly AGREE, DISAGREE, or INSUFFICIENT EVIDENCE with evidence pointers, the strongest counterargument, and a targeted resolving check.
 
 Ordinary disagreement is resolved with the targeted check or new evidence. Residual preference uses a safe, reversible, in-scope convention. Unresolved correctness requires an experiment, or the dependent human decision when no experiment is available.
 
-For a high-stakes decision, both advisors must return plain `AGREE`, and the driver must record its accepted assessment against the same evidence. Driver dissent starts another evidence round. Allow at most two focused evidence rounds, then escalate only the dependent decision with the question, three positions, evidence, resolving fact, and recommended default. Missing either advisor pauses only the dependent decision; use no substitute. Existing explicit authority remains valid until a material deviation.
+For a high-stakes decision, `planning-advisor` must return plain `AGREE`, and the driver records its accepted assessment against the same evidence. Driver dissent starts another evidence round. Allow at most two focused evidence rounds, then escalate only the dependent decision with the question, positions, evidence, resolving fact, and recommended default. An unavailable planning advisor pauses only the dependent high-stakes decision unless the user explicitly overrides this gate. Existing explicit authority remains valid until a material deviation.
 
-Record the decision, council status, advisor verdicts, source pointers, evidence or revision identity, resolving result, and focused-round count in the existing handoff. Material changes invalidate the receipt. Advisors keep files unchanged, create no children, and do not issue candidate-review verdicts; Opus review remains separate.
+Record the decision, advisor status, verdict, source pointers, evidence or revision identity, resolving result, and focused-round count in the existing handoff. Material changes invalidate the receipt. The advisor keeps files unchanged, creates no children, and does not issue candidate-review verdicts; candidate review remains with the independent session selected by the implementation pair.
 
 ## Documentation and explainers
 

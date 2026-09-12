@@ -36,7 +36,7 @@ const recurringOpusProfiles = [
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
-		thinkingOptionId: "medium",
+		thinkingOptionId: "low",
 	},
 	{
 		id: "pr-watchdog",
@@ -55,7 +55,7 @@ const currentWorkflowProfiles = [
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
-		thinkingOptionId: "medium",
+		thinkingOptionId: "low",
 	},
 	{
 		id: "pr-requirements",
@@ -75,7 +75,7 @@ const renamedWorkflowProfiles = [
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
-		thinkingOptionId: "medium",
+		thinkingOptionId: "low",
 	},
 	{
 		id: "pr-correctness",
@@ -95,15 +95,15 @@ const currentResearchAndExplainerProfiles = [
 		provider: "claude",
 		model: "claude-opus-5",
 		modeId: "bypassPermissions",
-		thinkingOptionId: "high",
+		thinkingOptionId: "medium",
 	},
 	{
 		id: "explainer",
 		name: "Visual Explainer",
 		provider: "claude",
-		model: "claude-opus-5",
+		model: "claude-sonnet-5",
 		modeId: "bypassPermissions",
-		thinkingOptionId: "medium",
+		thinkingOptionId: "xhigh",
 	},
 ];
 
@@ -533,7 +533,7 @@ describe("Paseo orchestration policy", () => {
 		expect(mergePaseoPolicy(complete, completePolicy)).toEqual(complete);
 	});
 
-	it("ships responsibility workflow routes while retaining generic Grok support", () => {
+	it("ships responsibility workflow routes with Grok disabled", () => {
 		const projectRoot = path.resolve(import.meta.dir, "..");
 		const bundledPolicy = JSON.parse(
 			fs.readFileSync(
@@ -549,19 +549,24 @@ describe("Paseo orchestration policy", () => {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
 		}
-		for (const id of ["docs", "pr-requirements"]) {
-			expect(profiles.get(id)).toMatchObject({
-				provider: "claude",
-				model: "claude-opus-5",
-				modeId: "bypassPermissions",
-				thinkingOptionId: "medium",
-			});
-		}
+		expect(profiles.get("docs")).toMatchObject({
+			provider: "claude",
+			model: "claude-opus-5",
+			modeId: "bypassPermissions",
+			thinkingOptionId: "low",
+		});
+		expect(profiles.get("pr-requirements")).toMatchObject({
+			provider: "claude",
+			model: "claude-opus-5",
+			modeId: "bypassPermissions",
+			thinkingOptionId: "medium",
+		});
 		for (const expected of renamedWorkflowProfiles) {
 			const { notes: _notes, ...actual } = profiles.get(expected.id) ?? {};
 			expect(actual).toEqual(expected);
 		}
 		expect(bundledPolicy.providers.grok).toEqual({
+			enabled: false,
 			extends: "acp",
 			label: "Grok",
 			description:
@@ -588,13 +593,48 @@ describe("Paseo orchestration policy", () => {
 		).toBe(false);
 		expect(profiles.has("research-sonnet")).toBe(false);
 		expect(profiles.has("explainer-sonnet")).toBe(false);
-		expect(profiles.get("research-code")?.thinkingOptionId).toBe("medium");
-		expect(profiles.get("explainer-content")?.thinkingOptionId).toBe("medium");
-		expect(profiles.get("explore-codebase")?.thinkingOptionId).toBe("xhigh");
-		expect(profiles.get("explainer-content-review")?.thinkingOptionId).toBe(
-			"high",
-		);
-		expect(profiles.get("explainer-review")?.thinkingOptionId).toBe("high");
+		const expectedEffort = {
+			"planning-advisor": "medium",
+			"research-requirements": "medium",
+			"research-code": "medium",
+			"research-web": "low",
+			"implement-code": "medium",
+			"review-code": "medium",
+			docs: "low",
+			"pr-security": "high",
+			"pr-correctness": "medium",
+			"pr-integration": "medium",
+			"pr-requirements": "medium",
+			"pr-architecture": "high",
+			"pr-complexity": "medium",
+			"pr-monitor": "low",
+			"pr-watchdog": "low",
+			"explore-codebase": "xhigh",
+			"explore-execution": "low",
+			explainer: "xhigh",
+			"explainer-review": "max",
+			"explainer-content": "low",
+			"explainer-content-review": "medium",
+		};
+		expect(Object.keys(expectedEffort)).toHaveLength(21);
+		for (const [id, effort] of Object.entries(expectedEffort)) {
+			expect(profiles.get(id)?.thinkingOptionId, id).toBe(effort);
+		}
+		expect(
+			Object.values(expectedEffort).reduce((counts, effort) => {
+				counts[effort] = (counts[effort] ?? 0) + 1;
+				return counts;
+			}, {}),
+		).toEqual({ medium: 10, low: 6, high: 2, xhigh: 2, max: 1 });
+		expect(profiles.get("explainer")?.model).toBe("claude-sonnet-5");
+		expect(profiles.get("explainer")?.provider).toBe("claude");
+		expect(profiles.get("explainer-review")?.model).toBe("gpt-5.6-luna");
+		expect(profiles.get("explainer-review")?.provider).toBe("codex");
+		expect(
+			Object.entries(expectedEffort)
+				.filter(([, effort]) => effort === "xhigh")
+				.map(([id]) => id),
+		).toEqual(["explore-codebase", "explainer"]);
 		expect(profiles.get("docs")?.notes).toContain("Ordinary prose stays prose");
 		expect(profiles.get("docs")?.notes).toContain("visual-explainer");
 		expect(profiles.get("explainer")?.notes).toContain(
@@ -613,33 +653,6 @@ describe("Paseo orchestration policy", () => {
 		for (const id of ["implement-code", "review-code"]) {
 			expect(profiles.get(id)?.thinkingOptionId).toBe("medium");
 			expect(profiles.get(id)?.notes).toContain("per-launch high override");
-		}
-		for (const id of [
-			"pr-security",
-			"pr-architecture",
-			"pr-complexity",
-			"explainer-content-review",
-			"explainer-review",
-		]) {
-			expect(profiles.get(id)?.thinkingOptionId, id).toBe("high");
-		}
-
-		for (const profile of bundledPolicy.agentProfiles) {
-			if (
-				profile.model === "claude-opus-5" &&
-				![
-					"explainer",
-					"docs",
-					"research-web",
-					"pr-correctness",
-					"pr-requirements",
-					"review-code",
-					"pr-monitor",
-					"pr-watchdog",
-				].includes(profile.id)
-			) {
-				expect(profile.thinkingOptionId, profile.id).toBe("high");
-			}
 		}
 	});
 
@@ -684,7 +697,7 @@ describe("Paseo orchestration policy", () => {
 			provider: "claude",
 			model: "claude-opus-5",
 			modeId: "bypassPermissions",
-			thinkingOptionId: "high",
+			thinkingOptionId: "medium",
 			notes:
 				"Independently review only Complexity and Simplicity for the pinned PR revision. Apply ~/.agents/skills/model-routing/references/simplicity-review.md. Return evidence, coverage and limitations; keep product files unchanged, launch no nested review, and submit nothing externally.",
 		});
@@ -697,8 +710,8 @@ describe("Paseo orchestration policy", () => {
 		);
 		expect(peerReview).toContain("all six reports");
 		expect(peerReview).toContain("six-angle coverage");
-		expect(peerReview).toContain("rerun the six angles");
-		expect(babysit).toContain("six-angle peer-review workflow");
+		expect(peerReview).toContain("full six-angle re-review");
+		expect(babysit).toContain("six-angle workflow is exceptional");
 		expect(babysit).not.toContain("five-angle peer-review workflow");
 		expect(peerReview).toContain(
 			"../model-routing/references/simplicity-review.md",
@@ -722,7 +735,7 @@ describe("Paseo orchestration policy", () => {
 		}
 	});
 
-	it("keeps the bundled Astra advisor while preserving custom profiles and secrets", () => {
+	it("retires the managed Astra advisor while preserving custom profiles and secrets", () => {
 		const policy = JSON.parse(
 			fs.readFileSync(
 				path.join(import.meta.dir, "..", "configs/paseo/agent-profiles.json"),
@@ -733,8 +746,16 @@ describe("Paseo orchestration policy", () => {
 			daemon: {
 				auth: { token: "keep" },
 				agentProfiles: [
-					{ id: "technical-advisor", model: "stale-astra" },
-					{ id: "custom-astra", model: "gpt-6-astra" },
+					{
+						id: "technical-advisor",
+						model: "stale-astra",
+						secret: "retire-with-profile",
+					},
+					{
+						id: "custom-astra",
+						model: "gpt-6-astra",
+						secret: "keep-custom-secret",
+					},
 				],
 			},
 		};
@@ -742,34 +763,37 @@ describe("Paseo orchestration policy", () => {
 		const fableAdvisor = policy.agentProfiles.find(
 			({ id }) => id === "planning-advisor",
 		);
-		const astraAdvisor = policy.agentProfiles.find(
-			({ id }) => id === "technical-advisor",
-		);
 		expect(fableAdvisor).toMatchObject({
 			name: "Fable Advisor",
 			provider: "claude",
 			model: "claude-fable-5-1",
 			modeId: "bypassPermissions",
-			thinkingOptionId: "xhigh",
+			thinkingOptionId: "medium",
 		});
-		expect(astraAdvisor).toMatchObject({
-			name: "Astra Advisor",
-			provider: "codex",
-			model: "gpt-6-astra",
-			modeId: "full-access",
-			thinkingOptionId: "xhigh",
-		});
-		expect(merged.daemon.agentProfiles).toContainEqual(astraAdvisor);
+		expect(fableAdvisor.notes).toContain("Sole standing planning advisor");
+		expect(fableAdvisor.notes).toContain(
+			"High-stakes decisions require this advisor's plain AGREE",
+		);
+		expect(fableAdvisor.notes).toContain(
+			"unless the user explicitly overrides the gate",
+		);
+		expect(
+			policy.agentProfiles.some(({ id }) => id === "technical-advisor"),
+		).toBe(false);
+		expect(
+			merged.daemon.agentProfiles.some(({ id }) => id === "technical-advisor"),
+		).toBe(false);
 		expect(merged.daemon.agentProfiles.at(-1)).toEqual({
 			id: "custom-astra",
 			model: "gpt-6-astra",
+			secret: "keep-custom-secret",
 		});
 		expect(merged.daemon.auth).toEqual(live.daemon.auth);
 		expect(live.daemon.agentProfiles).toHaveLength(2);
 		expect(mergePaseoPolicy(merged, policy)).toEqual(merged);
 	});
 
-	it("routes Decision Council scenarios while keeping known work direct", () => {
+	it("routes sole-advisor planning while keeping known work direct", () => {
 		const root = path.join(
 			import.meta.dir,
 			"..",
@@ -786,47 +810,85 @@ describe("Paseo orchestration policy", () => {
 			path.join(root, "references", "matt-workflows.md"),
 			"utf8",
 		);
+		const readme = fs.readFileSync(
+			path.join(import.meta.dir, "..", "README.md"),
+			"utf8",
+		);
+		const readmeContract = readme.replace(/\s+/g, " ");
 		expect(routing).toContain(
 			"The main conversation is the driver, using its selected model",
 		);
 		for (const contract of [
-			"Prefer Sol at medium reasoning",
-			"`implement-code` and `review-code` default to medium",
+			"Prefer Astra at low reasoning",
+			"preferred Astra driver starts at low",
+			"unrelated work returns to low",
+			"xhigh only for an explicit exceptional request",
+			"no dedicated Astra advisor profile",
+			"bundled `implement-code` and `review-code` profiles remain at medium",
 			"Override `thinkingOptionId` per launch",
-			"security or trust boundaries",
-			"irreversible data or infrastructure changes",
+			"substantive authorization or trust-boundary changes",
+			"wallet, recovery or transaction correctness",
+			"irreversible data or infrastructure operations",
 			"significant financial or loss risk",
 			"material architecture commitments",
 			"same substantive defect survives two evidence-backed attempts",
 			"evidence rejects the current causal explanation",
 			"substantive review finding remains disputed",
-			"File count, ordinary unfamiliarity, one failing test",
+			"Inspecting credential configuration, mentioning security",
 			"unrelated tasks start at medium",
-			"immutable-revision, independent-review, test, or authority gates",
-			"initial nontrivial approach",
-			"Any sliver of decision doubt",
-			"directly reading or testing",
-			"same source-linked question and evidence",
+			"immutable-revision, independent-review, test",
+			"native metadata integrity, protected-config or publication-authority gates",
+			"unresolved consequential decision",
+			"cheap factual checks",
+			"a source-linked question and evidence",
 			"records its own assessment before reading",
-			"Routine mechanical work with a known approach stays direct",
-			"`planning-advisor` and `technical-advisor`",
-			"Implementation stays with `implement-code`",
+			"Settled and mechanical work continues without renewed consultation",
+			"`planning-advisor` at medium as the sole standing advisor",
+			"`planning-advisor` must return plain AGREE",
+			"unless the user explicitly overrides this gate",
+			"Implementation and review use the selected pair",
+			"select the ordinary implementation pair below",
+			"Cache that discovery and verified workspace ownership for the task",
+			"configuration, host, model or mode changes",
+			"known quota outages early",
+			"Quota evidence never counts as approval",
+			"selected profile and capability fields",
 		]) {
 			expect(routing).toContain(contract);
 		}
-		expect(mattWorkflows).toContain(
-			"per-launch `thinkingOptionId` override to high",
-		);
+		expect(mattWorkflows).toContain("implementation-pair policy");
 		for (const contract of [
+			"compact, source-linked brief",
+			"changed evidence",
 			"strongest counterargument",
 			"targeted resolving check",
-			"both advisors must return plain `AGREE`",
+			"driver records its accepted assessment",
+			"`planning-advisor` must return plain `AGREE`",
+			"unless the user explicitly overrides this gate",
 			"at most two focused evidence rounds",
-			"Missing either advisor pauses only the dependent decision",
 		]) {
 			expect(briefings).toContain(contract);
 		}
-		expect(mattWorkflows).toContain("Decision Council");
+		expect(mattWorkflows).toContain("planning-advice triggers");
+		expect(mattWorkflows).toContain(
+			"One appropriate researcher is the default",
+		);
+		expect(mattWorkflows).toContain(
+			"Invoking `/implement` alone does not launch nested review agents",
+		);
+		expect(mattWorkflows).toContain(
+			"direct user invocation of `code-review` or explicit full parallel review",
+		);
+		expect(mattWorkflows).toContain("plain AGREE from `planning-advisor`");
+		expect(mattWorkflows).toContain(
+			"unless the user explicitly overrides the gate",
+		);
+		expect(`${routing}\n${briefings}\n${mattWorkflows}`).not.toContain(
+			"technical-advisor",
+		);
+		expect(`${routing}\n${briefings}\n${mattWorkflows}`).not.toContain(
+			"Decision Council",
+		);
 		for (const relativePath of [
 			"configs/codex/AGENTS.md",
 			"configs/claude/CLAUDE.md",
@@ -835,12 +897,56 @@ describe("Paseo orchestration policy", () => {
 				path.join(import.meta.dir, "..", relativePath),
 				"utf8",
 			);
-			expect(instructions).toContain("Fable");
-			expect(instructions).toContain(
-				"Advisor and Astra Advisor together at xhigh",
+			expect(instructions).toContain("Prefer Astra low");
+			expect(instructions).toContain("sole standing planning advisor");
+			expect(instructions).toContain("Fable Advisor at medium");
+			expect(instructions).toContain("Sonnet xhigh is");
+			expect(instructions.replace(/\s+/g, " ")).toContain(
+				"other xhigh use requires an explicit exceptional request",
 			);
+			expect(instructions).toContain("Fable's plain AGREE");
+			expect(instructions).toContain("unless the user overrides");
 			expect(instructions).toContain("actual selected main conversation");
+			expect(instructions).not.toContain("technical-advisor");
 		}
+		expect(readme).toContain("Fable's plain AGREE");
+		expect(readmeContract).toContain(
+			"2 high, 10 medium, 6 low, 2 xhigh, and 1 max",
+		);
+		expect(readme).toContain("unless the user explicitly overrides the gate");
+	});
+
+	it("keeps routine reviews single-seat and changed-candidate review incremental", () => {
+		const projectRoot = path.resolve(import.meta.dir, "..");
+		const skillRoot = path.join(projectRoot, "configs", "agent-skills");
+		const routing = fs.readFileSync(
+			path.join(skillRoot, "model-routing", "SKILL.md"),
+			"utf8",
+		);
+		const briefings = fs.readFileSync(
+			path.join(skillRoot, "model-routing", "references", "briefings.md"),
+			"utf8",
+		);
+		const babysit = fs.readFileSync(
+			path.join(skillRoot, "paseo-pr-babysit", "SKILL.md"),
+			"utf8",
+		);
+		const peerReview = fs.readFileSync(
+			path.join(skillRoot, "paseo-pr-review", "SKILL.md"),
+			"utf8",
+		);
+
+		for (const contents of [routing, briefings, babysit]) {
+			expect(contents).toContain("same reviewer");
+			expect(contents).toContain("exact delta");
+			expect(contents).toContain("affected coverage");
+			expect(contents).toContain("refreshed SHA");
+		}
+		expect(routing).toContain("Standards, Spec and simplicity directly");
+		expect(routing).toContain("explicitly invokes `code-review`");
+		expect(peerReview).toContain("Ordinary peer PR review uses `review-code`");
+		expect(peerReview).toContain("document the distinct coverage upfront");
+		expect(peerReview).toContain("explicitly selected this skill");
 	});
 
 	it("routes requested visual artifacts without forcing ordinary prose to HTML", () => {
