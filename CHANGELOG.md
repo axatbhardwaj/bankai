@@ -1,10 +1,33 @@
 # Changelog
 
-## Unreleased
+## 11.8.4 - 2026-09-12
 
-- Prefer Astra at low reasoning as the main driver, with effort escalation
-  when needed. Keep Fable xhigh as the sole standing planning advisor and
-  preserve Sol medium implementation and Opus medium review.
+- Add native `--paseo-schedules`, `--paseo-schedules-check`, and
+  `--paseo-schedules-apply` workflows for host-local configuration, read-only
+  validation, and explicit-ID diff-only updates. Policy/profile installation
+  leaves schedules unchanged; schedule apply remains a separate explicit
+  operation.
+- Select one implementation pair by risk: Sol medium author with independent
+  Opus medium review for ordinary work, or Opus high author with a fresh Sol
+  high reviewer for high-stakes work. Apply the pair at `/implement` and
+  whole-spec intake and per authored-PR repair batch, including exact candidate
+  and response-digest gates, same-author fixes, and explicit escalation
+  checkpoints. Peer PR review and monitor/watchdog roles remain unchanged.
+- Set only `explore-codebase` and `explainer` to the explicit Sonnet xhigh
+  preference while preserving all 21 stable role IDs and Luna max visual
+  review. Other xhigh use remains exceptional rather than a blanket default.
+- Use Sonnet xhigh for visual artifact authoring and Luna max for independent
+  exact-artifact review; preserve rendering and review requirements.
+- Optimize the bundled workflow to 2 high, 10 medium, 6 low, 2 xhigh, and 1 max
+  profile defaults. Keep Astra low as driver, Fable medium for
+  unresolved consequential decisions, and phase-specific high escalation.
+- Default ordinary nontrivial changes to one implementer and one independent
+  single-session Standards, Spec, and simplicity reviewer. Reserve extra
+  research and six-angle PR review for distinct unresolved or justified
+  high-risk coverage, while preserving explicit upstream `code-review` use.
+- Cache unchanged task discovery, workspace ownership, skill references and
+  selected capability fields; reuse changed evidence and reviewer sessions,
+  while refreshing every approval against the current SHA.
 - Retire the managed Astra advisor profile during setup while preserving
   custom profiles and provider credentials.
 - Remove the unreleased local provider-remapping layer; managed Codex roles

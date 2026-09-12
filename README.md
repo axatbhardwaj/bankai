@@ -225,6 +225,41 @@ fields are left byte-for-byte untouched and return failure; the routing policy
 then makes no metadata or cleanup changes. `keep` disables completion cleanup
 without disabling shared task labels.
 
+### Bounded Paseo schedule settings
+
+Haoshoku can manage only the provider, model, reasoning effort, and optional
+mode of three explicitly mapped native Paseo `new-agent` schedules. Initialize
+the private host-local config, preview it, and apply verified differences with:
+
+```bash
+haoshoku --paseo-schedules
+haoshoku --paseo-schedules-check
+haoshoku --paseo-schedules-apply
+```
+
+The config lives at `~/.config/haoshoku/paseo-schedules.json`. It starts with
+all `scheduleId` values set to `null`: stale archive and worktree cleaner use
+Claude Sonnet 5 at high reasoning, while merge readiness uses Codex Luna at
+high reasoning. Run the configure command in a terminal to select only the
+roles this host owns and enter each native schedule ID and settings. An
+unmapped role is skipped, so a host may own none, one, or several roles.
+
+`--paseo-schedules-check` is read-only. It validates every mapped ID against
+the running local daemon, requires a `new-agent` target, and reports capability
+support plus owned-field differences. `--paseo-schedules-apply` repeats the
+full preflight, writes an exclusive mode-`0600` backup under
+`~/.config/haoshoku/paseo-schedule-backups/`, updates only differences through
+Paseo's native API, and verifies readback. Cadence, prompt, status, safety
+settings, limits, and every other schedule remain untouched. If a write was
+attempted but verification fails, inspect the reported schedule and backup
+before retrying; Haoshoku never retries or rolls back uncertain state
+automatically.
+
+These modes never infer ownership from schedule titles, create, delete, pause,
+resume, or run schedules, and never reload or restart Paseo. Normal Haoshoku
+setup does not configure, check, or apply schedules. Run the command locally on
+each host; ambient `PASEO_HOME` and `PASEO_HOST` values are ignored.
+
 This is a bundled model-routing convention implemented with existing Paseo
 metadata and preferred no-force archive commands, not a new daemon feature,
 timer, state engine, or native UI grouping/filter. Paseo 0.7.2 performs the
@@ -246,28 +281,42 @@ must run its own Haoshoku configuration.
 
 Ordinary documentation uses `docs`; PR correctness and requirements review
 use `pr-correctness` and `pr-requirements`. Targeted web research uses
-`research-web`. These routes run Claude Opus 5 at medium effort with bypass
-permissions. Recurring PR monitoring uses `pr-monitor` at medium effort, while
-the independent `pr-watchdog` checks its health at low effort. The generic
-bundled `grok agent stdio` provider remains available and leaves OIDC
-authentication to the Grok CLI without an API-key override. During an upgrade,
+`research-web`. Recurring PR monitoring uses `pr-monitor`, while the independent
+`pr-watchdog` checks its health. Exact profile defaults are 21 total: 2 high, 10
+medium, 6 low, 2 xhigh, and 1 max:
+
+- Xhigh: `explore-codebase` and `explainer` (Sonnet), as explicit fixed
+  exceptions rather than a blanket escalation policy.
+- High: `pr-security`, `pr-architecture`.
+- Max: `explainer-review` (Luna), independently reviewing the exact artifact.
+- Medium: `planning-advisor`, `research-requirements`, `research-code`,
+  `implement-code`, `review-code`, `pr-correctness`, `pr-integration`,
+  `pr-requirements`, `pr-complexity`,
+  `explainer-content-review`.
+- Low: `research-web`, `docs`, `pr-monitor`, `pr-watchdog`,
+  `explore-execution`, `explainer-content`.
+
+The bundled Grok provider is disabled; no active workflow role selects it.
+Its compatibility definition preserves existing authentication without enabling usage. During an upgrade,
 Haoshoku removes superseded managed workflow IDs only when their replacement is
 present in the bundled policy; custom profile IDs and provider secrets remain
 untouched.
 
-Peer PR review uses six independent angles. The sixth `pr-complexity` profile
-runs Claude Opus 5 at high effort and checks complexity and simplicity against
-one shared checklist. The existing `review-code` implementation checkpoint
-applies that same checklist inside its normal review; it does not launch another
-checkpoint agent.
+Ordinary peer PR review and implementation checkpoints use one `review-code`
+session covering Standards, Spec and the shared simplicity checklist directly.
+The six-angle workflow is reserved for an explicit six-angle request or
+documented, substantial high-risk work needing genuinely distinct coverage. A
+direct invocation of upstream `code-review` retains its two-axis native-subagent
+method.
 
 PR babysitting launches the Opus monitor and watchdog as separate sessions.
 Each owns its own expiring heartbeat; healthy ticks update snapshots without
 waking the driver, while failures and renewal needs are deduplicated and sent
 to the driver for acknowledgement and coordination.
 
-Substantial research pairs `research-requirements` at high effort with
-`research-code` at medium. Requested visual artifacts use the
+Substantial research starts with the profile matching the unresolved question;
+another researcher is added only for a distinct unresolved question or high-risk
+independent validation. Requested visual artifacts use the
 `explainer` presentation profile and the pinned upstream visual-explainer;
 source-content and independent visual review profiles remain available when
 the artifact's risk warrants them. Ordinary prose stays prose, with no
@@ -275,15 +324,19 @@ mandatory Markdown-to-HTML chain. Upgrades retire the former `research-sonnet`
 and `explainer-sonnet` IDs only when their respective replacements are bundled.
 Prefer Astra at low effort when choosing the main conversation; the actual
 selected model remains the driver. Escalation is bounded to the reasoning work
-that needs it, with Astra xhigh available on demand and unrelated work returning
-to low. Fable Advisor (`planning-advisor`) runs at xhigh as the sole standing
-planning advisor; there is no dedicated Astra advisor profile or mandatory
-two-advisor council. High-stakes decisions require Fable's plain AGREE and the
-driver's accepted assessment; an unavailable Fable pauses only that decision
-unless the user explicitly overrides the gate. Ordinary implementation and
-exact-candidate review default to medium; the shared model-routing reasoning
-policy defines the per-launch high overrides and escalation triggers without
-changing review, test, revision, or authority gates.
+that needs it; outside the two fixed Sonnet roles, xhigh is reserved for an
+explicit exceptional request, and unrelated work returns to low. Fable Advisor (`planning-advisor`) runs at
+medium and is consulted only for unresolved consequential decisions after cheap
+factual checks; there is no dedicated Astra advisor profile or mandatory
+two-advisor council. High-stakes decisions still require Fable's plain AGREE and
+the driver's accepted assessment; an unavailable Fable pauses only that
+decision unless the user explicitly overrides the gate. Ordinary nontrivial
+changes use a Sol medium author and an independent Opus medium reviewer.
+High-stakes changes use an Opus high author and a fresh Sol high reviewer; the
+same author owns fixes, and the reviewer session must have authored none of the
+candidate, including uncommitted work. Simple known edits stay direct.
+Discovery, workspace ownership and unchanged skill references are cached for
+the task and refreshed on relevant configuration or capability changes.
 
 ## Claude Remote Control
 
@@ -382,6 +435,9 @@ haoshoku --paseo-tasks
 haoshoku --paseo-tasks-enabled disabled
 haoshoku --paseo-task-renaming disabled
 haoshoku --paseo-task-cleanup keep
+haoshoku --paseo-schedules
+haoshoku --paseo-schedules-check
+haoshoku --paseo-schedules-apply
 haoshoku --paseo-profiles
 haoshoku --paseo-profiles-backup
 haoshoku --gh-stack
@@ -505,7 +561,7 @@ encrypted relay offer in the app. SSH and relay are independent; neither flow
 causes Haoshoku to expose port 6767.
 
 This setup does not install or authenticate provider CLIs. Install and log in
-to Claude Code, Codex, Grok, or another supported provider separately as
+to Claude Code, Codex, or another enabled provider separately as
 the same user, then verify the daemon's environment and available models:
 
 ```bash
