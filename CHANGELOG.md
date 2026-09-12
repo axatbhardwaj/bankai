@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 11.8.5 - 2026-09-13
 
 - Stop auto-launching Omakade on workspace 2 at login; Steam keeps starting
   silently there and `Super+2` remains the on-demand Omakade key.
